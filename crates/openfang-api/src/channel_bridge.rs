@@ -1580,12 +1580,18 @@ pub async fn start_channel_bridge_with_config(
     let mut started_names = Vec::new();
     for (adapter, _) in adapters {
         let name = adapter.name().to_string();
+        // Register adapter in kernel so agents can use `channel_send` tool
+        kernel
+            .channel_adapters
+            .insert(name.clone(), adapter.clone());
         match manager.start_adapter(adapter).await {
             Ok(()) => {
                 info!("{name} channel bridge started");
                 started_names.push(name);
             }
             Err(e) => {
+                // Remove from kernel map if start failed
+                kernel.channel_adapters.remove(&name);
                 error!("Failed to start {name} bridge: {e}");
             }
         }

@@ -293,6 +293,9 @@ pub async fn execute_tool(
         "cron_list" => tool_cron_list(kernel, caller_agent_id).await,
         "cron_cancel" => tool_cron_cancel(input, kernel).await,
 
+        // Channel send tool (proactive outbound messaging)
+        "channel_send" => tool_channel_send(input, kernel).await,
+
         // Persistent process tools
         "process_start" => tool_process_start(input, process_manager, caller_agent_id).await,
         "process_poll" => tool_process_poll(input, process_manager).await,
@@ -907,6 +910,21 @@ pub fn builtin_tool_definitions() -> Vec<ToolDefinition> {
                     "job_id": { "type": "string", "description": "The UUID of the cron job to cancel" }
                 },
                 "required": ["job_id"]
+            }),
+        },
+        // --- Channel send tool (proactive outbound messaging) ---
+        ToolDefinition {
+            name: "channel_send".to_string(),
+            description: "Send a message to a user on a configured channel (email, telegram, slack, etc). For email: recipient is the email address; optionally prefix the message with 'Subject: Your Subject\\n\\n' to set the email subject.".to_string(),
+            input_schema: serde_json::json!({
+                "type": "object",
+                "properties": {
+                    "channel": { "type": "string", "description": "Channel adapter name (e.g., 'email', 'telegram', 'slack', 'discord')" },
+                    "recipient": { "type": "string", "description": "Platform-specific recipient identifier (email address, user ID, etc.)" },
+                    "subject": { "type": "string", "description": "Optional subject line (used for email; ignored for other channels)" },
+                    "message": { "type": "string", "description": "The message body to send" }
+                },
+                "required": ["channel", "recipient", "message"]
             }),
         },
         // --- Hand tools (curated autonomous capability packages) ---
@@ -2002,6 +2020,60 @@ async fn tool_cron_cancel(
 }
 
 // ---------------------------------------------------------------------------
+// Channel send tool (proactive outbound messaging via configured adapters)
+// ---------------------------------------------------------------------------
+
+async fn tool_channel_send(
+    input: &serde_json::Value,
+    kernel: Option<&Arc<dyn KernelHandle>>,
+) -> Result<String, String> {
+    let kh = require_kernel(kernel)?;
+
+    let channel = input["channel"]
+        .as_str()
+        .ok_or("Missing 'channel' parameter")?
+        .trim()
+        .to_lowercase();
+    let recipient = input["recipient"]
+        .as_str()
+        .ok_or("Missing 'recipient' parameter")?
+        .trim();
+    let message = input["message"]
+        .as_str()
+        .ok_or("Missing 'message' parameter")?;
+
+    if recipient.is_empty() {
+        return Err("Recipient cannot be empty".to_string());
+    }
+    if message.is_empty() {
+        return Err("Message cannot be empty".to_string());
+    }
+
+    // For email channels, validate email format and prepend subject
+    let final_message = if channel == "email" {
+        // Basic email format validation
+        if !recipient.contains('@') || !recipient.contains('.') {
+            return Err(format!("Invalid email address: '{recipient}'"));
+        }
+        // Prepend subject if provided
+        if let Some(subject) = input["subject"].as_str() {
+            if !subject.is_empty() {
+                format!("Subject: {subject}\n\n{message}")
+            } else {
+                message.to_string()
+            }
+        } else {
+            message.to_string()
+        }
+    } else {
+        message.to_string()
+    };
+
+    kh.send_channel_message(&channel, recipient, &final_message)
+        .await
+}
+
+// ---------------------------------------------------------------------------
 // Hand tools (delegated to kernel via KernelHandle trait)
 // ---------------------------------------------------------------------------
 
@@ -2953,6 +3025,8 @@ mod tests {
         assert!(names.contains(&"cron_create"));
         assert!(names.contains(&"cron_list"));
         assert!(names.contains(&"cron_cancel"));
+        // 1 channel send tool
+        assert!(names.contains(&"channel_send"));
         // 4 hand tools
         assert!(names.contains(&"hand_list"));
         assert!(names.contains(&"hand_activate"));
