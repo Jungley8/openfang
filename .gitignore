@@ -43,3 +43,6 @@ Thumbs.db
 *.swp
 *.swo
 *~
+
+# Generated desktop schemas
+crates/openfang-desktop/gen/
