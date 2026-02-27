@@ -5556,6 +5556,7 @@ fn cmd_reset(confirm: bool) {
 
 #[cfg(test)]
 mod tests {
+    use super::parse_api_key_from_config_toml;
 
     // --- Doctor command unit tests ---
 
@@ -5715,5 +5716,26 @@ api_key_env = "GROQ_API_KEY"
 "#;
         assert_eq!(parse_api_key_from_config_toml(with_empty), None);
         assert_eq!(parse_api_key_from_config_toml(missing), None);
+    }
+
+    #[test]
+    fn test_parse_api_key_from_config_toml_trims_value() {
+        let config = r#"
+api_listen = "127.0.0.1:4200"
+api_key = "  test-secret  "
+"#;
+        assert_eq!(
+            parse_api_key_from_config_toml(config).as_deref(),
+            Some("test-secret")
+        );
+    }
+
+    #[test]
+    fn test_parse_api_key_from_config_toml_invalid_toml() {
+        let invalid = r#"
+api_listen = "127.0.0.1:4200"
+api_key = "test-secret
+"#;
+        assert_eq!(parse_api_key_from_config_toml(invalid), None);
     }
 }
