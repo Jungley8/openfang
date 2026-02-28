@@ -13,13 +13,14 @@ mod templates;
 mod tui;
 mod ui;
 
+use chrono::Utc;
 use clap::{Parser, Subcommand};
 use colored::Colorize;
 use openfang_api::server::read_daemon_info;
 use openfang_kernel::OpenFangKernel;
 use openfang_types::agent::{AgentId, AgentManifest};
 use std::io::{self, BufRead, Write};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::sync::atomic::AtomicBool;
 #[cfg(windows)]
 use std::sync::atomic::Ordering;
@@ -1306,6 +1307,24 @@ decay_rate = 0.05
         restrict_file_permissions(&config_path);
         ui::success(&format!("Created: {}", config_path.display()));
     }
+}
+
+/// Rename the existing config.toml to a timestamped backup before writing a new one.
+fn backup_existing_config(config_path: &Path) -> std::io::Result<Option<PathBuf>> {
+    if !config_path.exists() {
+        return Ok(None);
+    }
+
+    let file_name = config_path
+        .file_name()
+        .and_then(|n| n.to_str())
+        .unwrap_or("config.toml");
+    let timestamp = Utc::now().format("%Y%m%d%H%M%S");
+    let backup_name = format!("{file_name}.backup-{timestamp}");
+    let backup_path = config_path.with_file_name(&backup_name);
+
+    std::fs::rename(config_path, &backup_path)?;
+    Ok(Some(backup_path))
 }
 
 fn cmd_start(config: Option<PathBuf>) {
