@@ -1102,10 +1102,12 @@
                     </div>
                     <div class="text-sm text-dim mb-2" x-text="a.description"></div>
                     <div class="text-xs text-dim">Agent: <span x-text="a.agent_name"></span> &middot; <span x-text="timeAgo(a.created_at)"></span></div>
-                    <div class="approval-actions" x-show="a.status === 'pending'" style="display:flex;gap:8px;margin-top:12px">
-                      <button class="btn btn-success btn-sm" @click="approve(a.id)">Approve</button>
-                      <button class="btn btn-danger btn-sm" @click="reject(a.id)">Reject</button>
-                    </div>
+                    <template x-if="a.status === 'pending'">
+                      <div class="approval-actions" style="display:flex;gap:8px;margin-top:12px">
+                        <button class="btn btn-success btn-sm" @click="approve(a.id)">Approve</button>
+                        <button class="btn btn-danger btn-sm" @click="reject(a.id)">Reject</button>
+                      </div>
+                    </template>
                   </div>
                 </template>
               </div>

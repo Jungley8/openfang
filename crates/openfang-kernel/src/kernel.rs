@@ -3095,6 +3095,8 @@ impl OpenFangKernel {
             let kernel = Arc::clone(self);
             tokio::spawn(async move {
                 let mut interval = tokio::time::interval(std::time::Duration::from_secs(15));
+                // Use Skip to avoid burst-firing after a long job blocks the loop.
+                interval.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Skip);
                 let mut persist_counter = 0u32;
                 interval.tick().await; // Skip first immediate tick
                 loop {

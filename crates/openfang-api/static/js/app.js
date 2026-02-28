@@ -158,7 +158,7 @@ document.addEventListener('alpine:init', function() {
         await OpenFangAPI.get('/api/providers');
         this.showAuthPrompt = false;
       } catch(e) {
-        if (e.message && e.message.indexOf('401') >= 0) {
+        if (e.message && (e.message.indexOf('Not authorized') >= 0 || e.message.indexOf('401') >= 0 || e.message.indexOf('Missing Authorization') >= 0)) {
           this.showAuthPrompt = true;
         }
       }

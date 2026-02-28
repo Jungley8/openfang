@@ -953,14 +953,20 @@ pub(crate) fn restrict_dir_permissions(_path: &std::path::Path) {}
 pub(crate) fn find_daemon() -> Option<String> {
     let home_dir = dirs::home_dir()?.join(".openfang");
     let info = read_daemon_info(&home_dir)?;
-    let url = format!("http://{}/api/health", info.listen_addr);
+
+    // Normalize listen address: replace 0.0.0.0 with 127.0.0.1 to avoid
+    // DNS/connectivity issues on macOS where 0.0.0.0 can hang.
+    let addr = info.listen_addr.replace("0.0.0.0", "127.0.0.1");
+    let url = format!("http://{addr}/api/health");
+
     let client = reqwest::blocking::Client::builder()
+        .connect_timeout(std::time::Duration::from_secs(1))
         .timeout(std::time::Duration::from_secs(2))
         .build()
         .ok()?;
     let resp = client.get(&url).send().ok()?;
     if resp.status().is_success() {
-        Some(format!("http://{}", info.listen_addr))
+        Some(format!("http://{addr}"))
     } else {
         None
     }

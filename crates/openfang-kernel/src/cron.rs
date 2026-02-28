@@ -222,16 +222,24 @@ impl CronScheduler {
     }
 
     /// Return jobs whose `next_run` is at or before `now` and are enabled.
+    ///
+    /// **Important**: This also pre-advances each due job's `next_run` to the
+    /// next scheduled time. This prevents the same job from being returned as
+    /// "due" on subsequent tick iterations while it's still executing.
     pub fn due_jobs(&self) -> Vec<CronJob> {
         let now = Utc::now();
-        self.jobs
-            .iter()
-            .filter(|r| {
-                let meta = r.value();
-                meta.job.enabled && meta.job.next_run.map(|t| t <= now).unwrap_or(false)
-            })
-            .map(|r| r.value().job.clone())
-            .collect()
+        let mut due = Vec::new();
+        for mut entry in self.jobs.iter_mut() {
+            let meta = entry.value_mut();
+            if meta.job.enabled && meta.job.next_run.map(|t| t <= now).unwrap_or(false) {
+                due.push(meta.job.clone());
+                // Pre-advance next_run so the job won't fire again on the next
+                // tick while it's still executing. record_success/record_failure
+                // will recompute it again after execution completes.
+                meta.job.next_run = Some(compute_next_run(&meta.job.schedule));
+            }
+        }
+        due
     }
 
     // -- Outcome recording --------------------------------------------------
