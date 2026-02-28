@@ -1945,18 +1945,14 @@ fn cmd_doctor(json: bool, repair: bool) {
                             ui::check_ok(".env file (permissions fixed to 0600)");
                         }
                         repaired = true;
-                    } else {
-                        if !json {
-                            ui::check_warn(&format!(
-                                ".env file has loose permissions ({:o}), should be 0600",
-                                mode
-                            ));
-                        }
+                    } else if !json {
+                        ui::check_warn(&format!(
+                            ".env file has loose permissions ({:o}), should be 0600",
+                            mode
+                        ));
                     }
-                } else {
-                    if !json {
-                        ui::check_ok(".env file");
-                    }
+                } else if !json {
+                    ui::check_ok(".env file");
                 }
             }
             #[cfg(not(unix))]
@@ -5628,9 +5624,9 @@ fn cmd_reset(confirm: bool) {
 
 #[cfg(test)]
 mod tests {
+    use super::parse_api_key_from_config_toml;
     use super::Cli;
     use clap::Parser;
-    use super::parse_api_key_from_config_toml;
 
     // --- Doctor command unit tests ---
 
