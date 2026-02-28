@@ -27,15 +27,15 @@ jobs:
             args: "--target x86_64-unknown-linux-gnu"
             rust_target: x86_64-unknown-linux-gnu
 
-          - name: macOS x86_64
-            os: macos-latest
-            args: "--target x86_64-apple-darwin"
-            rust_target: x86_64-apple-darwin
+          # - name: macOS x86_64
+          #   os: macos-latest
+          #   args: "--target x86_64-apple-darwin"
+          #   rust_target: x86_64-apple-darwin
 
-          - name: macOS ARM64
-            os: macos-latest
-            args: "--target aarch64-apple-darwin"
-            rust_target: aarch64-apple-darwin
+          # - name: macOS ARM64
+          #   os: macos-latest
+          #   args: "--target aarch64-apple-darwin"
+          #   rust_target: aarch64-apple-darwin
 
           - name: Windows x86_64
             os: windows-latest
@@ -108,7 +108,7 @@ jobs:
           releaseBody: |
             ## What's New
 
-            See the [CHANGELOG](https://github.com/RightNow-AI/openfang/blob/main/CHANGELOG.md) for full details.
+            See the [CHANGELOG](https://github.com//Jungley8/Octarq/blob/main/CHANGELOG.md) for full details.
 
             ## Installation
 
@@ -121,7 +121,7 @@ jobs:
 
             **Docker**:
             ```bash
-            docker pull ghcr.io/rightnow-ai/openfang:latest
+            docker pull ghcr.io/jungley8/octarq:latest
             ```
 
             **Coming from OpenClaw?**
@@ -228,7 +228,7 @@ jobs:
           push: true
           platforms: linux/amd64,linux/arm64
           tags: |
-            ghcr.io/rightnow-ai/openfang:latest
-            ghcr.io/rightnow-ai/openfang:${{ steps.version.outputs.version }}
+            ghcr.io/jungley8/octarq:latest
+            ghcr.io/jungley8/octarq:${{ steps.version.outputs.version }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
