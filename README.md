@@ -1,4 +1,19 @@
 <p align="center">
+  <img src="public/assets/octarq-logo.svg" width="180" alt="Octarq Logo" />
+</p>
+
+<h1 align="center">Octarq</h1>
+
+<p align="center">
+  Octarq is a renamed continuation of OpenFang, keeping the autonomous-agent foundation while evolving the brand.
+</p>
+<p align="center">
+  Thanks to the OpenFang project and community for the original open-source groundwork.
+</p>
+
+---
+
+<p align="center">
   <img src="public/assets/openfang-logo.png" width="160" alt="OpenFang Logo" />
 </p>
 
