@@ -982,6 +982,10 @@ complex_threshold = 500
     };
 
     let config_path = openfang_dir.join("config.toml");
+    if let Err(e) = crate::backup_existing_config(&config_path) {
+        state.save_error = format!("Failed to back up existing config: {e}");
+        return;
+    }
     let config = format!(
         r#"# OpenFang Agent OS configuration
 # See https://github.com/RightNow-AI/openfang for documentation
