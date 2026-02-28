@@ -44,12 +44,25 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
         with:
           key: test-${{ matrix.os }}
+      - uses: actions/cache@v4
+        id: cargo-cache
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: cargo-test-${{ matrix.os }}-${{ runner.arch }}-${{ hashFiles('**/Cargo.lock', '**/Cargo.toml') }}
+          restore-keys: |
+            cargo-test-${{ matrix.os }}-${{ runner.arch }}-
+            cargo-test-${{ matrix.os }}-
+            cargo-test-
       - name: Install Tauri system deps (Linux)
         if: runner.os == 'Linux'
         run: |
