@@ -118,7 +118,7 @@ var OpenFangToast = (function() {
 // ── Friendly Error Messages ──
 function friendlyError(status, serverMsg) {
   if (status === 0 || !status) return 'Cannot reach daemon — is openfang running?';
-  if (status === 401) return 'Not authorized — check your API key';
+  if (status === 401) return 'Not authorized — include Bearer API key (or open dashboard with ?token=...)';
   if (status === 403) return 'Permission denied';
   if (status === 404) return serverMsg || 'Resource not found';
   if (status === 429) return 'Rate limited — slow down and try again';
@@ -134,12 +134,36 @@ var OpenFangAPI = (function() {
   var WS_BASE = BASE.replace(/^http/, 'ws');
   var _authToken = '';
 
+  function initAuthToken() {
+    try {
+      var params = new URLSearchParams(window.location.search || '');
+      var fromQuery = params.get('token') || params.get('api_key') || '';
+      if (fromQuery) {
+        _authToken = fromQuery;
+        sessionStorage.setItem('openfang_auth_token', fromQuery);
+        return;
+      }
+      var fromSession = sessionStorage.getItem('openfang_auth_token') || '';
+      if (fromSession) _authToken = fromSession;
+    } catch(e) {
+      // Ignore parse/storage errors.
+    }
+  }
+
+  initAuthToken();
+
   // Connection state tracking
   var _connectionState = 'connected';
   var _reconnectAttempt = 0;
   var _connectionListeners = [];
 
-  function setAuthToken(token) { _authToken = token; }
+  function setAuthToken(token) {
+    _authToken = token || '';
+    try {
+      if (_authToken) sessionStorage.setItem('openfang_auth_token', _authToken);
+      else sessionStorage.removeItem('openfang_auth_token');
+    } catch(e) {}
+  }
 
   function headers() {
     var h = { 'Content-Type': 'application/json' };
