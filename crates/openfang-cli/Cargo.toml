@@ -27,6 +27,7 @@ serde_json = { workspace = true }
 toml = { workspace = true }
 dirs = { workspace = true }
 reqwest = { workspace = true, features = ["blocking"] }
+chrono = { workspace = true }
 openfang-runtime = { path = "../openfang-runtime" }
 uuid = { workspace = true }
 ratatui = { workspace = true }
