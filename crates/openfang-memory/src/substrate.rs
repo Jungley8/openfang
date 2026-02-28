@@ -503,6 +503,63 @@ impl MemorySubstrate {
         .map_err(|e| OpenFangError::Internal(e.to_string()))?
     }
 
+    // -----------------------------------------------------------------
+    // TELOS snapshots (version history for alignment reporting)
+    // -----------------------------------------------------------------
+
+    /// Save a TELOS context snapshot after load/reload.
+    pub fn save_telos_snapshot(
+        &self,
+        snapshot_id: &str,
+        created_at: &str,
+        mission_hash: Option<&str>,
+        goals_hash: Option<&str>,
+        full_context_json: &str,
+    ) -> OpenFangResult<()> {
+        let conn = self
+            .conn
+            .lock()
+            .map_err(|e| OpenFangError::Memory(e.to_string()))?;
+        conn.execute(
+            "INSERT INTO telos_snapshots (snapshot_id, created_at, mission_hash, goals_hash, full_context_json) VALUES (?1, ?2, ?3, ?4, ?5)",
+            rusqlite::params![snapshot_id, created_at, mission_hash, goals_hash, full_context_json],
+        )
+        .map_err(|e| OpenFangError::Memory(e.to_string()))?;
+        Ok(())
+    }
+
+    /// List TELOS snapshots created within the last N days (for report).
+    pub fn telos_snapshots_since(&self, days: u32) -> OpenFangResult<Vec<serde_json::Value>> {
+        let conn = self
+            .conn
+            .lock()
+            .map_err(|e| OpenFangError::Memory(e.to_string()))?;
+        let mut stmt = conn
+            .prepare(
+                "SELECT snapshot_id, created_at, mission_hash, goals_hash
+                 FROM telos_snapshots
+                 WHERE created_at >= datetime('now', ?1)
+                 ORDER BY created_at DESC",
+            )
+            .map_err(|e| OpenFangError::Memory(e.to_string()))?;
+        let binding = format!("-{days} days");
+        let rows = stmt
+            .query_map(rusqlite::params![&binding], |row| {
+                Ok(serde_json::json!({
+                    "snapshot_id": row.get::<_, String>(0)?,
+                    "created_at": row.get::<_, String>(1)?,
+                    "mission_hash": row.get::<_, Option<String>>(2)?,
+                    "goals_hash": row.get::<_, Option<String>>(3)?,
+                }))
+            })
+            .map_err(|e| OpenFangError::Memory(e.to_string()))?;
+        let mut out = Vec::new();
+        for row in rows {
+            out.push(row.map_err(|e| OpenFangError::Memory(e.to_string()))?);
+        }
+        Ok(out)
+    }
+
     /// List tasks, optionally filtered by status.
     pub async fn task_list(&self, status: Option<&str>) -> OpenFangResult<Vec<serde_json::Value>> {
         let conn = Arc::clone(&self.conn);

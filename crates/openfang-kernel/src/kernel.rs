@@ -2624,6 +2624,42 @@ impl OpenFangKernel {
             ..Default::default()
         };
 
+        // Inject TELOS context into system prompt
+        if def.telos.mode != openfang_telos::InjectionMode::Disabled {
+            let telos_dir = openfang_telos::TelosEngine::get_default_dir();
+            let telos_ctx = openfang_telos::TelosEngine::load_context_sync(&telos_dir);
+            let trusted = matches!(
+                manifest.model.provider.as_str(),
+                "ollama" | "local" | "lmstudio"
+            );
+            let params = openfang_telos::InjectionParams {
+                mode: def.telos.mode,
+                position: def.telos.position,
+                max_chars: def.telos.max_chars,
+                custom_files: &def.telos.files,
+                directive: def.telos.directive.as_deref(),
+                trusted_provider: trusted,
+            };
+            manifest.model.system_prompt = openfang_telos::injector::HandInjector::inject(
+                &telos_ctx,
+                &manifest.model.system_prompt,
+                &params,
+            );
+
+            self.audit_log.record_with_metadata(
+                hand_id,
+                openfang_runtime::audit::AuditAction::TelosInjection,
+                format!("hand={}, mode={:?}", hand_id, def.telos.mode),
+                "ok",
+                serde_json::json!({
+                    "hand": hand_id,
+                    "telos_mode": format!("{:?}", def.telos.mode),
+                    "telos_version": telos_ctx.last_updated.format("%Y-%m-%d").to_string(),
+                    "trusted_provider": trusted,
+                }),
+            );
+        }
+
         // Resolve hand settings → prompt block + env vars
         let resolved = openfang_hands::resolve_settings(&def.settings, &instance.config);
         if !resolved.prompt_block.is_empty() {

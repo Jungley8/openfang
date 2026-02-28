@@ -8,6 +8,7 @@ pub mod bundled;
 pub mod registry;
 
 use chrono::{DateTime, Utc};
+use openfang_telos::{InjectionMode, InjectionPosition};
 use openfang_types::agent::AgentId;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -174,6 +175,45 @@ pub struct HandSetting {
     pub options: Vec<HandSettingOption>,
 }
 
+/// Controls how a Hand consumes TELOS context.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct HandTelosConfig {
+    #[serde(default = "default_hand_telos_mode")]
+    pub mode: InjectionMode,
+    #[serde(default = "default_hand_telos_position")]
+    pub position: InjectionPosition,
+    #[serde(default = "default_hand_telos_max_chars")]
+    pub max_chars: usize,
+    #[serde(default)]
+    pub files: Vec<String>,
+    #[serde(default)]
+    pub directive: Option<String>,
+}
+
+impl Default for HandTelosConfig {
+    fn default() -> Self {
+        Self {
+            mode: default_hand_telos_mode(),
+            position: default_hand_telos_position(),
+            max_chars: default_hand_telos_max_chars(),
+            files: Vec::new(),
+            directive: None,
+        }
+    }
+}
+
+fn default_hand_telos_mode() -> InjectionMode {
+    InjectionMode::Disabled
+}
+
+fn default_hand_telos_position() -> InjectionPosition {
+    InjectionPosition::BeforePrompt
+}
+
+fn default_hand_telos_max_chars() -> usize {
+    4_000
+}
+
 /// Result of resolving user-chosen settings against the schema.
 pub struct ResolvedSettings {
     /// Markdown block to append to the system prompt (e.g. `## User Configuration\n- STT: Groq...`).
@@ -321,6 +361,9 @@ pub struct HandDefinition {
     pub settings: Vec<HandSetting>,
     /// Agent manifest template.
     pub agent: HandAgentConfig,
+    /// TELOS injection contract (optional).
+    #[serde(default)]
+    pub telos: HandTelosConfig,
     /// Dashboard metrics schema.
     #[serde(default)]
     pub dashboard: HandDashboard,

@@ -5,7 +5,7 @@
 use rusqlite::Connection;
 
 /// Current schema version.
-const SCHEMA_VERSION: u32 = 7;
+const SCHEMA_VERSION: u32 = 8;
 
 /// Run all migrations to bring the database up to date.
 pub fn run_migrations(conn: &Connection) -> Result<(), rusqlite::Error> {
@@ -37,6 +37,10 @@ pub fn run_migrations(conn: &Connection) -> Result<(), rusqlite::Error> {
 
     if current_version < 7 {
         migrate_v7(conn)?;
+    }
+
+    if current_version < 8 {
+        migrate_v8(conn)?;
     }
 
     set_schema_version(conn, SCHEMA_VERSION)?;
@@ -299,6 +303,26 @@ fn migrate_v7(conn: &Connection) -> Result<(), rusqlite::Error> {
     Ok(())
 }
 
+/// Version 8: Add telos_snapshots table for TELOS version history and alignment reporting.
+fn migrate_v8(conn: &Connection) -> Result<(), rusqlite::Error> {
+    conn.execute_batch(
+        "
+        CREATE TABLE IF NOT EXISTS telos_snapshots (
+            snapshot_id TEXT PRIMARY KEY,
+            created_at TEXT NOT NULL,
+            mission_hash TEXT,
+            goals_hash TEXT,
+            full_context_json TEXT NOT NULL
+        );
+        CREATE INDEX IF NOT EXISTS idx_telos_snapshots_created ON telos_snapshots(created_at);
+
+        INSERT OR IGNORE INTO migrations (version, applied_at, description)
+        VALUES (8, datetime('now'), 'Add telos_snapshots for TELOS version history');
+        ",
+    )?;
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -323,6 +347,7 @@ mod tests {
         assert!(tables.contains(&"memories".to_string()));
         assert!(tables.contains(&"entities".to_string()));
         assert!(tables.contains(&"relations".to_string()));
+        assert!(tables.contains(&"telos_snapshots".to_string()));
     }
 
     #[test]

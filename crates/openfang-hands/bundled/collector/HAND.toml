@@ -143,6 +143,19 @@ description = "Analyze and track sentiment trends over time"
 setting_type = "toggle"
 default = "false"
 
+# ─── TELOS Integration ─────────────────────────────────────────────────────────
+
+[telos]
+mode = "full"
+max_chars = 6000
+directive = """
+自动构建监控靶标列表：
+- PROJECTS.md 中每个项目 → 监控相关竞品和技术动态
+- CHALLENGES.md 中每个挑战 → 寻找解决方案和案例
+- GOALS.md 中每个目标 → 监控成功路径上的关键信号
+不要等用户手动指定监控目标，从 TELOS 自动推导。
+"""
+
 # ─── Agent configuration ─────────────────────────────────────────────────────
 
 [agent]
