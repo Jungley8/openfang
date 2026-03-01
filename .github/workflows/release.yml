@@ -24,6 +24,7 @@ jobs:
   # Also generates and uploads latest.json (the auto-updater manifest)
   desktop:
     name: Desktop / ${{ matrix.platform.name }}
+    if: github.event_name != 'workflow_dispatch'
     strategy:
       fail-fast: false
       matrix:
@@ -208,6 +209,7 @@ jobs:
           path: target/${{ matrix.target }}/release/openfang${{ runner.os == 'Windows' && '.exe' || '' }}
           if-no-files-found: error
       - name: Upload to GitHub Release
+        if: github.event_name != 'workflow_dispatch'
         uses: softprops/action-gh-release@v2
         with:
           files: openfang-${{ matrix.target }}.*
