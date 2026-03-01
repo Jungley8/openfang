@@ -795,6 +795,7 @@ fn clean_path_entries(home: &std::path::Path, openfang_dir: &str) {
     }
 }
 
+/// Returns true if a shell config line is an openfang PATH export.
 #[cfg(any(not(windows), test))]
 pub(crate) fn is_openfang_path_line(line: &str, openfang_dir: &str) -> bool {
     let lower = line.to_lowercase();

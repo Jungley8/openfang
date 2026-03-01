@@ -18,6 +18,7 @@ pub const AFTER_HELP: &str = "\
   openfang channel setup        Interactive channel setup wizard
   openfang cron list            List scheduled jobs
   openfang workspace clean      List orphan workspace dirs (use --force to remove)
+  openfang uninstall            Completely remove OpenFang from your system
 
 \x1b[1;36mQuick Start:\x1b[0m
   1. openfang init              Set up config + API key
