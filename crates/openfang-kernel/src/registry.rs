@@ -92,6 +92,14 @@ impl AgentRegistry {
         self.agents.iter().map(|e| e.value().clone()).collect()
     }
 
+    /// List short IDs (first 8 chars of each agent UUID). Used by workspace clean.
+    pub fn list_short_ids(&self) -> Vec<String> {
+        self.agents
+            .iter()
+            .map(|e| e.id.0.to_string().chars().take(8).collect::<String>())
+            .collect()
+    }
+
     /// Add a child agent ID to a parent's children list.
     pub fn add_child(&self, parent_id: AgentId, child_id: AgentId) {
         if let Some(mut entry) = self.agents.get_mut(&parent_id) {

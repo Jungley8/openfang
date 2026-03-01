@@ -81,6 +81,8 @@ async fn start_test_server_with_provider(
         channels_config: tokio::sync::RwLock::new(Default::default()),
         telos,
         shutdown_notify: Arc::new(tokio::sync::Notify::new()),
+        restart_requested: std::sync::atomic::AtomicBool::new(false),
+        restart_argv: vec!["openfang".to_string(), "start".to_string()],
     });
 
     let app = Router::new()
@@ -712,6 +714,8 @@ async fn start_test_server_with_auth(api_key: &str) -> TestServer {
         channels_config: tokio::sync::RwLock::new(Default::default()),
         telos,
         shutdown_notify: Arc::new(tokio::sync::Notify::new()),
+        restart_requested: std::sync::atomic::AtomicBool::new(false),
+        restart_argv: vec!["openfang".to_string(), "start".to_string()],
     });
 
     let api_key_state = state.kernel.config.api_key.clone();

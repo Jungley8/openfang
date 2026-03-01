@@ -740,4 +740,10 @@ TELOS 文件: 8/10 已加载 (缺少 NARRATIVES.md, LEARNED.md)
 
 ---
 
-*文档版本: 1.0 | 基于 PAI v2.5 + Octarq v0.2.1 分析*
+## 十三、致谢
+
+本集成方案的设计深度参考了 [Daniel Miessler](https://github.com/danielmiessler) 的 [Personal_AI_Infrastructure (PAI)](https://github.com/danielmiessler/Personal_AI_Infrastructure) 项目。感谢 Daniel 对个人 AI 基础设施及 TELOS 系统的前瞻性思考与开源贡献。
+
+---
+
+*文档版本: 1.1 | 基于 PAI v2.5 + Octarq v0.2.1 分析*

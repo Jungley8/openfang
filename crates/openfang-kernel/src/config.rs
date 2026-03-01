@@ -90,6 +90,45 @@ pub fn load_config(path: Option<&Path>) -> KernelConfig {
     KernelConfig::default()
 }
 
+/// Load config from path, returning `Err` on any parse/read/deserialize failure.
+/// Use this for hot-reload so invalid config is rejected instead of falling back to defaults.
+pub fn try_load_config(path: Option<&Path>) -> Result<KernelConfig, String> {
+    let config_path = path
+        .map(|p| p.to_path_buf())
+        .unwrap_or_else(default_config_path);
+
+    if !config_path.exists() {
+        return Err("Config file not found".to_string());
+    }
+
+    let contents =
+        std::fs::read_to_string(&config_path).map_err(|e| format!("Failed to read config: {e}"))?;
+
+    let mut root_value: toml::Value =
+        toml::from_str(&contents).map_err(|e| format!("Invalid TOML: {e}"))?;
+
+    let config_dir = config_path
+        .parent()
+        .unwrap_or_else(|| Path::new("."))
+        .to_path_buf();
+    let mut visited = HashSet::new();
+    if let Ok(canonical) = std::fs::canonicalize(&config_path) {
+        visited.insert(canonical);
+    } else {
+        visited.insert(config_path.clone());
+    }
+    resolve_config_includes(&mut root_value, &config_dir, &mut visited, 0)?;
+
+    if let toml::Value::Table(ref mut tbl) = root_value {
+        tbl.remove("include");
+    }
+
+    let config: KernelConfig = root_value
+        .try_into()
+        .map_err(|e| format!("Invalid config: {e}"))?;
+    Ok(config)
+}
+
 /// Resolve config includes by deep-merging included files into the root value.
 ///
 /// Included files are loaded first and the root config overrides them.

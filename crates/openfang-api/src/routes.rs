@@ -37,6 +37,10 @@ pub struct AppState {
     pub telos: Arc<openfang_telos::TelosEngine>,
     /// Notify handle to trigger graceful HTTP server shutdown from the API.
     pub shutdown_notify: Arc<tokio::sync::Notify>,
+    /// When set, run_daemon will spawn a new daemon and exit (config-change restart).
+    pub restart_requested: std::sync::atomic::AtomicBool,
+    /// Argv to exec for restart: [exe, "start", "--config", path?].
+    pub restart_argv: Vec<String>,
 }
 
 // ---------------------------------------------------------------------------
@@ -8114,37 +8118,28 @@ pub async fn reject_request(
 // Config Reload endpoint
 // ---------------------------------------------------------------------------
 
-/// POST /api/config/reload — Reload configuration from disk and apply hot-reloadable changes.
+/// POST /api/config/reload — Validate config on disk and trigger daemon restart to apply.
 ///
-/// Reads the config file, diffs against current config, validates the new config,
-/// and applies hot-reloadable actions (approval policy, cron limits, etc.).
-/// Returns the reload plan showing what changed and what was applied.
+/// Simple “reload = restart”: if the config file is valid, requests graceful shutdown
+/// and spawns a new daemon with the same argv so the new process picks up the config.
 pub async fn config_reload(State(state): State<Arc<AppState>>) -> impl IntoResponse {
-    // SECURITY: Record config reload in audit trail
     state.kernel.audit_log.record(
         "system",
         openfang_runtime::audit::AuditAction::ConfigChange,
-        "config reload requested via API",
+        "config reload (restart) requested via API",
         "pending",
     );
-    match state.kernel.reload_config() {
-        Ok(plan) => {
-            let status = if plan.restart_required {
-                "partial"
-            } else if plan.has_changes() {
-                "applied"
-            } else {
-                "no_changes"
-            };
-
+    match state.kernel.validate_config_from_disk() {
+        Ok(()) => {
+            state
+                .restart_requested
+                .store(true, std::sync::atomic::Ordering::Relaxed);
+            state.shutdown_notify.notify_one();
             (
-                StatusCode::OK,
+                StatusCode::ACCEPTED,
                 Json(serde_json::json!({
-                    "status": status,
-                    "restart_required": plan.restart_required,
-                    "restart_reasons": plan.restart_reasons,
-                    "hot_actions_applied": plan.hot_actions.iter().map(|a| format!("{a:?}")).collect::<Vec<_>>(),
-                    "noop_changes": plan.noop_changes,
+                    "status": "restarting",
+                    "message": "Config valid; daemon will restart to apply. Run `openfang status` to confirm.",
                 })),
             )
         }
@@ -8338,16 +8333,15 @@ pub async fn config_set(
         );
     }
 
-    // Trigger reload
-    let reload_status = match state.kernel.reload_config() {
-        Ok(plan) => {
-            if plan.restart_required {
-                "applied_partial"
-            } else {
-                "applied"
-            }
+    let reload_status = match state.kernel.validate_config_from_disk() {
+        Ok(()) => {
+            state
+                .restart_requested
+                .store(true, std::sync::atomic::Ordering::Relaxed);
+            state.shutdown_notify.notify_one();
+            "saved_restarting"
         }
-        Err(_) => "saved_reload_failed",
+        Err(_) => "saved",
     };
 
     state.kernel.audit_log.record(

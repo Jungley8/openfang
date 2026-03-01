@@ -10,8 +10,10 @@ OpenFang is an open-source Agent Operating System written in Rust (14 crates).
 After every feature implementation, run ALL THREE checks:
 ```bash
 cargo build --workspace --lib          # Must compile (use --lib if exe is locked)
-cargo test --workspace                 # All tests must pass (currently 1744+)
+# cargo test --workspace                 # All tests must pass (currently 1744+)
+cargo nextest run --workspace          # more fast test tool
 cargo clippy --workspace --all-targets -- -D warnings  # Zero warnings
+cargo fmt --all  # format code styles
 ```
 
 ## MANDATORY: Live Integration Testing
@@ -91,20 +93,20 @@ taskkill //PID <pid> //F
 ```
 
 ### Key API Endpoints for Testing
-| Endpoint | Method | Purpose |
-|----------|--------|---------|
-| `/api/health` | GET | Basic health check |
-| `/api/agents` | GET | List all agents |
-| `/api/agents/{id}/message` | POST | Send message (triggers LLM) |
-| `/api/budget` | GET/PUT | Global budget status/update |
-| `/api/budget/agents` | GET | Per-agent cost ranking |
-| `/api/budget/agents/{id}` | GET | Single agent budget detail |
-| `/api/network/status` | GET | OFP network status |
-| `/api/peers` | GET | Connected OFP peers |
-| `/api/a2a/agents` | GET | External A2A agents |
-| `/api/a2a/discover` | POST | Discover A2A agent at URL |
-| `/api/a2a/send` | POST | Send task to external A2A agent |
-| `/api/a2a/tasks/{id}/status` | GET | Check external A2A task status |
+| Endpoint                     | Method  | Purpose                         |
+| ---------------------------- | ------- | ------------------------------- |
+| `/api/health`                | GET     | Basic health check              |
+| `/api/agents`                | GET     | List all agents                 |
+| `/api/agents/{id}/message`   | POST    | Send message (triggers LLM)     |
+| `/api/budget`                | GET/PUT | Global budget status/update     |
+| `/api/budget/agents`         | GET     | Per-agent cost ranking          |
+| `/api/budget/agents/{id}`    | GET     | Single agent budget detail      |
+| `/api/network/status`        | GET     | OFP network status              |
+| `/api/peers`                 | GET     | Connected OFP peers             |
+| `/api/a2a/agents`            | GET     | External A2A agents             |
+| `/api/a2a/discover`          | POST    | Discover A2A agent at URL       |
+| `/api/a2a/send`              | POST    | Send task to external A2A agent |
+| `/api/a2a/tasks/{id}/status` | GET     | Check external A2A task status  |
 
 ## Architecture Notes
 - **Don't touch `openfang-cli`** — user is actively building the interactive CLI

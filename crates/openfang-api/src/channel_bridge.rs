@@ -1618,9 +1618,14 @@ pub async fn reload_channels_from_disk(
         *guard = None;
     }
 
-    // Re-read config from disk
-    let config_path = state.kernel.config.home_dir.join("config.toml");
-    let fresh_config = openfang_kernel::config::load_config(Some(&config_path));
+    // Re-read config from disk (same path as kernel so --config is respected).
+    // Use try_load_config so invalid config returns Err and we keep the existing bridge.
+    let config_path = state
+        .kernel
+        .config_path
+        .clone()
+        .unwrap_or_else(|| state.kernel.config.home_dir.join("config.toml"));
+    let fresh_config = openfang_kernel::config::try_load_config(Some(config_path.as_path()))?;
 
     // Update the live channels config so list_channels() reflects reality
     *state.channels_config.write().await = fresh_config.channels.clone();
