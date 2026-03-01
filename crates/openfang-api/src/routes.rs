@@ -14,7 +14,9 @@ use openfang_kernel::OpenFangKernel;
 use openfang_runtime::kernel_handle::KernelHandle;
 use openfang_runtime::tool_runner::builtin_tool_definitions;
 use openfang_types::agent::{AgentId, AgentIdentity, AgentManifest};
+use std::collections::hash_map::DefaultHasher;
 use std::collections::HashMap;
+use std::hash::{Hash, Hasher};
 use std::sync::{Arc, LazyLock};
 use std::time::Instant;
 
@@ -31,8 +33,138 @@ pub struct AppState {
     pub bridge_manager: tokio::sync::Mutex<Option<openfang_channels::bridge::BridgeManager>>,
     /// Live channel config — updated on every hot-reload so list_channels() reflects reality.
     pub channels_config: tokio::sync::RwLock<openfang_types::config::ChannelsConfig>,
+    /// PAI TELOS engine for user context.
+    pub telos: Arc<openfang_telos::TelosEngine>,
     /// Notify handle to trigger graceful HTTP server shutdown from the API.
     pub shutdown_notify: Arc<tokio::sync::Notify>,
+}
+
+// ---------------------------------------------------------------------------
+// TELOS routes
+// ---------------------------------------------------------------------------
+
+/// Query params for TELOS report.
+#[derive(serde::Deserialize)]
+pub struct TelosReportQuery {
+    #[serde(default = "default_telos_report_days")]
+    pub days: u32,
+}
+
+fn default_telos_report_days() -> u32 {
+    30
+}
+
+/// GET /api/telos/status — Current TELOS context status.
+pub async fn telos_status(State(state): State<Arc<AppState>>) -> impl IntoResponse {
+    let ctx = state.telos.get_context().await;
+    Json(ctx)
+}
+
+/// GET /api/telos/report — TELOS snapshots and activity in the last N days.
+pub async fn telos_report(
+    State(state): State<Arc<AppState>>,
+    Query(q): Query<TelosReportQuery>,
+) -> impl IntoResponse {
+    match state.kernel.memory.telos_snapshots_since(q.days) {
+        Ok(snapshots) => (
+            StatusCode::OK,
+            Json(serde_json::json!({ "days": q.days, "snapshots": snapshots })),
+        ),
+        Err(e) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(serde_json::json!({"error": e.to_string()})),
+        ),
+    }
+}
+
+fn telos_content_hash(s: Option<&String>) -> Option<String> {
+    s.as_ref().map(|c| {
+        let mut h = DefaultHasher::new();
+        c.hash(&mut h);
+        format!("{:016x}", h.finish())
+    })
+}
+
+/// GET /api/telos/preview/{hand} — Preview TELOS injection for a specific hand.
+pub async fn telos_preview(
+    State(state): State<Arc<AppState>>,
+    Path(hand): Path<String>,
+) -> impl IntoResponse {
+    let ctx = state.telos.get_context().await;
+
+    let bundled = openfang_hands::bundled::bundled_hands();
+    let found = bundled.into_iter().find(|(id, _, _)| *id == hand.as_str());
+
+    let (telos_cfg, system_prompt) = match found {
+        Some((id, toml_str, skill_str)) => {
+            match openfang_hands::bundled::parse_bundled(id, toml_str, skill_str) {
+                Ok(def) => (def.telos.clone(), def.agent.system_prompt.clone()),
+                Err(e) => {
+                    return (
+                        StatusCode::INTERNAL_SERVER_ERROR,
+                        Json(serde_json::json!({"error": format!("Failed to parse hand: {e}")})),
+                    );
+                }
+            }
+        }
+        None => {
+            return (
+                StatusCode::NOT_FOUND,
+                Json(serde_json::json!({"error": format!("Hand '{}' not found", hand)})),
+            );
+        }
+    };
+
+    let params = openfang_telos::InjectionParams {
+        mode: telos_cfg.mode,
+        position: telos_cfg.position,
+        max_chars: telos_cfg.max_chars,
+        custom_files: &telos_cfg.files,
+        directive: telos_cfg.directive.as_deref(),
+        trusted_provider: false,
+    };
+    let injected = openfang_telos::injector::HandInjector::inject(&ctx, &system_prompt, &params);
+
+    (
+        StatusCode::OK,
+        Json(serde_json::json!({
+            "hand": hand,
+            "mode": format!("{:?}", telos_cfg.mode),
+            "position": format!("{:?}", telos_cfg.position),
+            "max_chars": telos_cfg.max_chars,
+            "injected_chars": injected.len(),
+            "preview": injected,
+        })),
+    )
+}
+
+/// POST /api/telos/reload — Force reload TELOS from disk.
+pub async fn telos_reload(State(state): State<Arc<AppState>>) -> impl IntoResponse {
+    match state.telos.load_all().await {
+        Ok(_) => {
+            let ctx = state.telos.get_context().await;
+            let full_context_json =
+                serde_json::to_string(&ctx).unwrap_or_else(|_| "{}".to_string());
+            let created_at = ctx.last_updated.to_rfc3339();
+            let snapshot_id = uuid::Uuid::new_v4().to_string();
+            let mission_hash = telos_content_hash(ctx.mission.as_ref());
+            let goals_hash = telos_content_hash(ctx.goals.as_ref());
+            if let Err(e) = state.kernel.memory.save_telos_snapshot(
+                &snapshot_id,
+                &created_at,
+                mission_hash.as_deref(),
+                goals_hash.as_deref(),
+                &full_context_json,
+            ) {
+                tracing::warn!("Failed to save TELOS snapshot: {}", e);
+            }
+            (StatusCode::OK, Json(serde_json::json!({"status": "ok"})))
+        }
+        Err(e) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(serde_json::json!({"status": "error", "error": e.to_string()})),
+        ),
+    }
 }
 
 /// POST /api/agents — Spawn a new agent.

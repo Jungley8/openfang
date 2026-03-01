@@ -92,15 +92,15 @@ All compiled into the binary. No downloading, no pip install, no Docker pull.
 
 ### The 7 Bundled Hands
 
-| Hand | What It Actually Does |
-|------|----------------------|
-| **Clip** | Takes a YouTube URL, downloads it, identifies the best moments, cuts them into vertical shorts with captions and thumbnails, optionally adds AI voice-over, and publishes to Telegram and WhatsApp. 8-phase pipeline. FFmpeg + yt-dlp + 5 STT backends. |
-| **Lead** | Runs daily. Discovers prospects matching your ICP, enriches them with web research, scores 0-100, deduplicates against your existing database, and delivers qualified leads in CSV/JSON/Markdown. Builds ICP profiles over time. |
-| **Collector** | OSINT-grade intelligence. You give it a target (company, person, topic). It monitors continuously — change detection, sentiment tracking, knowledge graph construction, and critical alerts when something important shifts. |
-| **Predictor** | Superforecasting engine. Collects signals from multiple sources, builds calibrated reasoning chains, makes predictions with confidence intervals, and tracks its own accuracy using Brier scores. Has a contrarian mode that deliberately argues against consensus. |
-| **Researcher** | Deep autonomous researcher. Cross-references multiple sources, evaluates credibility using CRAAP criteria (Currency, Relevance, Authority, Accuracy, Purpose), generates cited reports with APA formatting, supports multiple languages. |
-| **Twitter** | Autonomous Twitter/X account manager. Creates content in 7 rotating formats, schedules posts for optimal engagement, responds to mentions, tracks performance metrics. Has an approval queue — nothing posts without your OK. |
-| **Browser** | Web automation agent. Navigates sites, fills forms, clicks buttons, handles multi-step workflows. Uses Playwright bridge with session persistence. **Mandatory purchase approval gate** — it will never spend your money without explicit confirmation. |
+| Hand           | What It Actually Does                                                                                                                                                                                                                                               |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Clip**       | Takes a YouTube URL, downloads it, identifies the best moments, cuts them into vertical shorts with captions and thumbnails, optionally adds AI voice-over, and publishes to Telegram and WhatsApp. 8-phase pipeline. FFmpeg + yt-dlp + 5 STT backends.             |
+| **Lead**       | Runs daily. Discovers prospects matching your ICP, enriches them with web research, scores 0-100, deduplicates against your existing database, and delivers qualified leads in CSV/JSON/Markdown. Builds ICP profiles over time.                                    |
+| **Collector**  | OSINT-grade intelligence. You give it a target (company, person, topic). It monitors continuously — change detection, sentiment tracking, knowledge graph construction, and critical alerts when something important shifts.                                        |
+| **Predictor**  | Superforecasting engine. Collects signals from multiple sources, builds calibrated reasoning chains, makes predictions with confidence intervals, and tracks its own accuracy using Brier scores. Has a contrarian mode that deliberately argues against consensus. |
+| **Researcher** | Deep autonomous researcher. Cross-references multiple sources, evaluates credibility using CRAAP criteria (Currency, Relevance, Authority, Accuracy, Purpose), generates cited reports with APA formatting, supports multiple languages.                            |
+| **Twitter**    | Autonomous Twitter/X account manager. Creates content in 7 rotating formats, schedules posts for optimal engagement, responds to mentions, tracks performance metrics. Has an approval queue — nothing posts without your OK.                                       |
+| **Browser**    | Web automation agent. Navigates sites, fills forms, clicks buttons, handles multi-step workflows. Uses Playwright bridge with session persistence. **Mandatory purchase approval gate** — it will never spend your money without explicit confirmation.             |
 
 ```bash
 # Activate the Researcher Hand — it starts working immediately
@@ -201,20 +201,20 @@ AutoGen    ███████████░░░░░░░░░░░░
 
 ### Feature-by-Feature Comparison
 
-| Feature | OpenFang | OpenClaw | ZeroClaw | CrewAI | AutoGen | LangGraph |
-|---------|----------|----------|----------|--------|---------|-----------|
-| **Language** | **Rust** | TypeScript | **Rust** | Python | Python | Python |
-| **Autonomous Hands** | **7 built-in** | None | None | None | None | None |
-| **Security Layers** | **16 discrete** | 3 basic | 6 layers | 1 basic | Docker | AES enc. |
-| **Agent Sandbox** | **WASM dual-metered** | None | Allowlists | None | Docker | None |
-| **Channel Adapters** | **40** | 13 | 15 | 0 | 0 | 0 |
-| **Built-in Tools** | **53 + MCP + A2A** | 50+ | 12 | Plugins | MCP | LC tools |
-| **Memory** | **SQLite + vector** | File-based | SQLite FTS5 | 4-layer | External | Checkpoints |
-| **Desktop App** | **Tauri 2.0** | None | None | None | Studio | None |
-| **Audit Trail** | **Merkle hash-chain** | Logs | Logs | Tracing | Logs | Checkpoints |
-| **Cold Start** | **<200ms** | ~6s | ~10ms | ~3s | ~4s | ~2.5s |
-| **Install Size** | **~32 MB** | ~500 MB | ~8.8 MB | ~100 MB | ~200 MB | ~150 MB |
-| **License** | MIT | MIT | MIT | MIT | Apache 2.0 | MIT |
+| Feature              | OpenFang              | OpenClaw   | ZeroClaw    | CrewAI  | AutoGen    | LangGraph   |
+| -------------------- | --------------------- | ---------- | ----------- | ------- | ---------- | ----------- |
+| **Language**         | **Rust**              | TypeScript | **Rust**    | Python  | Python     | Python      |
+| **Autonomous Hands** | **7 built-in**        | None       | None        | None    | None       | None        |
+| **Security Layers**  | **16 discrete**       | 3 basic    | 6 layers    | 1 basic | Docker     | AES enc.    |
+| **Agent Sandbox**    | **WASM dual-metered** | None       | Allowlists  | None    | Docker     | None        |
+| **Channel Adapters** | **40**                | 13         | 15          | 0       | 0          | 0           |
+| **Built-in Tools**   | **53 + MCP + A2A**    | 50+        | 12          | Plugins | MCP        | LC tools    |
+| **Memory**           | **SQLite + vector**   | File-based | SQLite FTS5 | 4-layer | External   | Checkpoints |
+| **Desktop App**      | **Tauri 2.0**         | None       | None        | None    | Studio     | None        |
+| **Audit Trail**      | **Merkle hash-chain** | Logs       | Logs        | Tracing | Logs       | Checkpoints |
+| **Cold Start**       | **<200ms**            | ~6s        | ~10ms       | ~3s     | ~4s        | ~2.5s       |
+| **Install Size**     | **~32 MB**            | ~500 MB    | ~8.8 MB     | ~100 MB | ~200 MB    | ~150 MB     |
+| **License**          | MIT                   | MIT        | MIT         | MIT     | Apache 2.0 | MIT         |
 
 ---
 
@@ -222,24 +222,24 @@ AutoGen    ███████████░░░░░░░░░░░░
 
 OpenFang doesn't bolt security on after the fact. Every layer is independently testable and operates without a single point of failure.
 
-| # | System | What It Does |
-|---|--------|-------------|
-| 1 | **WASM Dual-Metered Sandbox** | Tool code runs in WebAssembly with fuel metering + epoch interruption. A watchdog thread kills runaway code. |
-| 2 | **Merkle Hash-Chain Audit Trail** | Every action is cryptographically linked to the previous one. Tamper with one entry and the entire chain breaks. |
-| 3 | **Information Flow Taint Tracking** | Labels propagate through execution — secrets are tracked from source to sink. |
-| 4 | **Ed25519 Signed Agent Manifests** | Every agent identity and capability set is cryptographically signed. |
-| 5 | **SSRF Protection** | Blocks private IPs, cloud metadata endpoints, and DNS rebinding attacks. |
-| 6 | **Secret Zeroization** | `Zeroizing<String>` auto-wipes API keys from memory the instant they're no longer needed. |
-| 7 | **OFP Mutual Authentication** | HMAC-SHA256 nonce-based, constant-time verification for P2P networking. |
-| 8 | **Capability Gates** | Role-based access control — agents declare required tools, the kernel enforces it. |
-| 9 | **Security Headers** | CSP, X-Frame-Options, HSTS, X-Content-Type-Options on every response. |
-| 10 | **Health Endpoint Redaction** | Public health check returns minimal info. Full diagnostics require authentication. |
-| 11 | **Subprocess Sandbox** | `env_clear()` + selective variable passthrough. Process tree isolation with cross-platform kill. |
-| 12 | **Prompt Injection Scanner** | Detects override attempts, data exfiltration patterns, and shell reference injection in skills. |
-| 13 | **Loop Guard** | SHA256-based tool call loop detection with circuit breaker. Handles ping-pong patterns. |
-| 14 | **Session Repair** | 7-phase message history validation and automatic recovery from corruption. |
-| 15 | **Path Traversal Prevention** | Canonicalization with symlink escape prevention. `../` doesn't work here. |
-| 16 | **GCRA Rate Limiter** | Cost-aware token bucket rate limiting with per-IP tracking and stale cleanup. |
+| #   | System                              | What It Does                                                                                                     |
+| --- | ----------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| 1   | **WASM Dual-Metered Sandbox**       | Tool code runs in WebAssembly with fuel metering + epoch interruption. A watchdog thread kills runaway code.     |
+| 2   | **Merkle Hash-Chain Audit Trail**   | Every action is cryptographically linked to the previous one. Tamper with one entry and the entire chain breaks. |
+| 3   | **Information Flow Taint Tracking** | Labels propagate through execution — secrets are tracked from source to sink.                                    |
+| 4   | **Ed25519 Signed Agent Manifests**  | Every agent identity and capability set is cryptographically signed.                                             |
+| 5   | **SSRF Protection**                 | Blocks private IPs, cloud metadata endpoints, and DNS rebinding attacks.                                         |
+| 6   | **Secret Zeroization**              | `Zeroizing<String>` auto-wipes API keys from memory the instant they're no longer needed.                        |
+| 7   | **OFP Mutual Authentication**       | HMAC-SHA256 nonce-based, constant-time verification for P2P networking.                                          |
+| 8   | **Capability Gates**                | Role-based access control — agents declare required tools, the kernel enforces it.                               |
+| 9   | **Security Headers**                | CSP, X-Frame-Options, HSTS, X-Content-Type-Options on every response.                                            |
+| 10  | **Health Endpoint Redaction**       | Public health check returns minimal info. Full diagnostics require authentication.                               |
+| 11  | **Subprocess Sandbox**              | `env_clear()` + selective variable passthrough. Process tree isolation with cross-platform kill.                 |
+| 12  | **Prompt Injection Scanner**        | Detects override attempts, data exfiltration patterns, and shell reference injection in skills.                  |
+| 13  | **Loop Guard**                      | SHA256-based tool call loop detection with circuit breaker. Handles ping-pong patterns.                          |
+| 14  | **Session Repair**                  | 7-phase message history validation and automatic recovery from corruption.                                       |
+| 15  | **Path Traversal Prevention**       | Canonicalization with symlink escape prevention. `../` doesn't work here.                                        |
+| 16  | **GCRA Rate Limiter**               | Cost-aware token bucket rate limiting with per-IP tracking and stale cleanup.                                    |
 
 ---
 
@@ -374,6 +374,8 @@ cargo build --workspace --lib
 
 # Run all tests (1,767+)
 cargo test --workspace
+# or
+cargo nextest run --workspace
 
 # Lint (must be 0 warnings)
 cargo clippy --workspace --all-targets -- -D warnings

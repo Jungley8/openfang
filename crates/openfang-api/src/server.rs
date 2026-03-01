@@ -1,5 +1,7 @@
 //! OpenFang daemon server — boots the kernel and serves the HTTP API.
 
+use std::hash::Hasher;
+
 use crate::channel_bridge;
 use crate::middleware;
 use crate::rate_limiter;
@@ -41,6 +43,44 @@ pub async fn build_router(
     // Start channel bridges (Telegram, etc.)
     let bridge = channel_bridge::start_channel_bridge(kernel.clone()).await;
 
+    // Initialize PAI TELOS engine
+    let telos_dir = openfang_telos::TelosEngine::get_default_dir();
+    let telos = Arc::new(openfang_telos::TelosEngine::new(&telos_dir));
+    if let Err(e) = telos.load_all().await {
+        tracing::warn!(
+            "Failed to load initial TELOS context from {:?}: {}",
+            telos_dir,
+            e
+        );
+    } else {
+        let ctx = telos.get_context().await;
+        let full_context_json = serde_json::to_string(&ctx).unwrap_or_else(|_| "{}".to_string());
+        let created_at = ctx.last_updated.to_rfc3339();
+        let snapshot_id = uuid::Uuid::new_v4().to_string();
+        let mission_hash = ctx.mission.as_ref().map(|s| {
+            let mut h = std::collections::hash_map::DefaultHasher::new();
+            std::hash::Hash::hash(s, &mut h);
+            format!("{:016x}", h.finish())
+        });
+        let goals_hash = ctx.goals.as_ref().map(|s| {
+            let mut h = std::collections::hash_map::DefaultHasher::new();
+            std::hash::Hash::hash(s, &mut h);
+            format!("{:016x}", h.finish())
+        });
+        if let Err(e) = kernel.memory.save_telos_snapshot(
+            &snapshot_id,
+            &created_at,
+            mission_hash.as_deref(),
+            goals_hash.as_deref(),
+            &full_context_json,
+        ) {
+            tracing::warn!("Failed to save initial TELOS snapshot: {}", e);
+        }
+    }
+
+    // Start TELOS watcher for hot-reloading
+    let _telos_watcher = openfang_telos::TelosEngine::start_watching(telos.clone()).ok();
+
     let channels_config = kernel.config.channels.clone();
     let state = Arc::new(AppState {
         kernel: kernel.clone(),
@@ -48,6 +88,7 @@ pub async fn build_router(
         peer_registry: kernel.peer_registry.as_ref().map(|r| Arc::new(r.clone())),
         bridge_manager: tokio::sync::Mutex::new(bridge),
         channels_config: tokio::sync::RwLock::new(channels_config),
+        telos,
         shutdown_notify: Arc::new(tokio::sync::Notify::new()),
     });
 
@@ -119,6 +160,23 @@ pub async fn build_router(
         )
         .route("/api/status", axum::routing::get(routes::status))
         .route("/api/version", axum::routing::get(routes::version))
+        // TELOS endpoints
+        .route(
+            "/api/telos/status",
+            axum::routing::get(routes::telos_status),
+        )
+        .route(
+            "/api/telos/reload",
+            axum::routing::post(routes::telos_reload),
+        )
+        .route(
+            "/api/telos/report",
+            axum::routing::get(routes::telos_report),
+        )
+        .route(
+            "/api/telos/preview/{hand}",
+            axum::routing::get(routes::telos_preview),
+        )
         .route(
             "/api/agents",
             axum::routing::get(routes::list_agents).post(routes::spawn_agent),

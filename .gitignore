@@ -27,6 +27,7 @@ config.toml
 
 # Runtime artifacts
 linux-schema.json
+macOS-schema.json
 collector_hand_state.json
 collector_knowledge_base.json
 predictions_database.json

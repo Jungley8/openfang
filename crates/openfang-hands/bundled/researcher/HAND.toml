@@ -151,6 +151,20 @@ label = "Japanese"
 value = "auto"
 label = "Auto-detect"
 
+# ─── TELOS Integration ─────────────────────────────────────────────────────────
+
+[telos]
+mode = "full"
+max_chars = 6000
+directive = """
+在研究时：
+1. 将所有发现与用户的 GOALS.md 中的目标相关联
+2. 对 CHALLENGES.md 中的挑战给予特别关注
+3. 在 PROJECTS.md 中找到当前项目，优先产出可立即行动的数据
+4. 用 MODELS.md 中的思维框架来组织你的分析结构
+5. 报告结尾标注哪些发现与用户使命最高度对齐
+"""
+
 # ─── Agent configuration ─────────────────────────────────────────────────────
 
 [agent]

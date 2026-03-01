@@ -158,6 +158,15 @@ label = "Standard (+ company size, industry, tech stack)"
 value = "deep"
 label = "Deep (+ funding, recent news, social profiles)"
 
+# ─── TELOS Integration ─────────────────────────────────────────────────────────
+
+[telos]
+mode = "minimal"
+max_chars = 2000
+directive = """
+从 PROJECTS.md 中提取用户的产品定位和目标客户描述。将这作为你的 ICP 定义源。目标客户应该是能帮助用户实现 GOALS.md 中目标的人。
+"""
+
 # ─── Agent configuration ─────────────────────────────────────────────────────
 
 [agent]
