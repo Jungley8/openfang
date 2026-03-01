@@ -13,6 +13,37 @@
 
 ---
 
+> **v0.3.2 — Personal AI (TELOS) Release (March 2026)**
+>
+> This release integrates the TELOS goal system (PAI), allowing agents to understand your mission, projects, and challenges. Octarq is now more than just an executor—it's your personal autonomous infrastructure. [Report issues here.](https://github.com/Jungley8/Octarq/issues)
+
+### TELOS: Your Agent's Soul (PAI Integration)
+
+Octarq integrates the **TELOS** goal system, inspired by Daniel Miessler's [Personal AI Infrastructure (PAI)](https://github.com/danielmiessler/Personal_AI_Infrastructure). This adds "soul" to your agents by providing them with a deep understanding of who you are, what your mission is, and what challenges you face.
+
+Instead of generic research, Octarq agents use your TELOS context to provide personalized, goal-oriented results.
+
+- **`MISSION.md`** — Your North Star.
+- **`GOALS.md`** — What you are currently pursuing.
+- **`PROJECTS.md`** — Active work and milestones.
+- **`CHALLENGES.md`** — Obstacles the agent should help solve.
+
+#### New in v0.3.2:
+- **Refactored CLI**: Completely modularized command system for better maintainability and extensibility.
+- **Enhanced Gemini Driver**: Added comprehensive safety settings and better block detection for high-risk prompts.
+- **PAI-Integrated Skills**: 8 new bundled skills (OSINT, Research, Prompting, etc.) specifically designed to leverage the TELOS context.
+- **Improved Security**: Audit trail integrity verification and enhanced secret zeroization.
+
+```bash
+# Initialize your TELOS profile
+octarq telos init
+
+# Preview how a Hand sees your goals
+octarq telos preview researcher
+```
+
+---
+
 <p align="center">
   <img src="public/assets/openfang-logo.png" width="160" alt="OpenFang Logo" />
 </p>
@@ -245,7 +276,7 @@ OpenFang doesn't bolt security on after the fact. Every layer is independently t
 
 ## Architecture
 
-14 Rust crates. 137,728 lines of code. Modular kernel design.
+15 Rust crates. 137,728 lines of code. Modular kernel design.
 
 ```
 openfang-kernel      Orchestration, workflows, metering, RBAC, scheduler, budget tracking
@@ -253,6 +284,7 @@ openfang-runtime     Agent loop, 3 LLM drivers, 53 tools, WASM sandbox, MCP, A2A
 openfang-api         140+ REST/WS/SSE endpoints, OpenAI-compatible API, dashboard
 openfang-channels    40 messaging adapters with rate limiting, DM/group policies
 openfang-memory      SQLite persistence, vector embeddings, canonical sessions, compaction
+openfang-telos       PAI-inspired goal system, context injection, TELOS engine
 openfang-types       Core types, taint tracking, Ed25519 manifest signing, model catalog
 openfang-skills      60 bundled skills, SKILL.md parser, FangHub marketplace
 openfang-hands       7 autonomous Hands, HAND.toml parser, lifecycle management
