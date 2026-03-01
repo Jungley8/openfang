@@ -195,6 +195,12 @@ jobs:
           Compress-Archive -Path "target/${{ matrix.target }}/release/openfang.exe" -DestinationPath "openfang-${{ matrix.target }}.zip"
           $hash = (Get-FileHash "openfang-${{ matrix.target }}.zip" -Algorithm SHA256).Hash.ToLower()
           "$hash  openfang-${{ matrix.target }}.zip" | Out-File -Encoding ASCII "openfang-${{ matrix.target }}.zip.sha256"
+      - name: Upload Binary Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: openfang-${{ matrix.target }}
+          path: target/${{ matrix.target }}/release/openfang${{ runner.os == 'Windows' && '.exe' || '' }}
+          if-no-files-found: error
       - name: Upload to GitHub Release
         uses: softprops/action-gh-release@v2
         with:
@@ -205,26 +211,50 @@ jobs:
   # ── Docker (linux/amd64 + linux/arm64) ────────────────────────────────────
   docker:
     name: Docker Image
+    needs: [cli]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
       - name: Log in to GHCR
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - name: Set up QEMU (for arm64 emulation)
+
+      - name: Download x86_64 Binary
+        uses: actions/download-artifact@v4
+        with:
+          name: openfang-x86_64-unknown-linux-gnu
+          path: bin/linux/amd64/
+
+      - name: Download aarch64 Binary
+        uses: actions/download-artifact@v4
+        with:
+          name: openfang-aarch64-unknown-linux-gnu
+          path: bin/linux/arm64/
+
+      - name: Fix permissions
+        run: |
+          chmod +x bin/linux/amd64/openfang
+          chmod +x bin/linux/arm64/openfang
+
+      - name: Set up QEMU (for arm64 emulation of apt-get)
         uses: docker/setup-qemu-action@v3
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
+
       - name: Extract version
         id: version
         run: echo "version=${GITHUB_REF#refs/tags/v}" >> "$GITHUB_OUTPUT"
+
       - name: Build and push (multi-arch)
         uses: docker/build-push-action@v6
         with:
           context: .
+          file: Dockerfile.dist
           push: true
           platforms: linux/amd64,linux/arm64
           tags: |

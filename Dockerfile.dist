@@ -1,0 +1,15 @@
+# syntax=docker/dockerfile:1
+FROM debian:bookworm-slim
+ARG TARGETPLATFORM
+RUN apt-get update && apt-get install -y ca-certificates && rm -rf /var/lib/apt/lists/*
+
+# The release workflow will place binaries in bin/linux/amd64/ and bin/linux/arm64/
+# TARGETPLATFORM is set automatically by docker buildx (e.g., linux/amd64, linux/arm64)
+COPY bin/${TARGETPLATFORM}/openfang /usr/local/bin/openfang
+COPY agents /opt/openfang/agents
+
+EXPOSE 4200
+VOLUME /data
+ENV OPENFANG_HOME=/data
+ENTRYPOINT ["openfang"]
+CMD ["start"]
