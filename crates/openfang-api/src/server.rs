@@ -805,12 +805,60 @@ pub async fn run_daemon(
     info!("WebChat UI available at http://{addr}/",);
     info!("WebSocket endpoint: ws://{addr}/api/agents/{{id}}/ws",);
 
-    let listener = tokio::net::TcpListener::bind(addr).await?;
+    let mut listener = None;
+    let mut last_err = None;
+    // Retry binding for up to 5 seconds (50 * 100ms) to allow the previous
+    // daemon instance to release the port during a restart.
+    for _ in 0..50 {
+        match tokio::net::TcpListener::bind(addr).await {
+            Ok(l) => {
+                listener = Some(l);
+                break;
+            }
+            Err(e) if e.kind() == std::io::ErrorKind::AddrInUse => {
+                last_err = Some(e);
+                tokio::time::sleep(std::time::Duration::from_millis(100)).await;
+            }
+            Err(e) => return Err(e.into()),
+        }
+    }
+    let listener = listener.ok_or_else(|| {
+        last_err.unwrap_or_else(|| {
+            std::io::Error::new(std::io::ErrorKind::AddrInUse, "Address already in use")
+        })
+    })?;
 
     // Run server with graceful shutdown.
     // SECURITY: `into_make_service_with_connect_info` injects the peer
     // SocketAddr so the auth middleware can check for loopback connections.
     let api_shutdown = state.shutdown_notify.clone();
+
+    // Early-spawn: when shutdown is triggered (e.g. config reload), spawn the
+    // replacement immediately so it is already initializing while we graceful-shutdown.
+    let api_shutdown_for_spawn = api_shutdown.clone();
+    let state_for_spawn = state.clone();
+    tokio::spawn(async move {
+        api_shutdown_for_spawn.notified().await;
+        if state_for_spawn
+            .restart_requested
+            .load(std::sync::atomic::Ordering::Relaxed)
+        {
+            let argv = state_for_spawn.restart_argv.clone();
+            if argv.len() >= 2 {
+                match std::process::Command::new(&argv[0])
+                    .args(&argv[1..])
+                    .stdin(std::process::Stdio::null())
+                    .stdout(std::process::Stdio::null())
+                    .stderr(std::process::Stdio::null())
+                    .spawn()
+                {
+                    Ok(_) => info!("Restart requested; replacement spawned early to minimize gap"),
+                    Err(e) => tracing::warn!("Failed to early-spawn replacement: {e}"),
+                }
+            }
+        }
+    });
+
     axum::serve(
         listener,
         app.into_make_service_with_connect_info::<SocketAddr>(),
@@ -822,25 +870,26 @@ pub async fn run_daemon(
         .restart_requested
         .load(std::sync::atomic::Ordering::Relaxed)
     {
-        // Spawn new daemon with same argv and exit so it can bind the port.
-        let argv = state.restart_argv.clone();
-        if argv.len() >= 2 {
-            match std::process::Command::new(&argv[0])
-                .args(&argv[1..])
-                .stdin(std::process::Stdio::null())
-                .stdout(std::process::Stdio::null())
-                .stderr(std::process::Stdio::null())
-                .spawn()
-            {
-                Ok(_) => {
-                    info!("Restart requested; new daemon spawned, exiting");
-                    std::process::exit(0);
-                }
-                Err(e) => {
-                    tracing::warn!(
-                        "Failed to spawn daemon for restart: {e}; exiting without restart"
-                    );
-                }
+        // Now that axum::serve has returned, the listener is closed.
+        // We just need to wait until the new daemon (spawned above) has bound.
+        info!("Waiting for new daemon to bind...");
+        const BIND_WAIT_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(30);
+        const POLL_INTERVAL: std::time::Duration = std::time::Duration::from_millis(150);
+        let deadline = tokio::time::Instant::now() + BIND_WAIT_TIMEOUT;
+        let mut interval = tokio::time::interval(POLL_INTERVAL);
+        interval.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Skip);
+        loop {
+            interval.tick().await;
+            if tokio::net::TcpStream::connect(addr).await.is_ok() {
+                info!("New daemon is listening, exiting");
+                std::process::exit(0);
+            }
+            if tokio::time::Instant::now() >= deadline {
+                tracing::warn!(
+                    "New daemon did not bind within {:?}; exiting anyway",
+                    BIND_WAIT_TIMEOUT
+                );
+                std::process::exit(0);
             }
         }
     }
