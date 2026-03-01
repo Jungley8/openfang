@@ -7,6 +7,7 @@ pub fn cmd_hand_list() {
     let base = require_daemon("hand list");
     let client = daemon_client();
     let body = daemon_json(client.get(format!("{base}/api/hands")).send());
+    // API returns {"hands": [...]} or a bare array
     let arr_val;
     if let Some(arr) = body.get("hands").and_then(|v| v.as_array()) {
         arr_val = arr.clone();
@@ -48,6 +49,7 @@ pub fn cmd_hand_active() {
     let base = require_daemon("hand active");
     let client = daemon_client();
     let body = daemon_json(client.get(format!("{base}/api/hands/active")).send());
+    // API returns {"instances": [...]} or bare array
     let arr = body
         .get("instances")
         .and_then(|v| v.as_array())
@@ -101,6 +103,7 @@ pub fn cmd_hand_activate(id: &str) {
 pub fn cmd_hand_deactivate(id: &str) {
     let base = require_daemon("hand deactivate");
     let client = daemon_client();
+    // First find the instance ID for this hand
     let active = daemon_json(client.get(format!("{base}/api/hands/active")).send());
     let arr = active
         .get("instances")
