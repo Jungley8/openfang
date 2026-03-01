@@ -90,6 +90,9 @@ pub enum Commands {
     /// Manage channel integrations (setup, test, enable, disable) [*].
     #[command(subcommand)]
     Channel(ChannelCommands),
+    /// Manage hands (list, activate, deactivate, info) [*].
+    #[command(subcommand)]
+    Hand(HandCommands),
     /// Show or edit configuration (show, edit, get, set, keys) [*].
     #[command(subcommand)]
     Config(ConfigCommands),
@@ -364,6 +367,29 @@ pub enum ChannelCommands {
     Disable {
         /// Channel name.
         channel: String,
+    },
+}
+
+#[derive(Subcommand)]
+pub enum HandCommands {
+    /// List all available hands.
+    List,
+    /// Show currently active hand instances.
+    Active,
+    /// Activate a hand by ID.
+    Activate {
+        /// Hand ID (e.g. "clip", "lead", "researcher").
+        id: String,
+    },
+    /// Deactivate an active hand instance.
+    Deactivate {
+        /// Hand ID.
+        id: String,
+    },
+    /// Show detailed info about a hand.
+    Info {
+        /// Hand ID.
+        id: String,
     },
 }
 

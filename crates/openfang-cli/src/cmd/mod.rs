@@ -2,6 +2,7 @@
 
 pub mod agent;
 pub mod config;
+pub mod hand;
 pub mod init;
 pub mod integration;
 pub mod model;

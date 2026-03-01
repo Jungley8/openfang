@@ -218,6 +218,13 @@ fn main() {
                 cmd::integration::cmd_channel_toggle(&channel, false)
             }
         },
+        Some(Commands::Hand(sub)) => match sub {
+            HandCommands::List => cmd::hand::cmd_hand_list(),
+            HandCommands::Active => cmd::hand::cmd_hand_active(),
+            HandCommands::Activate { id } => cmd::hand::cmd_hand_activate(&id),
+            HandCommands::Deactivate { id } => cmd::hand::cmd_hand_deactivate(&id),
+            HandCommands::Info { id } => cmd::hand::cmd_hand_info(&id),
+        },
         Some(Commands::Config(sub)) => match sub {
             ConfigCommands::Show => cmd::config::cmd_config_show(),
             ConfigCommands::Edit => cmd::config::cmd_config_edit(),
