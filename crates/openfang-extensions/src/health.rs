@@ -107,7 +107,7 @@ pub struct HealthMonitor {
     /// Health records keyed by integration ID.
     health: Arc<DashMap<String, IntegrationHealth>>,
     /// Configuration.
-    config: HealthMonitorConfig,
+    config: std::sync::RwLock<HealthMonitorConfig>,
 }
 
 impl HealthMonitor {
@@ -115,7 +115,14 @@ impl HealthMonitor {
     pub fn new(config: HealthMonitorConfig) -> Self {
         Self {
             health: Arc::new(DashMap::new()),
-            config,
+            config: std::sync::RwLock::new(config),
+        }
+    }
+
+    /// Update the monitor configuration at runtime.
+    pub fn update_config(&self, new_config: HealthMonitorConfig) {
+        if let Ok(mut cfg) = self.config.write() {
+            *cfg = new_config;
         }
     }
 
@@ -159,17 +166,26 @@ impl HealthMonitor {
     pub fn backoff_duration(&self, attempt: u32) -> Duration {
         let base_secs = 5u64;
         let backoff = base_secs.saturating_mul(1u64 << attempt.min(10));
-        Duration::from_secs(backoff.min(self.config.max_backoff_secs))
+        let max_backoff = self
+            .config
+            .read()
+            .map(|c| c.max_backoff_secs)
+            .unwrap_or(300);
+        Duration::from_secs(backoff.min(max_backoff))
     }
 
     /// Check if an integration should be reconnected.
     pub fn should_reconnect(&self, id: &str) -> bool {
-        if !self.config.auto_reconnect {
+        let cfg = match self.config.read() {
+            Ok(c) => c,
+            Err(_) => return false,
+        };
+        if !cfg.auto_reconnect {
             return false;
         }
         if let Some(entry) = self.health.get(id) {
             matches!(entry.status, IntegrationStatus::Error(_))
-                && entry.reconnect_attempts < self.config.max_reconnect_attempts
+                && entry.reconnect_attempts < cfg.max_reconnect_attempts
         } else {
             false
         }
@@ -188,8 +204,8 @@ impl HealthMonitor {
     }
 
     /// Get the config.
-    pub fn config(&self) -> &HealthMonitorConfig {
-        &self.config
+    pub fn config(&self) -> HealthMonitorConfig {
+        self.config.read().map(|c| c.clone()).unwrap_or_default()
     }
 }
 

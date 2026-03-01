@@ -42,6 +42,8 @@ use tracing::{debug, info, warn};
 pub struct OpenFangKernel {
     /// Kernel configuration.
     pub config: KernelConfig,
+    /// Path to the configuration file (if any).
+    pub config_path: Option<PathBuf>,
     /// Agent registry.
     pub registry: AgentRegistry,
     /// Capability manager.
@@ -479,7 +481,9 @@ impl OpenFangKernel {
     /// Boot the kernel with configuration from the given path.
     pub fn boot(config_path: Option<&Path>) -> KernelResult<Self> {
         let config = load_config(config_path);
-        Self::boot_with_config(config)
+        let mut kernel = Self::boot_with_config(config)?;
+        kernel.config_path = config_path.map(|p| p.to_path_buf());
+        Ok(kernel)
     }
 
     /// Boot the kernel with an explicit configuration.
@@ -840,6 +844,7 @@ impl OpenFangKernel {
 
         let kernel = Self {
             config,
+            config_path: None, // Will be set by boot()
             registry: AgentRegistry::new(),
             capabilities: CapabilityManager::new(),
             event_bus: EventBus::new(),
@@ -2782,80 +2787,20 @@ impl OpenFangKernel {
         }
     }
 
-    /// Reload configuration: read the config file, diff against current, and
-    /// apply hot-reloadable actions. Returns the reload plan for API response.
-    pub fn reload_config(&self) -> Result<crate::config_reload::ReloadPlan, String> {
-        use crate::config_reload::{
-            build_reload_plan, should_apply_hot, validate_config_for_reload,
-        };
+    /// Validate config file on disk (load + sanity check). Used before triggering restart on config change.
+    /// Returns `Ok(())` if the file is valid; `Err` with message if missing, unreadable, or invalid.
+    pub fn validate_config_from_disk(&self) -> Result<(), String> {
+        use crate::config_reload::validate_config_for_reload;
 
-        // Read and parse config file (using load_config to process $include directives)
-        let config_path = self.config.home_dir.join("config.toml");
-        let new_config = if config_path.exists() {
-            crate::config::load_config(Some(&config_path))
-        } else {
-            return Err("Config file not found".to_string());
-        };
+        let config_path = self
+            .config_path
+            .as_deref()
+            .map(|p| p.to_path_buf())
+            .unwrap_or_else(|| self.config.home_dir.join("config.toml"));
 
-        // Validate new config
-        if let Err(errors) = validate_config_for_reload(&new_config) {
-            return Err(format!("Validation failed: {}", errors.join("; ")));
-        }
-
-        // Build the reload plan
-        let plan = build_reload_plan(&self.config, &new_config);
-        plan.log_summary();
-
-        // Apply hot actions if the reload mode allows it
-        if should_apply_hot(self.config.reload.mode, &plan) {
-            self.apply_hot_actions(&plan, &new_config);
-        }
-
-        Ok(plan)
-    }
-
-    /// Apply hot-reload actions to the running kernel.
-    fn apply_hot_actions(
-        &self,
-        plan: &crate::config_reload::ReloadPlan,
-        new_config: &openfang_types::config::KernelConfig,
-    ) {
-        use crate::config_reload::HotAction;
-
-        for action in &plan.hot_actions {
-            match action {
-                HotAction::UpdateApprovalPolicy => {
-                    info!("Hot-reload: updating approval policy");
-                    self.approval_manager
-                        .update_policy(new_config.approval.clone());
-                }
-                HotAction::UpdateCronConfig => {
-                    info!(
-                        "Hot-reload: updating cron config (max_jobs={})",
-                        new_config.max_cron_jobs
-                    );
-                    self.cron_scheduler
-                        .set_max_total_jobs(new_config.max_cron_jobs);
-                }
-                HotAction::ReloadProviderUrls => {
-                    info!("Hot-reload: applying provider URL overrides");
-                    let mut catalog = self
-                        .model_catalog
-                        .write()
-                        .unwrap_or_else(|e| e.into_inner());
-                    catalog.apply_url_overrides(&new_config.provider_urls);
-                }
-                _ => {
-                    // Other hot actions (channels, web, browser, extensions, etc.)
-                    // are logged but not applied here — they require subsystem-specific
-                    // reinitialization that should be added as those systems mature.
-                    info!(
-                        "Hot-reload: action {:?} noted but not yet auto-applied",
-                        action
-                    );
-                }
-            }
-        }
+        let config = crate::config::try_load_config(Some(&config_path))?;
+        validate_config_for_reload(&config)
+            .map_err(|errs| format!("Validation failed: {}", errs.join("; ")))
     }
 
     /// Publish an event to the bus and evaluate triggers.

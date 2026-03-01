@@ -62,6 +62,8 @@ async fn start_test_server() -> TestServer {
         channels_config: tokio::sync::RwLock::new(Default::default()),
         telos,
         shutdown_notify: Arc::new(tokio::sync::Notify::new()),
+        restart_requested: std::sync::atomic::AtomicBool::new(false),
+        restart_argv: vec!["openfang".to_string(), "start".to_string()],
     });
 
     let app = Router::new()

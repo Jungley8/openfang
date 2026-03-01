@@ -114,7 +114,17 @@ enum Commands {
         quick: bool,
     },
     /// Start the OpenFang kernel daemon (API server + kernel).
-    Start,
+    Start {
+        /// Run in the background (daemon mode).
+        #[arg(long, short = 'd')]
+        daemon: bool,
+    },
+    /// Restart the running daemon.
+    Restart {
+        /// Run in the background (daemon mode).
+        #[arg(long, short = 'd')]
+        daemon: bool,
+    },
     /// Stop the running daemon.
     Stop,
     /// Manage agents (new, list, chat, kill, spawn) [*].
@@ -844,7 +854,8 @@ fn main() {
         }
         Some(Commands::Tui) => tui::run(cli.config),
         Some(Commands::Init { quick }) => cmd_init(quick),
-        Some(Commands::Start) => cmd_start(cli.config),
+        Some(Commands::Start { daemon }) => cmd_start(cli.config, daemon),
+        Some(Commands::Restart { daemon }) => cmd_restart(cli.config, daemon),
         Some(Commands::Stop) => cmd_stop(),
         Some(Commands::Agent(sub)) => match sub {
             AgentCommands::New { template } => cmd_agent_new(cli.config, template),
@@ -922,7 +933,7 @@ fn main() {
             ModelsCommands::Set { model } => cmd_models_set(model),
         },
         Some(Commands::Gateway(sub)) => match sub {
-            GatewayCommands::Start => cmd_start(cli.config),
+            GatewayCommands::Start => cmd_start(cli.config, false),
             GatewayCommands::Stop => cmd_stop(),
             GatewayCommands::Status { json } => cmd_status(cli.config, json),
         },
@@ -1376,13 +1387,18 @@ fn backup_existing_config(config_path: &Path) -> std::io::Result<Option<PathBuf>
     Ok(Some(backup_path))
 }
 
-fn cmd_start(config: Option<PathBuf>) {
+fn cmd_start(config: Option<PathBuf>, daemon: bool) {
     if let Some(base) = find_daemon() {
         ui::error_with_fix(
             &format!("Daemon already running at {base}"),
             "Use `openfang status` to check it, or stop it first",
         );
         std::process::exit(1);
+    }
+
+    if daemon {
+        spawn_daemon(config);
+        return;
     }
 
     ui::banner();
@@ -1438,6 +1454,83 @@ fn cmd_start(config: Option<PathBuf>) {
         ui::blank();
         println!("  OpenFang daemon stopped.");
     });
+}
+
+fn cmd_restart(config: Option<PathBuf>, daemon: bool) {
+    // 1. Pre-validate configuration before stopping anything
+    println!("  Validating configuration...");
+    let cfg = openfang_kernel::config::load_config(config.as_deref());
+    let warnings = cfg.validate();
+    // In restart, we treat serious warnings as errors to prevent downtime with bad config
+    if warnings
+        .iter()
+        .any(|w| w.contains("invalid") || w.contains("error") || w.contains("failed"))
+    {
+        for w in &warnings {
+            ui::error(&format!("Config validation error: {w}"));
+        }
+        ui::error("Restart aborted: configuration is invalid.");
+        std::process::exit(1);
+    }
+    ui::success("Configuration is valid.");
+
+    if find_daemon().is_some() {
+        println!("  Stopping existing daemon...");
+        cmd_stop();
+
+        // Wait for PID file to disappear (max 5 seconds)
+        let mut retries = 0;
+        while find_daemon().is_some() && retries < 10 {
+            std::thread::sleep(std::time::Duration::from_millis(500));
+            retries += 1;
+        }
+
+        if find_daemon().is_some() {
+            ui::error("Daemon failed to stop. Please kill it manually.");
+            std::process::exit(1);
+        }
+        ui::success("Daemon stopped.");
+        ui::blank();
+    } else {
+        ui::check_warn("No running daemon found.");
+    }
+
+    cmd_start(config, daemon);
+}
+
+/// Spawn the daemon as a background process.
+fn spawn_daemon(config: Option<PathBuf>) {
+    use std::process::{Command, Stdio};
+
+    let exe = std::env::current_exe().expect("Failed to get current executable path");
+    let mut cmd = Command::new(exe);
+    cmd.arg("start");
+
+    if let Some(ref cfg_path) = config {
+        cmd.arg("--config").arg(cfg_path);
+    }
+
+    // Ensure we don't pass -d again to avoid recursion
+    // The spawned process will run without -d (foreground in its own process)
+
+    println!("  Spawning OpenFang daemon in the background...");
+
+    match cmd
+        .stdout(Stdio::null())
+        .stderr(Stdio::null())
+        .stdin(Stdio::null())
+        .spawn()
+    {
+        Ok(child) => {
+            let pid = child.id();
+            ui::success(&format!("Daemon spawned with PID {pid}"));
+            ui::hint("Use `openfang status` or check the Dashboard to monitor it.");
+        }
+        Err(e) => {
+            ui::error(&format!("Failed to spawn daemon: {e}"));
+            std::process::exit(1);
+        }
+    }
 }
 
 fn cmd_stop() {

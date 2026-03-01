@@ -82,6 +82,18 @@ pub async fn build_router(
     let _telos_watcher = openfang_telos::TelosEngine::start_watching(telos.clone()).ok();
 
     let channels_config = kernel.config.channels.clone();
+    let restart_argv: Vec<String> = {
+        let exe = std::env::current_exe()
+            .ok()
+            .and_then(|p| p.into_os_string().into_string().ok())
+            .unwrap_or_else(|| "openfang".to_string());
+        let mut argv = vec![exe, "start".to_string()];
+        if let Some(ref p) = kernel.config_path {
+            argv.push("--config".to_string());
+            argv.push(p.to_string_lossy().into_owned());
+        }
+        argv
+    };
     let state = Arc::new(AppState {
         kernel: kernel.clone(),
         started_at: Instant::now(),
@@ -90,6 +102,8 @@ pub async fn build_router(
         channels_config: tokio::sync::RwLock::new(channels_config),
         telos,
         shutdown_notify: Arc::new(tokio::sync::Notify::new()),
+        restart_requested: std::sync::atomic::AtomicBool::new(false),
+        restart_argv,
     });
 
     // CORS: allow localhost origins by default. If API key is set, the API
@@ -715,10 +729,16 @@ pub async fn run_daemon(
     kernel.set_self_handle();
     kernel.start_background_agents();
 
-    // Config file hot-reload watcher (polls every 30 seconds)
+    let (app, state) = build_router(kernel.clone(), addr).await;
+
+    // Config file watcher: on change, validate and trigger restart (simple “reload = restart”).
     {
-        let k = kernel.clone();
-        let config_path = kernel.config.home_dir.join("config.toml");
+        let state = state.clone();
+        let config_path = state
+            .kernel
+            .config_path
+            .clone()
+            .unwrap_or_else(|| state.kernel.config.home_dir.join("config.toml"));
         tokio::spawn(async move {
             let mut last_modified = std::fs::metadata(&config_path)
                 .and_then(|m| m.modified())
@@ -729,24 +749,24 @@ pub async fn run_daemon(
                     .and_then(|m| m.modified())
                     .ok();
                 if current != last_modified && current.is_some() {
-                    last_modified = current;
-                    tracing::info!("Config file changed, reloading...");
-                    match k.reload_config() {
-                        Ok(plan) => {
-                            if plan.has_changes() {
-                                tracing::info!("Config hot-reload applied: {:?}", plan.hot_actions);
-                            } else {
-                                tracing::debug!("Config hot-reload: no actionable changes");
-                            }
+                    tracing::info!("Config file changed, validating...");
+                    match state.kernel.validate_config_from_disk() {
+                        Ok(()) => {
+                            last_modified = current;
+                            tracing::info!("Config valid, requesting restart to apply");
+                            state
+                                .restart_requested
+                                .store(true, std::sync::atomic::Ordering::Relaxed);
+                            state.shutdown_notify.notify_one();
                         }
-                        Err(e) => tracing::warn!("Config hot-reload failed: {e}"),
+                        Err(e) => {
+                            tracing::warn!("Config invalid (will retry): {e}");
+                        }
                     }
                 }
             }
         });
     }
-
-    let (app, state) = build_router(kernel.clone(), addr).await;
 
     // Write daemon info file
     if let Some(info_path) = daemon_info_path {
@@ -797,6 +817,33 @@ pub async fn run_daemon(
     )
     .with_graceful_shutdown(shutdown_signal(api_shutdown))
     .await?;
+
+    if state
+        .restart_requested
+        .load(std::sync::atomic::Ordering::Relaxed)
+    {
+        // Spawn new daemon with same argv and exit so it can bind the port.
+        let argv = state.restart_argv.clone();
+        if argv.len() >= 2 {
+            match std::process::Command::new(&argv[0])
+                .args(&argv[1..])
+                .stdin(std::process::Stdio::null())
+                .stdout(std::process::Stdio::null())
+                .stderr(std::process::Stdio::null())
+                .spawn()
+            {
+                Ok(_) => {
+                    info!("Restart requested; new daemon spawned, exiting");
+                    std::process::exit(0);
+                }
+                Err(e) => {
+                    tracing::warn!(
+                        "Failed to spawn daemon for restart: {e}; exiting without restart"
+                    );
+                }
+            }
+        }
+    }
 
     // Clean up daemon info file
     if let Some(info_path) = daemon_info_path {
