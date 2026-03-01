@@ -2268,6 +2268,27 @@ impl OpenFangKernel {
         let provider = resolved_provider.or_else(|| infer_provider_from_model(model));
 
         if let Some(provider) = provider {
+            // Verify the provider has auth configured
+            let auth_missing = self
+                .model_catalog
+                .read()
+                .map(|catalog| {
+                    catalog
+                        .get_provider(&provider)
+                        .map(|p| {
+                            p.auth_status == openfang_types::model_catalog::AuthStatus::Missing
+                        })
+                        .unwrap_or(false)
+                })
+                .unwrap_or(false);
+
+            if auth_missing {
+                warn!(agent_id = %agent_id, provider = %provider, "Model switch failed: provider missing API key");
+                return Err(KernelError::OpenFang(OpenFangError::Config(format!(
+                    "Provider '{provider}' missing API key. Configure it in Settings or via environment variables."
+                ))));
+            }
+
             self.registry
                 .update_model_and_provider(agent_id, model.to_string(), provider.clone())
                 .map_err(KernelError::OpenFang)?;
