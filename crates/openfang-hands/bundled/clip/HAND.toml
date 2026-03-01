@@ -173,6 +173,11 @@ description = "Phone number in international format, no + or spaces (e.g. 141555
 setting_type = "text"
 default = ""
 
+# ─── TELOS Integration ─────────────────────────────────────────────────────────
+
+[telos]
+mode = "disabled"
+
 # ─── Agent configuration ─────────────────────────────────────────────────────
 
 [agent]

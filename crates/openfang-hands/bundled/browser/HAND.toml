@@ -109,6 +109,18 @@ description = "Automatically take a screenshot after every click/navigate for vi
 setting_type = "toggle"
 default = "false"
 
+# ─── TELOS Integration ─────────────────────────────────────────────────────────
+
+[telos]
+mode = "custom"
+files = ["goals", "strategies", "beliefs"]
+max_chars = 3000
+directive = """
+BELIEFS.md 中可能包含用户的伦理边界（如「我不做竞品攻击」）。
+在执行任何操作前检查是否与这些信念冲突。
+购买审批门槛：任何支出都需要关联到 GOALS.md 中的目标。
+"""
+
 # ─── Agent configuration ─────────────────────────────────────────────────────
 
 [agent]

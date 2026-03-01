@@ -106,12 +106,17 @@ async fn test_full_daemon_lifecycle() {
     let kernel = Arc::new(kernel);
     kernel.set_self_handle();
 
+    let telos_dir = tmp.path().join("telos");
+    let _ = std::fs::create_dir_all(&telos_dir);
+    let telos = Arc::new(openfang_telos::TelosEngine::new(&telos_dir));
+
     let state = Arc::new(AppState {
         kernel: kernel.clone(),
         started_at: Instant::now(),
         peer_registry: None,
         bridge_manager: tokio::sync::Mutex::new(None),
         channels_config: tokio::sync::RwLock::new(Default::default()),
+        telos,
         shutdown_notify: Arc::new(tokio::sync::Notify::new()),
     });
 
@@ -229,12 +234,17 @@ async fn test_server_immediate_responsiveness() {
     let kernel = OpenFangKernel::boot_with_config(config).unwrap();
     let kernel = Arc::new(kernel);
 
+    let telos_dir = tmp.path().join("telos");
+    let _ = std::fs::create_dir_all(&telos_dir);
+    let telos = Arc::new(openfang_telos::TelosEngine::new(&telos_dir));
+
     let state = Arc::new(AppState {
         kernel: kernel.clone(),
         started_at: Instant::now(),
         peer_registry: None,
         bridge_manager: tokio::sync::Mutex::new(None),
         channels_config: tokio::sync::RwLock::new(Default::default()),
+        telos,
         shutdown_notify: Arc::new(tokio::sync::Notify::new()),
     });
 

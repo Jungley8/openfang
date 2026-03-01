@@ -24,6 +24,7 @@ pub enum AuditAction {
     AuthAttempt,
     WireConnect,
     ConfigChange,
+    TelosInjection,
 }
 
 impl std::fmt::Display for AuditAction {
@@ -47,6 +48,9 @@ pub struct AuditEntry {
     pub detail: String,
     /// The outcome of the action (e.g. "ok", "denied", an error message).
     pub outcome: String,
+    /// Optional structured metadata (e.g. telos_alignment context).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub metadata: Option<serde_json::Value>,
     /// SHA-256 hash of the previous entry (or all-zeros for the genesis).
     pub prev_hash: String,
     /// SHA-256 hash of this entry's content concatenated with `prev_hash`.
@@ -126,6 +130,47 @@ impl AuditLog {
             action,
             detail,
             outcome,
+            metadata: None,
+            prev_hash,
+            hash: hash.clone(),
+        });
+
+        *tip = hash.clone();
+        hash
+    }
+
+    /// Like `record`, but attaches structured metadata (e.g. TELOS alignment context).
+    pub fn record_with_metadata(
+        &self,
+        agent_id: impl Into<String>,
+        action: AuditAction,
+        detail: impl Into<String>,
+        outcome: impl Into<String>,
+        metadata: serde_json::Value,
+    ) -> String {
+        let agent_id = agent_id.into();
+        let detail = detail.into();
+        let outcome = outcome.into();
+        let timestamp = Utc::now().to_rfc3339();
+
+        let mut entries = self.entries.lock().unwrap_or_else(|e| e.into_inner());
+        let mut tip = self.tip.lock().unwrap_or_else(|e| e.into_inner());
+
+        let seq = entries.len() as u64;
+        let prev_hash = tip.clone();
+
+        let hash = compute_entry_hash(
+            seq, &timestamp, &agent_id, &action, &detail, &outcome, &prev_hash,
+        );
+
+        entries.push(AuditEntry {
+            seq,
+            timestamp,
+            agent_id,
+            action,
+            detail,
+            outcome,
+            metadata: Some(metadata),
             prev_hash,
             hash: hash.clone(),
         });

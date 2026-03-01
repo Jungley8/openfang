@@ -166,6 +166,19 @@ description = "Write tweets to a queue file for your review instead of posting d
 setting_type = "toggle"
 default = "true"
 
+# ─── TELOS Integration ─────────────────────────────────────────────────────────
+
+[telos]
+mode = "custom"
+files = ["mission", "strategies", "narratives"]
+max_chars = 2000
+directive = """
+STRATEGIES.md 定义了用户的内容策略偏好（语气、格式、话题）。
+NARRATIVES.md 提供可引用的个人故事素材。
+MISSION.md 决定内容主题边界——不发布与使命无关的内容。
+所有内容都需要经过审批队列，不自动发布。
+"""
+
 # ─── Agent configuration ─────────────────────────────────────────────────────
 
 [agent]
