@@ -237,6 +237,15 @@ pub enum Commands {
         #[arg(long)]
         confirm: bool,
     },
+    /// Completely uninstall OpenFang from your system.
+    Uninstall {
+        /// Skip confirmation prompt (also --yes).
+        #[arg(long, alias = "yes")]
+        confirm: bool,
+        /// Keep config files (config.toml, .env, secrets.env).
+        #[arg(long)]
+        keep_config: bool,
+    },
     /// Manage PAI TELOS goal system [*].
     #[command(subcommand)]
     Telos(TelosCommands),

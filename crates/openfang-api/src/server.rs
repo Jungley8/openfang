@@ -229,6 +229,10 @@ pub async fn build_router(
             axum::routing::post(routes::reset_session),
         )
         .route(
+            "/api/agents/{id}/history",
+            axum::routing::delete(routes::clear_agent_history),
+        )
+        .route(
             "/api/agents/{id}/session/compact",
             axum::routing::post(routes::compact_session),
         )
@@ -519,7 +523,8 @@ pub async fn build_router(
         )
         .route(
             "/api/budget/agents/{id}",
-            axum::routing::get(routes::agent_budget_status),
+            axum::routing::get(routes::agent_budget_status)
+                .put(routes::update_agent_budget),
         )
         // Session endpoints
         .route("/api/sessions", axum::routing::get(routes::list_sessions))

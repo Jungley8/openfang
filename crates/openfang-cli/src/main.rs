@@ -335,6 +335,9 @@ fn main() {
             SystemCommands::Version { json } => cmd::system::cmd_system_version(json),
         },
         Some(Commands::Reset { confirm }) => cmd::config::cmd_reset(confirm),
+        Some(Commands::Uninstall { confirm, keep_config }) => {
+            cmd::config::cmd_uninstall(confirm, keep_config)
+        },
         Some(Commands::Telos(sub)) => match sub {
             TelosCommands::Init { quick } => cmd::telos::cmd_telos_init(quick),
             TelosCommands::Status => cmd::telos::cmd_telos_status(),
@@ -734,5 +737,37 @@ api_listen = "127.0.0.1:4200"
 api_key = "test-secret
 "#;
         assert_eq!(parse_api_key_from_config_toml(invalid), None);
+    }
+
+    #[test]
+    fn test_uninstall_path_line_filter() {
+        use crate::cmd::config::is_openfang_path_line;
+        let dir = "/home/user/.openfang/bin";
+        assert!(is_openfang_path_line(
+            r#"export PATH="$HOME/.openfang/bin:$PATH""#,
+            dir
+        ));
+        assert!(is_openfang_path_line(
+            r#"export PATH="/home/user/.openfang/bin:$PATH""#,
+            dir
+        ));
+        assert!(is_openfang_path_line(
+            "set -gx PATH $HOME/.openfang/bin $PATH",
+            dir
+        ));
+        assert!(is_openfang_path_line(
+            "fish_add_path $HOME/.openfang/bin",
+            dir
+        ));
+        assert!(!is_openfang_path_line(
+            r#"export PATH="$HOME/.cargo/bin:$PATH""#,
+            dir
+        ));
+        assert!(!is_openfang_path_line(
+            r#"export PATH="/usr/local/bin:$PATH""#,
+            dir
+        ));
+        assert!(!is_openfang_path_line("# openfang config", dir));
+        assert!(!is_openfang_path_line("alias of=openfang", dir));
     }
 }

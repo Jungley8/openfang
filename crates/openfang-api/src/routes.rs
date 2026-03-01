@@ -4491,6 +4491,55 @@ pub async fn agent_budget_ranking(State(state): State<Arc<AppState>>) -> impl In
     Json(serde_json::json!({"agents": agents, "total": agents.len()}))
 }
 
+/// PUT /api/budget/agents/{id} — Update per-agent budget limits at runtime.
+pub async fn update_agent_budget(
+    State(state): State<Arc<AppState>>,
+    Path(id): Path<String>,
+    Json(body): Json<serde_json::Value>,
+) -> impl IntoResponse {
+    let agent_id: AgentId = match id.parse() {
+        Ok(id) => id,
+        Err(_) => {
+            return (
+                StatusCode::BAD_REQUEST,
+                Json(serde_json::json!({"error": "Invalid agent ID"})),
+            )
+        }
+    };
+
+    let hourly = body["max_cost_per_hour_usd"].as_f64();
+    let daily = body["max_cost_per_day_usd"].as_f64();
+    let monthly = body["max_cost_per_month_usd"].as_f64();
+
+    if hourly.is_none() && daily.is_none() && monthly.is_none() {
+        return (
+            StatusCode::BAD_REQUEST,
+            Json(serde_json::json!({"error": "Provide at least one of: max_cost_per_hour_usd, max_cost_per_day_usd, max_cost_per_month_usd"})),
+        );
+    }
+
+    match state
+        .kernel
+        .registry
+        .update_resources(agent_id, hourly, daily, monthly)
+    {
+        Ok(()) => {
+            // Persist updated entry
+            if let Some(entry) = state.kernel.registry.get(agent_id) {
+                let _ = state.kernel.memory.save_agent(&entry);
+            }
+            (
+                StatusCode::OK,
+                Json(serde_json::json!({"status": "ok", "message": "Agent budget updated"})),
+            )
+        }
+        Err(e) => (
+            StatusCode::NOT_FOUND,
+            Json(serde_json::json!({"error": format!("{e}")})),
+        ),
+    }
+}
+
 // ---------------------------------------------------------------------------
 // Session listing endpoints
 // ---------------------------------------------------------------------------
@@ -5763,6 +5812,32 @@ pub async fn reset_session(
         Ok(()) => (
             StatusCode::OK,
             Json(serde_json::json!({"status": "ok", "message": "Session reset"})),
+        ),
+        Err(e) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(serde_json::json!({"error": format!("{e}")})),
+        ),
+    }
+}
+
+/// DELETE /api/agents/{id}/history — Clear ALL conversation history for an agent.
+pub async fn clear_agent_history(
+    State(state): State<Arc<AppState>>,
+    Path(id): Path<String>,
+) -> impl IntoResponse {
+    let agent_id: AgentId = match id.parse() {
+        Ok(id) => id,
+        Err(_) => {
+            return (
+                StatusCode::BAD_REQUEST,
+                Json(serde_json::json!({"error": "Invalid agent ID"})),
+            )
+        }
+    };
+    match state.kernel.clear_agent_history(agent_id) {
+        Ok(()) => (
+            StatusCode::OK,
+            Json(serde_json::json!({"status": "ok", "message": "All history cleared"})),
         ),
         Err(e) => (
             StatusCode::INTERNAL_SERVER_ERROR,
@@ -9388,39 +9463,46 @@ fn audit_to_comms_event(
     };
 
     let action_str = format!("{:?}", entry.action);
-    let (kind, detail) = match action_str.as_str() {
-        "AgentMessage" => (
-            CommsEventKind::AgentMessage,
-            openfang_types::truncate_str(&entry.detail, 200).to_string(),
-        ),
+    let (kind, detail, target_label) = match action_str.as_str() {
+        "AgentMessage" => {
+            // Format detail: "tokens_in=X, tokens_out=Y" → readable summary
+            let detail = if entry.detail.starts_with("tokens_in=") {
+                let parts: Vec<&str> = entry.detail.split(", ").collect();
+                let in_tok = parts.first().and_then(|p| p.strip_prefix("tokens_in=")).unwrap_or("?");
+                let out_tok = parts.get(1).and_then(|p| p.strip_prefix("tokens_out=")).unwrap_or("?");
+                if entry.outcome == "ok" {
+                    format!("{} in / {} out tokens", in_tok, out_tok)
+                } else {
+                    format!("{} in / {} out — {}", in_tok, out_tok, openfang_types::truncate_str(&entry.outcome, 80))
+                }
+            } else if entry.outcome != "ok" {
+                format!("{} — {}", openfang_types::truncate_str(&entry.detail, 80), openfang_types::truncate_str(&entry.outcome, 80))
+            } else {
+                openfang_types::truncate_str(&entry.detail, 200).to_string()
+            };
+            (CommsEventKind::AgentMessage, detail, "user")
+        }
         "AgentSpawn" => (
             CommsEventKind::AgentSpawned,
             format!("Agent spawned: {}", openfang_types::truncate_str(&entry.detail, 100)),
+            "",
         ),
         "AgentKill" => (
             CommsEventKind::AgentTerminated,
             format!("Agent killed: {}", openfang_types::truncate_str(&entry.detail, 100)),
+            "",
         ),
-        "ToolInvoke" => return None,
-        "CapabilityCheck" => return None,
-        "MemoryAccess" => return None,
-        "FileAccess" => return None,
-        "NetworkAccess" => return None,
-        "ShellExec" => return None,
-        "AuthAttempt" => return None,
-        "WireConnect" => return None,
-        "ConfigChange" => return None,
         _ => return None,
     };
 
     Some(CommsEvent {
-        id: entry.seq.to_string(),
+        id: format!("audit-{}", entry.seq),
         timestamp: entry.timestamp.clone(),
         kind,
         source_id: entry.agent_id.clone(),
         source_name: resolve_name(&entry.agent_id),
-        target_id: String::new(),
-        target_name: String::new(),
+        target_id: if target_label.is_empty() { String::new() } else { target_label.to_string() },
+        target_name: if target_label.is_empty() { String::new() } else { target_label.to_string() },
         detail,
     })
 }
