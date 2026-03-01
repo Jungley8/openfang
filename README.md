@@ -5,42 +5,42 @@
 <h1 align="center">Octarq</h1>
 
 <p align="center">
-  Octarq is a renamed continuation of OpenFang, keeping the autonomous-agent foundation while evolving the brand.
+Your agents know what they're doing. But do they know *why*?
 </p>
-<p align="center">
-  Thanks to the OpenFang project and community for the original open-source groundwork.
-</p>
+
+Octarq is an autonomous agent runtime that understands your mission.
+Powered by the TELOS goal system — inspired by Daniel Miessler's PAI —
+every agent you run has access to your North Star, active goals, and
+current challenges. No more generic outputs. Just work that actually
+moves your life forward.
+
+## What makes Octarq different
+
+Most agent frameworks execute tasks. Octarq executes *your* tasks.
+
+Before running any skill, Octarq loads your TELOS context:
+- `MISSION.md` — who you are and what you're building
+- `GOALS.md` — what you're pursuing right now
+- `PROJECTS.md` — active work and milestones
+- `CHALLENGES.md` — obstacles the agent should help solve
+
+The result: a researcher that knows your priorities. An OSINT agent
+that filters for what's relevant to *you*. Infrastructure that works
+like a team member, not a tool.
+
+## Quick start
+```bash
+octarq telos init          # set up your TELOS profile
+octarq telos preview researcher   # see how an agent reads your goals
+```
 
 ---
 
-> **v0.3.2 — Personal AI (TELOS) Release (March 2026)**
->
-> This release integrates the TELOS goal system (PAI), allowing agents to understand your mission, projects, and challenges. Octarq is now more than just an executor—it's your personal autonomous infrastructure. [Report issues here.](https://github.com/Jungley8/Octarq/issues)
+## Foundation: OpenFang
 
-### TELOS: Your Agent's Soul (PAI Integration)
-
-Octarq integrates the **TELOS** goal system, inspired by Daniel Miessler's [Personal AI Infrastructure (PAI)](https://github.com/danielmiessler/Personal_AI_Infrastructure). This adds "soul" to your agents by providing them with a deep understanding of who you are, what your mission is, and what challenges you face.
-
-Instead of generic research, Octarq agents use your TELOS context to provide personalized, goal-oriented results.
-
-- **`MISSION.md`** — Your North Star.
-- **`GOALS.md`** — What you are currently pursuing.
-- **`PROJECTS.md`** — Active work and milestones.
-- **`CHALLENGES.md`** — Obstacles the agent should help solve.
-
-#### New in v0.3.2:
-- **Refactored CLI**: Completely modularized command system for better maintainability and extensibility.
-- **Enhanced Gemini Driver**: Added comprehensive safety settings and better block detection for high-risk prompts.
-- **PAI-Integrated Skills**: 8 new bundled skills (OSINT, Research, Prompting, etc.) specifically designed to leverage the TELOS context.
-- **Improved Security**: Audit trail integrity verification and enhanced secret zeroization.
-
-```bash
-# Initialize your TELOS profile
-octarq telos init
-
-# Preview how a Hand sees your goals
-octarq telos preview researcher
-```
+The following documentation is inherited from [OpenFang](https://github.com/RightNow-AI/openfang),
+the open-source project Octarq is built upon.
+Thanks to the OpenFang team and community for the original groundwork.
 
 ---
 
