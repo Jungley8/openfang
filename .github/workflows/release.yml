@@ -4,6 +4,12 @@ on:
   push:
     tags:
       - "v*"
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Manual version (e.g., 0.3.2-beta.1)'
+        required: true
+        default: 'beta'
 
 permissions:
   contents: write
@@ -248,7 +254,12 @@ jobs:
 
       - name: Extract version
         id: version
-        run: echo "version=${GITHUB_REF#refs/tags/v}" >> "$GITHUB_OUTPUT"
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "version=${{ github.event.inputs.version }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "version=${GITHUB_REF#refs/tags/v}" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Build and push (multi-arch)
         uses: docker/build-push-action@v6
