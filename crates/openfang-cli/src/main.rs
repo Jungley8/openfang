@@ -93,7 +93,7 @@ const AFTER_HELP: &str = "\
     about = "\u{1F40D} OpenFang \u{2014} Open-source Agent Operating System",
     long_about = "\u{1F40D} OpenFang \u{2014} Open-source Agent Operating System\n\n\
                   Deploy, manage, and orchestrate AI agents from your terminal.\n\
-                  40 channels \u{00b7} 60 skills \u{00b7} 50+ models \u{00b7} infinite possibilities.",
+                  40 channels \u{00b7} 68 skills \u{00b7} 50+ models \u{00b7} infinite possibilities.",
     after_help = AFTER_HELP,
 )]
 struct Cli {
@@ -1337,6 +1337,7 @@ fn write_config_if_missing(
             r#"# OpenFang Agent OS configuration
 # See https://github.com/RightNow-AI/openfang for documentation
 
+# For Docker, change to "0.0.0.0:4200" or set OPENFANG_LISTEN env var.
 api_listen = "127.0.0.1:4200"
 
 [default_model]
@@ -2066,6 +2067,7 @@ fn cmd_doctor(json: bool, repair: bool) {
                 let default_config = r#"# OpenFang Agent OS configuration
 # See https://github.com/RightNow-AI/openfang for documentation
 
+# For Docker, change to "0.0.0.0:4200" or set OPENFANG_LISTEN env var.
 api_listen = "127.0.0.1:4200"
 
 [default_model]

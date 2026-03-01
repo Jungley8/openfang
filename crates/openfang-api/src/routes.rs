@@ -5019,6 +5019,134 @@ pub async fn list_providers(State(state): State<Arc<AppState>>) -> impl IntoResp
     )
 }
 
+/// POST /api/models/custom — Add a custom model to the catalog.
+///
+/// Persists to `~/.openfang/custom_models.json` and makes the model immediately
+/// available for agent assignment.
+pub async fn add_custom_model(
+    State(state): State<Arc<AppState>>,
+    Json(body): Json<serde_json::Value>,
+) -> impl IntoResponse {
+    let id = body
+        .get("id")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
+    let provider = body
+        .get("provider")
+        .and_then(|v| v.as_str())
+        .unwrap_or("openrouter")
+        .to_string();
+    let context_window = body
+        .get("context_window")
+        .and_then(|v| v.as_u64())
+        .unwrap_or(128_000);
+    let max_output = body
+        .get("max_output_tokens")
+        .and_then(|v| v.as_u64())
+        .unwrap_or(8_192);
+
+    if id.is_empty() {
+        return (
+            StatusCode::BAD_REQUEST,
+            Json(serde_json::json!({"error": "Missing required field: id"})),
+        );
+    }
+
+    let display = body
+        .get("display_name")
+        .and_then(|v| v.as_str())
+        .unwrap_or(&id)
+        .to_string();
+
+    let entry = openfang_types::model_catalog::ModelCatalogEntry {
+        id: id.clone(),
+        display_name: display,
+        provider: provider.clone(),
+        tier: openfang_types::model_catalog::ModelTier::Custom,
+        context_window,
+        max_output_tokens: max_output,
+        input_cost_per_m: body
+            .get("input_cost_per_m")
+            .and_then(|v| v.as_f64())
+            .unwrap_or(0.0),
+        output_cost_per_m: body
+            .get("output_cost_per_m")
+            .and_then(|v| v.as_f64())
+            .unwrap_or(0.0),
+        supports_tools: body
+            .get("supports_tools")
+            .and_then(|v| v.as_bool())
+            .unwrap_or(true),
+        supports_vision: body
+            .get("supports_vision")
+            .and_then(|v| v.as_bool())
+            .unwrap_or(false),
+        supports_streaming: body
+            .get("supports_streaming")
+            .and_then(|v| v.as_bool())
+            .unwrap_or(true),
+        aliases: vec![],
+    };
+
+    let mut catalog = state
+        .kernel
+        .model_catalog
+        .write()
+        .unwrap_or_else(|e| e.into_inner());
+
+    if !catalog.add_custom_model(entry) {
+        return (
+            StatusCode::CONFLICT,
+            Json(serde_json::json!({"error": format!("Model '{}' already exists", id)})),
+        );
+    }
+
+    // Persist to disk
+    let custom_path = state.kernel.config.home_dir.join("custom_models.json");
+    if let Err(e) = catalog.save_custom_models(&custom_path) {
+        tracing::warn!("Failed to persist custom models: {e}");
+    }
+
+    (
+        StatusCode::CREATED,
+        Json(serde_json::json!({
+            "id": id,
+            "provider": provider,
+            "status": "added"
+        })),
+    )
+}
+
+/// DELETE /api/models/custom/{id} — Remove a custom model.
+pub async fn remove_custom_model(
+    State(state): State<Arc<AppState>>,
+    axum::extract::Path(model_id): axum::extract::Path<String>,
+) -> impl IntoResponse {
+    let mut catalog = state
+        .kernel
+        .model_catalog
+        .write()
+        .unwrap_or_else(|e| e.into_inner());
+
+    if !catalog.remove_custom_model(&model_id) {
+        return (
+            StatusCode::NOT_FOUND,
+            Json(serde_json::json!({"error": format!("Custom model '{}' not found", model_id)})),
+        );
+    }
+
+    let custom_path = state.kernel.config.home_dir.join("custom_models.json");
+    if let Err(e) = catalog.save_custom_models(&custom_path) {
+        tracing::warn!("Failed to persist custom models: {e}");
+    }
+
+    (
+        StatusCode::OK,
+        Json(serde_json::json!({"status": "removed"})),
+    )
+}
+
 // ── A2A (Agent-to-Agent) Protocol Endpoints ─────────────────────────
 
 /// GET /.well-known/agent.json — A2A Agent Card for the default agent.
@@ -8842,4 +8970,155 @@ fn validate_webhook_token(headers: &axum::http::HeaderMap, token_env: &str) -> b
         return false;
     }
     provided.as_bytes().ct_eq(expected.as_bytes()).into()
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// GitHub Copilot OAuth Device Flow
+// ══════════════════════════════════════════════════════════════════════
+
+/// State for an in-progress device flow.
+struct CopilotFlowState {
+    device_code: String,
+    interval: u64,
+    expires_at: Instant,
+}
+
+/// Active device flows, keyed by poll_id. Auto-expire after the flow's TTL.
+static COPILOT_FLOWS: LazyLock<DashMap<String, CopilotFlowState>> = LazyLock::new(DashMap::new);
+
+/// POST /api/providers/github-copilot/oauth/start
+///
+/// Initiates a GitHub device flow for Copilot authentication.
+/// Returns a user code and verification URI that the user visits in their browser.
+pub async fn copilot_oauth_start() -> impl IntoResponse {
+    // Clean up expired flows first
+    COPILOT_FLOWS.retain(|_, state| state.expires_at > Instant::now());
+
+    match openfang_runtime::copilot_oauth::start_device_flow().await {
+        Ok(resp) => {
+            let poll_id = uuid::Uuid::new_v4().to_string();
+
+            COPILOT_FLOWS.insert(
+                poll_id.clone(),
+                CopilotFlowState {
+                    device_code: resp.device_code,
+                    interval: resp.interval,
+                    expires_at: Instant::now() + std::time::Duration::from_secs(resp.expires_in),
+                },
+            );
+
+            (
+                StatusCode::OK,
+                Json(serde_json::json!({
+                    "user_code": resp.user_code,
+                    "verification_uri": resp.verification_uri,
+                    "poll_id": poll_id,
+                    "expires_in": resp.expires_in,
+                    "interval": resp.interval,
+                })),
+            )
+        }
+        Err(e) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(serde_json::json!({ "error": e })),
+        ),
+    }
+}
+
+/// GET /api/providers/github-copilot/oauth/poll/{poll_id}
+///
+/// Poll the status of a GitHub device flow.
+/// Returns `pending`, `complete`, `expired`, `denied`, or `error`.
+/// On `complete`, saves the token to secrets.env and sets GITHUB_TOKEN.
+pub async fn copilot_oauth_poll(
+    State(state): State<Arc<AppState>>,
+    Path(poll_id): Path<String>,
+) -> impl IntoResponse {
+    let flow = match COPILOT_FLOWS.get(&poll_id) {
+        Some(f) => f,
+        None => {
+            return (
+                StatusCode::NOT_FOUND,
+                Json(serde_json::json!({"status": "not_found", "error": "Unknown poll_id"})),
+            )
+        }
+    };
+
+    if flow.expires_at <= Instant::now() {
+        drop(flow);
+        COPILOT_FLOWS.remove(&poll_id);
+        return (
+            StatusCode::OK,
+            Json(serde_json::json!({"status": "expired"})),
+        );
+    }
+
+    let device_code = flow.device_code.clone();
+    drop(flow);
+
+    match openfang_runtime::copilot_oauth::poll_device_flow(&device_code).await {
+        openfang_runtime::copilot_oauth::DeviceFlowStatus::Pending => (
+            StatusCode::OK,
+            Json(serde_json::json!({"status": "pending"})),
+        ),
+        openfang_runtime::copilot_oauth::DeviceFlowStatus::Complete { access_token } => {
+            // Save to secrets.env
+            let secrets_path = state.kernel.config.home_dir.join("secrets.env");
+            if let Err(e) = write_secret_env(&secrets_path, "GITHUB_TOKEN", &access_token) {
+                return (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    Json(
+                        serde_json::json!({"status": "error", "error": format!("Failed to save token: {e}")}),
+                    ),
+                );
+            }
+
+            // Set in current process
+            std::env::set_var("GITHUB_TOKEN", access_token.as_str());
+
+            // Refresh auth detection
+            state
+                .kernel
+                .model_catalog
+                .write()
+                .unwrap_or_else(|e| e.into_inner())
+                .detect_auth();
+
+            // Clean up flow state
+            COPILOT_FLOWS.remove(&poll_id);
+
+            (
+                StatusCode::OK,
+                Json(serde_json::json!({"status": "complete"})),
+            )
+        }
+        openfang_runtime::copilot_oauth::DeviceFlowStatus::SlowDown { new_interval } => {
+            // Update interval
+            if let Some(mut f) = COPILOT_FLOWS.get_mut(&poll_id) {
+                f.interval = new_interval;
+            }
+            (
+                StatusCode::OK,
+                Json(serde_json::json!({"status": "pending", "interval": new_interval})),
+            )
+        }
+        openfang_runtime::copilot_oauth::DeviceFlowStatus::Expired => {
+            COPILOT_FLOWS.remove(&poll_id);
+            (
+                StatusCode::OK,
+                Json(serde_json::json!({"status": "expired"})),
+            )
+        }
+        openfang_runtime::copilot_oauth::DeviceFlowStatus::AccessDenied => {
+            COPILOT_FLOWS.remove(&poll_id);
+            (
+                StatusCode::OK,
+                Json(serde_json::json!({"status": "denied"})),
+            )
+        }
+        openfang_runtime::copilot_oauth::DeviceFlowStatus::Error(e) => (
+            StatusCode::OK,
+            Json(serde_json::json!({"status": "error", "error": e})),
+        ),
+    }
 }
