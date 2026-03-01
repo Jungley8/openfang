@@ -184,10 +184,7 @@ pub fn bundled_skills() -> Vec<(&'static str, &'static str)> {
             "pai-research",
             include_str!("../bundled/pai-research/SKILL.md"),
         ),
-        (
-            "pai-osint",
-            include_str!("../bundled/pai-osint/SKILL.md"),
-        ),
+        ("pai-osint", include_str!("../bundled/pai-osint/SKILL.md")),
         (
             "pai-web-extraction",
             include_str!("../bundled/pai-web-extraction/SKILL.md"),
