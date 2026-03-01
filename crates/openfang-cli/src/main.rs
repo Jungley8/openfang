@@ -133,6 +133,9 @@ enum Commands {
     /// Manage workflows (list, create, run) [*].
     #[command(subcommand)]
     Workflow(WorkflowCommands),
+    /// Manage agent workspaces (clean orphan dirs) [*].
+    #[command(subcommand)]
+    Workspace(WorkspaceCommands),
     /// Manage event triggers (list, create, delete) [*].
     #[command(subcommand)]
     Trigger(TriggerCommands),
@@ -547,6 +550,16 @@ enum TriggerCommands {
 }
 
 #[derive(Subcommand)]
+enum WorkspaceCommands {
+    /// Remove workspace directories that no longer belong to any registered agent.
+    Clean {
+        /// Actually delete orphan directories (default: dry run).
+        #[arg(long)]
+        force: bool,
+    },
+}
+
+#[derive(Subcommand)]
 enum ModelsCommands {
     /// List available models (optionally filter by provider).
     List {
@@ -873,6 +886,9 @@ fn main() {
             WorkflowCommands::List => cmd_workflow_list(),
             WorkflowCommands::Create { file } => cmd_workflow_create(file),
             WorkflowCommands::Run { workflow_id, input } => cmd_workflow_run(&workflow_id, &input),
+        },
+        Some(Commands::Workspace(sub)) => match sub {
+            WorkspaceCommands::Clean { force } => cmd_workspace_clean(cli.config, force),
         },
         Some(Commands::Trigger(sub)) => match sub {
             TriggerCommands::List { agent_id } => cmd_trigger_list(agent_id.as_deref()),
@@ -3112,6 +3128,91 @@ fn cmd_workflow_run(workflow_id: &str, input: &str) {
         );
         std::process::exit(1);
     }
+}
+
+// ---------------------------------------------------------------------------
+// Workspace commands
+// ---------------------------------------------------------------------------
+
+fn cmd_workspace_clean(config: Option<std::path::PathBuf>, force: bool) {
+    let kernel = boot_kernel(config);
+    let workspaces_dir = kernel.config.effective_workspaces_dir();
+    let active_short_ids: std::collections::HashSet<String> =
+        kernel.list_active_short_ids().into_iter().collect();
+
+    if !workspaces_dir.exists() {
+        println!(
+            "Workspaces directory does not exist: {}",
+            workspaces_dir.display()
+        );
+        return;
+    }
+
+    let entries = match std::fs::read_dir(&workspaces_dir) {
+        Ok(e) => e,
+        Err(e) => {
+            eprintln!("Failed to read workspaces dir: {e}");
+            std::process::exit(1);
+        }
+    };
+
+    let mut keep = Vec::new();
+    let mut remove = Vec::new();
+    for entry in entries.flatten() {
+        let path = entry.path();
+        if !path.is_dir() {
+            continue;
+        }
+        let name = match path.file_name().and_then(|n| n.to_str()) {
+            Some(n) => n,
+            None => continue,
+        };
+        if name.starts_with('.') {
+            continue;
+        }
+        let suffix = name.rsplit('-').next().unwrap_or("");
+        if suffix.len() != 8 || !suffix.chars().all(|c| c.is_ascii_hexdigit()) {
+            continue;
+        }
+        if active_short_ids.contains(suffix) {
+            keep.push(name.to_string());
+        } else {
+            remove.push(path);
+        }
+    }
+
+    let active_count = active_short_ids.len();
+    let orphan_count = remove.len();
+    println!("Active agents: {active_count}");
+    println!("Orphan workspace directories: {orphan_count}");
+    ui::blank();
+    for k in &keep {
+        println!("  KEEP:  {k}");
+    }
+    for r in &remove {
+        let name = r
+            .file_name()
+            .map(|n| n.to_string_lossy())
+            .unwrap_or_default();
+        println!("  REMOVE: {name}");
+    }
+
+    if remove.is_empty() {
+        println!("Nothing to clean.");
+        return;
+    }
+
+    if !force {
+        ui::hint("Run with --force to delete these directories.");
+        return;
+    }
+
+    for path in &remove {
+        if let Err(e) = std::fs::remove_dir_all(path) {
+            eprintln!("Failed to remove {}: {e}", path.display());
+        }
+    }
+    ui::success(&format!("Removed {} orphan directory(ies).", remove.len()));
 }
 
 // ---------------------------------------------------------------------------

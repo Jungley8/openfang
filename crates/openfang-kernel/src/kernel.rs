@@ -2557,6 +2557,12 @@ impl OpenFangKernel {
         Ok(())
     }
 
+    /// List short IDs (first 8 chars of UUID) for all agents in the registry.
+    /// Used by `openfang workspace clean` to identify which workspace dirs are in use.
+    pub fn list_active_short_ids(&self) -> Vec<String> {
+        self.registry.list_short_ids()
+    }
+
     // ─── Hand lifecycle ─────────────────────────────────────────────────────
 
     /// Activate a hand: check requirements, create instance, spawn agent.
