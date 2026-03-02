@@ -537,7 +537,11 @@ impl OpenFangKernel {
         let driver_config = DriverConfig {
             provider: config.default_model.provider.clone(),
             api_key: std::env::var(&config.default_model.api_key_env).ok(),
-            base_url: config.default_model.base_url.clone(),
+            base_url: config
+                .default_model
+                .base_url
+                .clone()
+                .or_else(|| config.provider_urls.get(&config.default_model.provider).cloned()),
         };
         let primary_driver = drivers::create_driver(&driver_config)
             .map_err(|e| KernelError::BootFailed(format!("LLM driver init failed: {e}")))?;
@@ -553,7 +557,10 @@ impl OpenFangKernel {
                     } else {
                         std::env::var(&fb.api_key_env).ok()
                     },
-                    base_url: fb.base_url.clone(),
+                    base_url: fb
+                        .base_url
+                        .clone()
+                        .or_else(|| config.provider_urls.get(&fb.provider).cloned()),
                 };
                 match drivers::create_driver(&fb_config) {
                     Ok(d) => {
@@ -3761,10 +3768,14 @@ impl OpenFangKernel {
             let base_url = if has_custom_url {
                 manifest.model.base_url.clone()
             } else if agent_provider == default_provider {
-                self.config.default_model.base_url.clone()
+                self.config
+                    .default_model
+                    .base_url
+                    .clone()
+                    .or_else(|| self.config.provider_urls.get(agent_provider.as_str()).cloned())
             } else {
-                // Let create_driver() use the target provider's default base URL
-                None
+                // Check provider_urls before falling back to hardcoded defaults
+                self.config.provider_urls.get(agent_provider.as_str()).cloned()
             };
 
             let driver_config = DriverConfig {
@@ -3790,7 +3801,10 @@ impl OpenFangKernel {
                         .api_key_env
                         .as_ref()
                         .and_then(|env| std::env::var(env).ok()),
-                    base_url: fb.base_url.clone(),
+                    base_url: fb
+                        .base_url
+                        .clone()
+                        .or_else(|| self.config.provider_urls.get(&fb.provider).cloned()),
                 };
                 match drivers::create_driver(&config) {
                     Ok(d) => chain.push((d, fb.model.clone())),

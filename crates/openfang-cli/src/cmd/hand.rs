@@ -156,3 +156,65 @@ pub fn cmd_hand_info(id: &str) {
         serde_json::to_string_pretty(&body).unwrap_or_default()
     );
 }
+
+pub fn cmd_hand_check_deps(id: &str) {
+    let base = require_daemon("hand check-deps");
+    let client = daemon_client();
+    let body = daemon_json(client.get(format!("{base}/api/hands/{id}/check-deps")).send());
+    if body.get("error").is_some() {
+        eprintln!(
+            "{}",
+            body["error"].as_str().unwrap_or("Unknown error")
+        );
+        std::process::exit(1);
+    }
+    println!(
+        "{}",
+        serde_json::to_string_pretty(&body).unwrap_or_default()
+    );
+}
+
+pub fn cmd_hand_install_deps(id: &str) {
+    let base = require_daemon("hand install-deps");
+    let client = daemon_client();
+    let body = daemon_json(client.post(format!("{base}/api/hands/{id}/install-deps")).send());
+    if body.get("error").is_some() {
+        eprintln!(
+            "{}",
+            body["error"].as_str().unwrap_or("Unknown error")
+        );
+        std::process::exit(1);
+    }
+    println!(
+        "{}",
+        serde_json::to_string_pretty(&body).unwrap_or_default()
+    );
+}
+
+pub fn cmd_hand_pause(id: &str) {
+    let base = require_daemon("hand pause");
+    let client = daemon_client();
+    let body = daemon_json(client.post(format!("{base}/api/hands/{id}/pause")).send());
+    if body.get("error").is_some() {
+        eprintln!(
+            "{}",
+            body["error"].as_str().unwrap_or("Unknown error")
+        );
+        std::process::exit(1);
+    }
+    crate::ui::success("Hand paused.");
+}
+
+pub fn cmd_hand_resume(id: &str) {
+    let base = require_daemon("hand resume");
+    let client = daemon_client();
+    let body = daemon_json(client.post(format!("{base}/api/hands/{id}/resume")).send());
+    if body.get("error").is_some() {
+        eprintln!(
+            "{}",
+            body["error"].as_str().unwrap_or("Unknown error")
+        );
+        std::process::exit(1);
+    }
+    crate::ui::success("Hand resumed.");
+}

@@ -400,6 +400,26 @@ pub enum HandCommands {
         /// Hand ID.
         id: String,
     },
+    /// Check dependencies for a hand.
+    CheckDeps {
+        /// Hand ID.
+        id: String,
+    },
+    /// Install dependencies for a hand.
+    InstallDeps {
+        /// Hand ID.
+        id: String,
+    },
+    /// Pause an active hand instance.
+    Pause {
+        /// Instance ID.
+        id: String,
+    },
+    /// Resume a paused hand instance.
+    Resume {
+        /// Instance ID.
+        id: String,
+    },
 }
 
 #[derive(Subcommand)]
@@ -617,6 +637,9 @@ pub enum CronCommands {
         spec: String,
         /// Prompt to send when the job fires.
         prompt: String,
+        /// Optional display name for the job.
+        #[arg(long)]
+        name: Option<String>,
     },
     /// Delete a scheduled job.
     Delete {

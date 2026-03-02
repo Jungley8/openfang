@@ -964,19 +964,18 @@ pub fn cmd_cron_list(json: bool) {
     }
 }
 
-pub fn cmd_cron_create(agent: &str, spec: &str, prompt: &str) {
+pub fn cmd_cron_create(agent: &str, spec: &str, prompt: &str, name: Option<&str>) {
     let base = require_daemon("cron create");
     let client = daemon_client();
-    let body = daemon_json(
-        client
-            .post(format!("{base}/api/cron/jobs"))
-            .json(&serde_json::json!({
-                "agent_id": agent,
-                "cron_expr": spec,
-                "prompt": prompt,
-            }))
-            .send(),
-    );
+    let mut payload = serde_json::json!({
+        "agent_id": agent,
+        "cron_expr": spec,
+        "prompt": prompt,
+    });
+    if let Some(n) = name {
+        payload["name"] = serde_json::json!(n);
+    }
+    let body = daemon_json(client.post(format!("{base}/api/cron/jobs")).json(&payload).send());
     if let Some(id) = body["id"].as_str() {
         ui::success(&format!("Cron job created: {id}"));
     } else {
