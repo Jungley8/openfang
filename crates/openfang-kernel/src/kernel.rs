@@ -995,10 +995,8 @@ impl OpenFangKernel {
                         && restored_entry.manifest.model.base_url.is_none()
                     {
                         let dm = &kernel.config.default_model;
-                        let is_default_provider = restored_entry.manifest.model.provider.is_empty()
-                            || restored_entry.manifest.model.provider == "anthropic";
-                        let is_default_model = restored_entry.manifest.model.model.is_empty()
-                            || restored_entry.manifest.model.model == "claude-sonnet-4-20250514";
+                        let is_default_provider = restored_entry.manifest.model.provider.is_empty();
+                        let is_default_model = restored_entry.manifest.model.model.is_empty();
                         if is_default_provider && is_default_model {
                             if !dm.provider.is_empty() {
                                 restored_entry.manifest.model.provider = dm.provider.clone();
