@@ -168,6 +168,7 @@ pub async fn execute_tool(
         }
     }
 
+    let _tool_span = tracing::info_span!("tool", tool_name = %tool_name);
     debug!(tool_name, "Executing tool");
     let result = match tool_name {
         // Filesystem tools

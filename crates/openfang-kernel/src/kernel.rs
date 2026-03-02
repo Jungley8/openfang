@@ -1142,6 +1142,14 @@ impl OpenFangKernel {
             KernelError::OpenFang(OpenFangError::AgentNotFound(agent_id.to_string()))
         })?;
 
+        let session_span = tracing::info_span!(
+            "session",
+            session_id = %entry.session_id,
+            agent_id = %agent_id,
+        );
+        // Enter and immediately drop so we do not hold EnteredSpan (!Send) across await.
+        drop(session_span.enter());
+
         // Dispatch based on module type
         let result = if entry.manifest.module.starts_with("wasm:") {
             self.execute_wasm_agent(&entry, message, kernel_handle)
@@ -1173,6 +1181,10 @@ impl OpenFangKernel {
                     "ok",
                 );
 
+                session_span.record(
+                    "merkle_root",
+                    tracing::field::display(&self.audit_log.tip_hash()),
+                );
                 Ok(result)
             }
             Err(e) => {
@@ -1184,6 +1196,10 @@ impl OpenFangKernel {
                     format!("error: {e}"),
                 );
 
+                session_span.record(
+                    "merkle_root",
+                    tracing::field::display(&self.audit_log.tip_hash()),
+                );
                 // Record the failure in supervisor for health reporting
                 self.supervisor.record_panic();
                 warn!(agent_id = %agent_id, error = %e, "Agent loop failed — recorded in supervisor");

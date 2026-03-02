@@ -1,0 +1,25 @@
+{
+  "name": "weekly-twitter-trends",
+  "description": "Weekly workflow: Research deep trends -> Generate a high-impact tweet.",
+  "steps": [
+    {
+      "name": "research-weekly",
+      "agent_name": "growth-hacker-os",
+      "prompt": "深度研究过去一周内 AI、大模型、智能体、研发、自媒体等领域最具有前瞻性的趋势或重大突破。列举 3 个核心点。",
+      "mode": "sequential",
+      "timeout_secs": 300,
+      "output_var": "weekly_trends"
+    },
+    {
+      "name": "generate-tweet",
+      "agent_name": "growth-hacker-os",
+      "prompt": "基于以下研究内容，生成一条极具传播力的 Twitter 推文（金句、深度洞察或趋势总结）：
+
+{{weekly_trends}}
+
+要求：280 字符以内，包含话题标签，适合技术人群。",
+      "mode": "sequential",
+      "timeout_secs": 120
+    }
+  ]
+}

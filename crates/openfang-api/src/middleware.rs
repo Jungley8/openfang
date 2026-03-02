@@ -4,6 +4,10 @@
 //! - Request ID generation and propagation
 //! - Per-endpoint structured request logging
 //! - In-memory rate limiting (per IP)
+//!
+//! Note: W3C TraceContext extraction is configured in CLI/Desktop (global propagator).
+//! Async middleware cannot hold opentelemetry::ContextGuard across await (!Send);
+//! incoming trace context can be used when request is handled in the same task.
 
 use axum::body::Body;
 use axum::http::{Request, Response, StatusCode};
