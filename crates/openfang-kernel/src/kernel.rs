@@ -910,6 +910,61 @@ impl OpenFangKernel {
                     let agent_id = entry.id;
                     let name = entry.name.clone();
 
+                    // Check if TOML on disk is newer/different — if so, update from file
+                    let mut entry = entry;
+                    let toml_path = kernel
+                        .config
+                        .home_dir
+                        .join("agents")
+                        .join(&name)
+                        .join("agent.toml");
+                    if toml_path.exists() {
+                        match std::fs::read_to_string(&toml_path) {
+                            Ok(toml_str) => {
+                                match toml::from_str::<openfang_types::agent::AgentManifest>(
+                                    &toml_str,
+                                ) {
+                                    Ok(disk_manifest) => {
+                                        // Compare key fields to detect changes
+                                        let changed = disk_manifest.name != entry.manifest.name
+                                            || disk_manifest.description != entry.manifest.description
+                                            || disk_manifest.model.system_prompt != entry.manifest.model.system_prompt
+                                            || disk_manifest.model.provider != entry.manifest.model.provider
+                                            || disk_manifest.model.model != entry.manifest.model.model
+                                            || disk_manifest.capabilities.tools != entry.manifest.capabilities.tools;
+                                        if changed {
+                                            info!(
+                                                agent = %name,
+                                                "Agent TOML on disk differs from DB, updating"
+                                            );
+                                            entry.manifest = disk_manifest;
+                                            // Persist the update back to DB
+                                            if let Err(e) = kernel.memory.save_agent(&entry) {
+                                                warn!(
+                                                    agent = %name,
+                                                    "Failed to persist TOML update: {e}"
+                                                );
+                                            }
+                                        }
+                                    }
+                                    Err(e) => {
+                                        warn!(
+                                            agent = %name,
+                                            path = %toml_path.display(),
+                                            "Invalid agent TOML on disk, using DB version: {e}"
+                                        );
+                                    }
+                                }
+                            }
+                            Err(e) => {
+                                warn!(
+                                    agent = %name,
+                                    "Failed to read agent TOML: {e}"
+                                );
+                            }
+                        }
+                    }
+
                     // Re-grant capabilities
                     let caps = manifest_to_capabilities(&entry.manifest);
                     kernel.capabilities.grant(agent_id, caps);
@@ -3195,18 +3250,30 @@ impl OpenFangKernel {
     /// `Continuous`, `Periodic`, or `Proactive` schedules.
     pub fn start_background_agents(self: &Arc<Self>) {
         let agents = self.registry.list();
-        let mut started = 0u32;
+        let mut bg_agents: Vec<(openfang_types::agent::AgentId, String, ScheduleMode)> =
+            Vec::new();
 
         for entry in &agents {
             if matches!(entry.manifest.schedule, ScheduleMode::Reactive) {
                 continue;
             }
-            self.start_background_for_agent(entry.id, &entry.name, &entry.manifest.schedule);
-            started += 1;
+            bg_agents.push((entry.id, entry.name.clone(), entry.manifest.schedule.clone()));
         }
 
-        if started > 0 {
-            info!("Started {started} background agent loop(s)");
+        if !bg_agents.is_empty() {
+            let count = bg_agents.len();
+            let kernel = Arc::clone(self);
+            // Stagger agent startup to prevent rate-limit storm on shared providers.
+            // Each agent gets a 500ms delay before the next one starts.
+            tokio::spawn(async move {
+                for (i, (id, name, schedule)) in bg_agents.into_iter().enumerate() {
+                    kernel.start_background_for_agent(id, &name, &schedule);
+                    if i > 0 {
+                        tokio::time::sleep(std::time::Duration::from_millis(500)).await;
+                    }
+                }
+                info!("Started {count} background agent loop(s) (staggered)");
+            });
         }
 
         // Start heartbeat monitor for agent health checking

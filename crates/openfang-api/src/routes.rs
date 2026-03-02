@@ -7711,6 +7711,13 @@ pub async fn patch_agent_config(
         }
     }
 
+    // Persist updated manifest to database so changes survive restart
+    if let Some(entry) = state.kernel.registry.get(agent_id) {
+        if let Err(e) = state.kernel.memory.save_agent(&entry) {
+            tracing::warn!("Failed to persist agent config update: {e}");
+        }
+    }
+
     (
         StatusCode::OK,
         Json(serde_json::json!({"status": "ok", "agent_id": id})),

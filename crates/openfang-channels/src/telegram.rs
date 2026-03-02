@@ -85,6 +85,7 @@ impl TelegramAdapter {
             let body = serde_json::json!({
                 "chat_id": chat_id,
                 "text": chunk,
+                "parse_mode": "HTML",
             });
 
             let resp = self.client.post(&url).json(&body).send().await?;
