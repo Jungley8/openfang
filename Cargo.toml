@@ -48,6 +48,13 @@ crossbeam = "0.8"
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
 
+# OpenTelemetry (optional: enable with feature "otel" on binaries)
+opentelemetry = { version = "0.31", default-features = false, features = ["trace"] }
+opentelemetry_sdk = { version = "0.31", default-features = false, features = ["trace", "rt-tokio"] }
+opentelemetry-otlp = { version = "0.31", default-features = false, features = ["trace", "grpc-tonic"] }
+opentelemetry-http = { version = "0.31", default-features = false }
+tracing-opentelemetry = { version = "0.32", default-features = false }
+
 # Time
 chrono = { version = "0.4", features = ["serde"] }
 

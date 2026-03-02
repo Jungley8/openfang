@@ -7,6 +7,7 @@
 mod commands;
 mod server;
 mod shortcuts;
+mod tracing_init;
 mod tray;
 mod updater;
 
@@ -30,13 +31,7 @@ pub struct KernelState {
 /// Entry point for the Tauri application.
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    // Init tracing
-    tracing_subscriber::fmt()
-        .with_env_filter(
-            tracing_subscriber::EnvFilter::try_from_default_env()
-                .unwrap_or_else(|_| "openfang=info,tauri=info".into()),
-        )
-        .init();
+    tracing_init::init_tracing();
 
     info!("Starting OpenFang Desktop...");
 
