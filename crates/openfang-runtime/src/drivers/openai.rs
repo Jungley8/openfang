@@ -660,8 +660,8 @@ impl LlmDriver for OpenAIDriver {
                         continue;
                     }
 
-                    let data = match line.strip_prefix("data: ") {
-                        Some(d) => d,
+                    let data = match line.strip_prefix("data:") {
+                        Some(d) => d.trim_start(),
                         None => continue,
                     };
 

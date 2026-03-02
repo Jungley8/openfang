@@ -930,14 +930,20 @@ impl OpenFangKernel {
                         && restored_entry.manifest.model.base_url.is_none()
                     {
                         let dm = &kernel.config.default_model;
-                        if !dm.provider.is_empty() {
-                            restored_entry.manifest.model.provider = dm.provider.clone();
-                        }
-                        if !dm.model.is_empty() {
-                            restored_entry.manifest.model.model = dm.model.clone();
-                        }
-                        if dm.base_url.is_some() {
-                            restored_entry.manifest.model.base_url = dm.base_url.clone();
+                        let is_default_provider = restored_entry.manifest.model.provider.is_empty()
+                            || restored_entry.manifest.model.provider == "anthropic";
+                        let is_default_model = restored_entry.manifest.model.model.is_empty()
+                            || restored_entry.manifest.model.model == "claude-sonnet-4-20250514";
+                        if is_default_provider && is_default_model {
+                            if !dm.provider.is_empty() {
+                                restored_entry.manifest.model.provider = dm.provider.clone();
+                            }
+                            if !dm.model.is_empty() {
+                                restored_entry.manifest.model.model = dm.model.clone();
+                            }
+                            if dm.base_url.is_some() {
+                                restored_entry.manifest.model.base_url = dm.base_url.clone();
+                            }
                         }
                     }
 
@@ -1004,18 +1010,26 @@ impl OpenFangKernel {
         }
         info!(agent = %name, id = %agent_id, exec_mode = ?manifest.exec_policy.as_ref().map(|p| &p.mode), "Agent exec_policy resolved");
 
-        // Overlay kernel default_model onto agent if no custom key/url is set.
-        // This ensures agents respect the user's configured provider from `openfang init`.
+        // Overlay kernel default_model onto agent if agent didn't explicitly choose.
+        // Only override provider/model when the agent uses the generic defaults
+        // (empty or the compile-time default "anthropic"/"claude-sonnet-4-20250514").
+        // This preserves explicit model choices like provider="groq", model="llama-3.3-70b".
         if manifest.model.api_key_env.is_none() && manifest.model.base_url.is_none() {
             let dm = &self.config.default_model;
-            if !dm.provider.is_empty() {
-                manifest.model.provider = dm.provider.clone();
-            }
-            if !dm.model.is_empty() {
-                manifest.model.model = dm.model.clone();
-            }
-            if dm.base_url.is_some() {
-                manifest.model.base_url = dm.base_url.clone();
+            let is_default_provider = manifest.model.provider.is_empty()
+                || manifest.model.provider == "anthropic";
+            let is_default_model = manifest.model.model.is_empty()
+                || manifest.model.model == "claude-sonnet-4-20250514";
+            if is_default_provider && is_default_model {
+                if !dm.provider.is_empty() {
+                    manifest.model.provider = dm.provider.clone();
+                }
+                if !dm.model.is_empty() {
+                    manifest.model.model = dm.model.clone();
+                }
+                if dm.base_url.is_some() {
+                    manifest.model.base_url = dm.base_url.clone();
+                }
             }
         }
 
@@ -1454,6 +1468,7 @@ impl OpenFangKernel {
                     None
                 },
                 peer_agents,
+                current_date: Some(chrono::Local::now().format("%A, %B %d, %Y (%Y-%m-%d %H:%M %Z)").to_string()),
             };
             manifest.model.system_prompt =
                 openfang_runtime::prompt_builder::build_system_prompt(&prompt_ctx);
@@ -1922,6 +1937,7 @@ impl OpenFangKernel {
                     None
                 },
                 peer_agents,
+                current_date: Some(chrono::Local::now().format("%A, %B %d, %Y (%Y-%m-%d %H:%M %Z)").to_string()),
             };
             manifest.model.system_prompt =
                 openfang_runtime::prompt_builder::build_system_prompt(&prompt_ctx);
@@ -3687,7 +3703,9 @@ impl OpenFangKernel {
 
         // If fallback models are configured, wrap in FallbackDriver
         if !manifest.fallback_models.is_empty() {
-            let mut chain = vec![primary.clone()];
+            // Primary driver uses the agent's own model name (already set in request)
+            let mut chain: Vec<(std::sync::Arc<dyn openfang_runtime::llm_driver::LlmDriver>, String)> =
+                vec![(primary.clone(), String::new())];
             for fb in &manifest.fallback_models {
                 let config = DriverConfig {
                     provider: fb.provider.clone(),
@@ -3698,7 +3716,7 @@ impl OpenFangKernel {
                     base_url: fb.base_url.clone(),
                 };
                 match drivers::create_driver(&config) {
-                    Ok(d) => chain.push(d),
+                    Ok(d) => chain.push((d, fb.model.clone())),
                     Err(e) => {
                         warn!("Fallback driver '{}' failed to init: {e}", fb.provider);
                     }
@@ -3706,7 +3724,7 @@ impl OpenFangKernel {
             }
             if chain.len() > 1 {
                 return Ok(Arc::new(
-                    openfang_runtime::drivers::fallback::FallbackDriver::new(chain),
+                    openfang_runtime::drivers::fallback::FallbackDriver::with_models(chain),
                 ));
             }
         }

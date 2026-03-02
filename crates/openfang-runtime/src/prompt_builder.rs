@@ -53,6 +53,8 @@ pub struct PromptContext {
     pub heartbeat_md: Option<String>,
     /// Peer agents visible to this agent: (name, state, model).
     pub peer_agents: Vec<(String, String, String)>,
+    /// Current date/time string for temporal awareness.
+    pub current_date: Option<String>,
 }
 
 /// Build the complete system prompt from a `PromptContext`.
@@ -65,6 +67,11 @@ pub fn build_system_prompt(ctx: &PromptContext) -> String {
 
     // Section 1 — Agent Identity (always present)
     sections.push(build_identity_section(ctx));
+
+    // Section 1.5 — Current Date/Time (always present when set)
+    if let Some(ref date) = ctx.current_date {
+        sections.push(format!("## Current Date\nToday is {date}."));
+    }
 
     // Section 2 — Tool Call Behavior (skip for subagents)
     if !ctx.is_subagent {
