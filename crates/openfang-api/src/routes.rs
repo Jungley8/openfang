@@ -41,6 +41,8 @@ pub struct AppState {
     pub restart_requested: std::sync::atomic::AtomicBool,
     /// Argv to exec for restart: [exe, "start", "--config", path?].
     pub restart_argv: Vec<String>,
+    /// ClawHub response cache — prevents 429 rate limiting on rapid dashboard refreshes.
+    pub clawhub_cache: DashMap<String, (Instant, serde_json::Value)>,
 }
 
 // ---------------------------------------------------------------------------
@@ -2918,6 +2920,14 @@ pub async fn clawhub_search(
         .and_then(|v| v.parse().ok())
         .unwrap_or(20);
 
+    // Check cache (120s TTL)
+    let cache_key = format!("search:{}:{}", query, limit);
+    if let Some(entry) = state.clawhub_cache.get(&cache_key) {
+        if entry.0.elapsed().as_secs() < 120 {
+            return (StatusCode::OK, Json(entry.1.clone()));
+        }
+    }
+
     let cache_dir = state.kernel.config.home_dir.join(".cache").join("clawhub");
     let client = openfang_skills::clawhub::ClawHubClient::new(cache_dir);
 
@@ -2937,20 +2947,26 @@ pub async fn clawhub_search(
                     })
                 })
                 .collect();
-            (
-                StatusCode::OK,
-                Json(serde_json::json!({
-                    "items": items,
-                    "next_cursor": null,
-                })),
-            )
+            let resp = serde_json::json!({
+                "items": items,
+                "next_cursor": null,
+            });
+            state.clawhub_cache.insert(cache_key, (Instant::now(), resp.clone()));
+            (StatusCode::OK, Json(resp))
         }
         Err(e) => {
-            tracing::warn!("ClawHub search failed: {e}");
+            let msg = format!("{e}");
+            tracing::warn!("ClawHub search failed: {msg}");
+            // Propagate 429 status instead of masking as 200
+            let status = if msg.contains("429") || msg.contains("rate limit") {
+                StatusCode::TOO_MANY_REQUESTS
+            } else {
+                StatusCode::OK
+            };
             (
-                StatusCode::OK,
+                status,
                 Json(
-                    serde_json::json!({"items": [], "next_cursor": null, "error": format!("{e}")}),
+                    serde_json::json!({"items": [], "next_cursor": null, "error": msg}),
                 ),
             )
         }
@@ -2982,6 +2998,14 @@ pub async fn clawhub_browse(
 
     let cursor = params.get("cursor").map(|s| s.as_str());
 
+    // Check cache (120s TTL)
+    let cache_key = format!("browse:{:?}:{}:{}", sort, limit, cursor.unwrap_or(""));
+    if let Some(entry) = state.clawhub_cache.get(&cache_key) {
+        if entry.0.elapsed().as_secs() < 120 {
+            return (StatusCode::OK, Json(entry.1.clone()));
+        }
+    }
+
     let cache_dir = state.kernel.config.home_dir.join(".cache").join("clawhub");
     let client = openfang_skills::clawhub::ClawHubClient::new(cache_dir);
 
@@ -2992,20 +3016,25 @@ pub async fn clawhub_browse(
                 .iter()
                 .map(clawhub_browse_entry_to_json)
                 .collect();
-            (
-                StatusCode::OK,
-                Json(serde_json::json!({
-                    "items": items,
-                    "next_cursor": results.next_cursor,
-                })),
-            )
+            let resp = serde_json::json!({
+                "items": items,
+                "next_cursor": results.next_cursor,
+            });
+            state.clawhub_cache.insert(cache_key, (Instant::now(), resp.clone()));
+            (StatusCode::OK, Json(resp))
         }
         Err(e) => {
-            tracing::warn!("ClawHub browse failed: {e}");
+            let msg = format!("{e}");
+            tracing::warn!("ClawHub browse failed: {msg}");
+            let status = if msg.contains("429") || msg.contains("rate limit") {
+                StatusCode::TOO_MANY_REQUESTS
+            } else {
+                StatusCode::OK
+            };
             (
-                StatusCode::OK,
+                status,
                 Json(
-                    serde_json::json!({"items": [], "next_cursor": null, "error": format!("{e}")}),
+                    serde_json::json!({"items": [], "next_cursor": null, "error": msg}),
                 ),
             )
         }
@@ -7323,7 +7352,8 @@ pub async fn run_schedule(
         serde_json::Value::Array(schedules_updated),
     );
 
-    match state.kernel.send_message(target_agent, &run_message).await {
+    let kernel_handle: Arc<dyn KernelHandle> = state.kernel.clone() as Arc<dyn KernelHandle>;
+    match state.kernel.send_message_with_handle(target_agent, &run_message, Some(kernel_handle)).await {
         Ok(result) => (
             StatusCode::OK,
             Json(serde_json::json!({
@@ -8453,7 +8483,19 @@ pub async fn config_reload(State(state): State<Arc<AppState>>) -> impl IntoRespo
 // ---------------------------------------------------------------------------
 
 /// GET /api/config/schema — Return a simplified JSON description of the config structure.
-pub async fn config_schema() -> impl IntoResponse {
+pub async fn config_schema(
+    State(state): State<Arc<AppState>>,
+) -> impl IntoResponse {
+    // Build provider/model options from model catalog for dropdowns
+    let catalog = state.kernel.model_catalog.read().unwrap_or_else(|e| e.into_inner());
+    let provider_options: Vec<String> = catalog.list_providers().iter().map(|p| p.id.clone()).collect();
+    let model_options: Vec<serde_json::Value> = catalog
+        .list_models()
+        .iter()
+        .map(|m| serde_json::json!({"id": m.id, "name": m.display_name, "provider": m.provider}))
+        .collect();
+    drop(catalog);
+
     Json(serde_json::json!({
         "sections": {
             "api": {
@@ -8464,9 +8506,10 @@ pub async fn config_schema() -> impl IntoResponse {
                 }
             },
             "default_model": {
+                "hot_reloadable": true,
                 "fields": {
-                    "provider": "string",
-                    "model": "string",
+                    "provider": { "type": "select", "options": provider_options },
+                    "model": { "type": "select", "options": model_options },
                     "api_key_env": "string",
                     "base_url": "string"
                 }

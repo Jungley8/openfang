@@ -134,6 +134,8 @@ pub struct OpenFangKernel {
     /// Channel adapters registered at bridge startup (for proactive `channel_send` tool).
     pub channel_adapters:
         dashmap::DashMap<String, Arc<dyn openfang_channels::types::ChannelAdapter>>,
+    /// Hot-reloadable default model override (set via config hot-reload, read at agent spawn).
+    pub default_model_override: std::sync::RwLock<Option<openfang_types::config::DefaultModelConfig>>,
     /// Weak self-reference for trigger dispatch (set after Arc wrapping).
     self_handle: OnceLock<Weak<OpenFangKernel>>,
 }
@@ -889,6 +891,7 @@ impl OpenFangKernel {
             booted_at: std::time::Instant::now(),
             whatsapp_gateway_pid: Arc::new(std::sync::Mutex::new(None)),
             channel_adapters: dashmap::DashMap::new(),
+            default_model_override: std::sync::RwLock::new(None),
             self_handle: OnceLock::new(),
         };
 
@@ -1011,15 +1014,19 @@ impl OpenFangKernel {
         info!(agent = %name, id = %agent_id, exec_mode = ?manifest.exec_policy.as_ref().map(|p| &p.mode), "Agent exec_policy resolved");
 
         // Overlay kernel default_model onto agent if agent didn't explicitly choose.
-        // Only override provider/model when the agent uses the generic defaults
-        // (empty or the compile-time default "anthropic"/"claude-sonnet-4-20250514").
+        // Only override when the agent has empty (unset) provider/model fields.
         // This preserves explicit model choices like provider="groq", model="llama-3.3-70b".
         if manifest.model.api_key_env.is_none() && manifest.model.base_url.is_none() {
-            let dm = &self.config.default_model;
-            let is_default_provider = manifest.model.provider.is_empty()
-                || manifest.model.provider == "anthropic";
-            let is_default_model = manifest.model.model.is_empty()
-                || manifest.model.model == "claude-sonnet-4-20250514";
+            // Check hot-reloaded override first, fall back to boot-time config
+            let override_guard = self
+                .default_model_override
+                .read()
+                .unwrap_or_else(|e: std::sync::PoisonError<_>| e.into_inner());
+            let dm = override_guard
+                .as_ref()
+                .unwrap_or(&self.config.default_model);
+            let is_default_provider = manifest.model.provider.is_empty();
+            let is_default_model = manifest.model.model.is_empty();
             if is_default_provider && is_default_model {
                 if !dm.provider.is_empty() {
                     manifest.model.provider = dm.provider.clone();
@@ -2971,6 +2978,75 @@ impl OpenFangKernel {
             .map_err(|errs| format!("Validation failed: {}", errs.join("; ")))
     }
 
+    /// Build reload plan and apply hot actions (if reload mode allows). Caller provides already-loaded new_config.
+    pub fn try_reload_config(
+        &self,
+        new_config: &openfang_types::config::KernelConfig,
+    ) -> Result<crate::config_reload::ReloadPlan, String> {
+        use crate::config_reload::{build_reload_plan, should_apply_hot, validate_config_for_reload};
+
+        validate_config_for_reload(new_config)
+            .map_err(|errs| format!("Validation failed: {}", errs.join("; ")))?;
+        let plan = build_reload_plan(&self.config, new_config);
+        plan.log_summary();
+        if should_apply_hot(self.config.reload.mode, &plan) {
+            self.apply_hot_actions(&plan, new_config);
+        }
+        Ok(plan)
+    }
+
+    /// Apply hot-reload actions to the running kernel.
+    fn apply_hot_actions(
+        &self,
+        plan: &crate::config_reload::ReloadPlan,
+        new_config: &openfang_types::config::KernelConfig,
+    ) {
+        use crate::config_reload::HotAction;
+
+        for action in &plan.hot_actions {
+            match action {
+                HotAction::UpdateApprovalPolicy => {
+                    info!("Hot-reload: updating approval policy");
+                    self.approval_manager
+                        .update_policy(new_config.approval.clone());
+                }
+                HotAction::UpdateCronConfig => {
+                    info!(
+                        "Hot-reload: updating cron config (max_jobs={})",
+                        new_config.max_cron_jobs
+                    );
+                    self.cron_scheduler
+                        .set_max_total_jobs(new_config.max_cron_jobs);
+                }
+                HotAction::ReloadProviderUrls => {
+                    info!("Hot-reload: applying provider URL overrides");
+                    let mut catalog = self
+                        .model_catalog
+                        .write()
+                        .unwrap_or_else(|e| e.into_inner());
+                    catalog.apply_url_overrides(&new_config.provider_urls);
+                }
+                HotAction::UpdateDefaultModel => {
+                    info!(
+                        "Hot-reload: updating default model to {}/{}",
+                        new_config.default_model.provider, new_config.default_model.model
+                    );
+                    let mut guard = self
+                        .default_model_override
+                        .write()
+                        .unwrap_or_else(|e: std::sync::PoisonError<_>| e.into_inner());
+                    *guard = Some(new_config.default_model.clone());
+                }
+                _ => {
+                    info!(
+                        "Hot-reload: action {:?} noted but not yet auto-applied",
+                        action
+                    );
+                }
+            }
+        }
+    }
+
     /// Publish an event to the bus and evaluate triggers.
     ///
     /// Any matching triggers will dispatch messages to the subscribing agents.
@@ -3314,9 +3390,10 @@ impl OpenFangKernel {
                                 let timeout_s = timeout_secs.unwrap_or(120);
                                 let timeout = std::time::Duration::from_secs(timeout_s);
                                 let delivery = job.delivery.clone();
+                                let kh: std::sync::Arc<dyn openfang_runtime::kernel_handle::KernelHandle> = kernel.clone();
                                 match tokio::time::timeout(
                                     timeout,
-                                    kernel.send_message(agent_id, message),
+                                    kernel.send_message_with_handle(agent_id, message, Some(kh)),
                                 )
                                 .await
                                 {

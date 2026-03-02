@@ -83,6 +83,7 @@ async fn start_test_server_with_provider(
         shutdown_notify: Arc::new(tokio::sync::Notify::new()),
         restart_requested: std::sync::atomic::AtomicBool::new(false),
         restart_argv: vec!["openfang".to_string(), "start".to_string()],
+        clawhub_cache: dashmap::DashMap::new(),
     });
 
     let app = Router::new()
@@ -716,6 +717,7 @@ async fn start_test_server_with_auth(api_key: &str) -> TestServer {
         shutdown_notify: Arc::new(tokio::sync::Notify::new()),
         restart_requested: std::sync::atomic::AtomicBool::new(false),
         restart_argv: vec!["openfang".to_string(), "start".to_string()],
+        clawhub_cache: dashmap::DashMap::new(),
     });
 
     let api_key_state = state.kernel.config.api_key.clone();

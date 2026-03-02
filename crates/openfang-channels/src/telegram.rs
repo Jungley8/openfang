@@ -130,6 +130,26 @@ impl ChannelAdapter for TelegramAdapter {
         let bot_name = self.validate_token().await?;
         info!("Telegram bot @{bot_name} connected");
 
+        // Clear any existing webhook to avoid 409 Conflict during getUpdates polling.
+        // This is necessary when the daemon restarts — the old polling session may
+        // still be active on Telegram's side for ~30s, causing 409 errors.
+        {
+            let delete_url = format!(
+                "https://api.telegram.org/bot{}/deleteWebhook",
+                self.token.as_str()
+            );
+            match self
+                .client
+                .post(&delete_url)
+                .json(&serde_json::json!({"drop_pending_updates": true}))
+                .send()
+                .await
+            {
+                Ok(_) => info!("Telegram: cleared webhook, polling mode active"),
+                Err(e) => tracing::warn!("Telegram: deleteWebhook failed (non-fatal): {e}"),
+            }
+        }
+
         let (tx, rx) = mpsc::channel::<ChannelMessage>(256);
 
         let token = self.token.clone();
