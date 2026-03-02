@@ -6334,14 +6334,25 @@ pub async fn test_provider(
     State(state): State<Arc<AppState>>,
     Path(name): Path<String>,
 ) -> impl IntoResponse {
-    let (env_var, base_url, key_required) = {
+    let (env_var, base_url, key_required, default_model) = {
         let catalog = state
             .kernel
             .model_catalog
             .read()
             .unwrap_or_else(|e| e.into_inner());
         match catalog.get_provider(&name) {
-            Some(p) => (p.api_key_env.clone(), p.base_url.clone(), p.key_required),
+            Some(p) => {
+                // Find a default model for this provider to use in the test request
+                let model_id = catalog
+                    .default_model_for_provider(&name)
+                    .unwrap_or_default();
+                (
+                    p.api_key_env.clone(),
+                    p.base_url.clone(),
+                    p.key_required,
+                    model_id,
+                )
+            }
             None => {
                 return (
                     StatusCode::NOT_FOUND,
@@ -6376,7 +6387,7 @@ pub async fn test_provider(
         Ok(driver) => {
             // Send a minimal completion request to test connectivity
             let test_req = openfang_runtime::llm_driver::CompletionRequest {
-                model: String::new(), // Driver will use default
+                model: default_model.clone(),
                 messages: vec![openfang_types::message::Message::user("Hi")],
                 tools: vec![],
                 max_tokens: 1,

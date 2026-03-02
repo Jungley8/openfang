@@ -1002,6 +1002,7 @@ impl OpenFangKernel {
         if manifest.exec_policy.is_none() {
             manifest.exec_policy = Some(self.config.exec_policy.clone());
         }
+        info!(agent = %name, id = %agent_id, exec_mode = ?manifest.exec_policy.as_ref().map(|p| &p.mode), "Agent exec_policy resolved");
 
         // Overlay kernel default_model onto agent if no custom key/url is set.
         // This ensures agents respect the user's configured provider from `openfang init`.
@@ -2873,6 +2874,18 @@ impl OpenFangKernel {
             if let Err(e) = self.kill_agent(agent_id) {
                 warn!(agent = %agent_id, error = %e, "Failed to kill hand agent (may already be dead)");
             }
+        } else {
+            // Fallback: if agent_id was never set (incomplete activation), search by hand tag
+            let hand_tag = format!("hand:{}", instance.hand_id);
+            for entry in self.registry.list() {
+                if entry.tags.contains(&hand_tag) {
+                    if let Err(e) = self.kill_agent(entry.id) {
+                        warn!(agent = %entry.id, error = %e, "Failed to kill orphaned hand agent");
+                    } else {
+                        info!(agent_id = %entry.id, hand_id = %instance.hand_id, "Cleaned up orphaned hand agent");
+                    }
+                }
+            }
         }
         Ok(())
     }
@@ -4104,6 +4117,18 @@ impl OpenFangKernel {
         }
         if !tool_blocklist.is_empty() {
             all_tools.retain(|t| !tool_blocklist.iter().any(|b| b == &t.name));
+        }
+
+        // Remove shell_exec from tool list if exec_policy won't allow it,
+        // so the LLM doesn't try to call a tool that will be blocked.
+        let exec_blocks_shell = entry.as_ref().is_some_and(|e| {
+            e.manifest
+                .exec_policy
+                .as_ref()
+                .is_some_and(|p| p.mode == openfang_types::config::ExecSecurityMode::Deny)
+        });
+        if exec_blocks_shell {
+            all_tools.retain(|t| t.name != "shell_exec");
         }
 
         let caps = self.capabilities.list(agent_id);

@@ -2462,7 +2462,7 @@ args = ["-y", "@modelcontextprotocol/server-filesystem", "/path"]</pre>
                         <span style="font-size:1.4rem" x-text="getHandIcon(inst.hand_id)"></span>
                         <div class="card-header" style="margin:0" x-text="inst.agent_name || inst.hand_id"></div>
                       </div>
-                      <span class="badge" :class="inst.status === 'Active' ? 'badge-success' : inst.status === 'Paused' ? 'badge-dim' : 'badge-info'" x-text="inst.status"></span>
+                      <span class="badge" :class="{ 'badge-success': inst.status === 'Active', 'badge-dim': inst.status === 'Paused', 'badge-warn': inst.status && inst.status.startsWith('Error'), 'badge-info': inst.status === 'Inactive' }" x-text="inst.status"></span>
                     </div>
                     <div class="text-xs text-dim" x-text="'Activated: ' + new Date(inst.activated_at).toLocaleString()"></div>
                     <div class="text-xs text-dim" x-show="inst.agent_id" x-text="'Agent: ' + inst.agent_id"></div>
@@ -2488,6 +2488,9 @@ args = ["-y", "@modelcontextprotocol/server-filesystem", "/path"]</pre>
                       </template>
                       <template x-if="inst.status === 'Paused'">
                         <button class="btn btn-ghost btn-sm" @click="resumeHand(inst)">Resume</button>
+                      </template>
+                      <template x-if="inst.status && inst.status.startsWith('Error')">
+                        <span class="text-xs text-dim">Error — deactivate and reactivate</span>
                       </template>
                       <button class="btn btn-danger btn-sm" @click="deactivate(inst)">Deactivate</button>
                     </div>
