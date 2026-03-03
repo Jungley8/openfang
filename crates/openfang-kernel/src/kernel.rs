@@ -38,7 +38,7 @@ use openfang_types::tool::ToolDefinition;
 use async_trait::async_trait;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, OnceLock, Weak};
-use tracing::{debug, info, warn};
+use tracing::{debug, info, warn, Instrument};
 
 /// The main OpenFang kernel — coordinates all subsystems.
 /// Stub LLM driver used when no providers are configured.
@@ -1301,20 +1301,22 @@ impl OpenFangKernel {
             session_id = %entry.session_id,
             agent_id = %agent_id,
         );
-        // Enter and immediately drop so we do not hold EnteredSpan (!Send) across await.
-        drop(session_span.enter());
 
         // Dispatch based on module type
-        let result = if entry.manifest.module.starts_with("wasm:") {
-            self.execute_wasm_agent(&entry, message, kernel_handle)
-                .await
-        } else if entry.manifest.module.starts_with("python:") {
-            self.execute_python_agent(&entry, agent_id, message).await
-        } else {
-            // Default: LLM agent loop (builtin:chat or any unrecognized module)
-            self.execute_llm_agent(&entry, agent_id, message, kernel_handle)
-                .await
-        };
+        let result = async {
+            if entry.manifest.module.starts_with("wasm:") {
+                self.execute_wasm_agent(&entry, message, kernel_handle)
+                    .await
+            } else if entry.manifest.module.starts_with("python:") {
+                self.execute_python_agent(&entry, agent_id, message).await
+            } else {
+                // Default: LLM agent loop (builtin:chat or any unrecognized module)
+                self.execute_llm_agent(&entry, agent_id, message, kernel_handle)
+                    .await
+            }
+        }
+        .instrument(session_span.clone())
+        .await;
 
         match result {
             Ok(result) => {
@@ -3518,68 +3520,88 @@ impl OpenFangKernel {
                         let agent_id = job.agent_id;
                         let job_name = job.name.clone();
 
-                        match &job.action {
-                            openfang_types::scheduler::CronAction::SystemEvent { text } => {
-                                tracing::debug!(job = %job_name, "Cron: firing system event");
-                                let payload_bytes = serde_json::to_vec(&serde_json::json!({
-                                    "type": format!("cron.{}", job_name),
-                                    "text": text,
-                                    "job_id": job_id.to_string(),
-                                }))
-                                .unwrap_or_default();
-                                let event = Event::new(
-                                    AgentId::new(), // system-originated
-                                    EventTarget::Broadcast,
-                                    EventPayload::Custom(payload_bytes),
-                                );
-                                kernel.publish_event(event).await;
-                                kernel.cron_scheduler.record_success(job_id);
-                            }
-                            openfang_types::scheduler::CronAction::AgentTurn {
-                                message,
-                                timeout_secs,
-                                ..
-                            } => {
-                                tracing::debug!(job = %job_name, agent = %agent_id, "Cron: firing agent turn");
-                                let timeout_s = timeout_secs.unwrap_or(120);
-                                let timeout = std::time::Duration::from_secs(timeout_s);
-                                let delivery = job.delivery.clone();
-                                let kh: std::sync::Arc<
-                                    dyn openfang_runtime::kernel_handle::KernelHandle,
-                                > = kernel.clone();
-                                match tokio::time::timeout(
-                                    timeout,
-                                    kernel.send_message_with_handle(agent_id, message, Some(kh)),
-                                )
-                                .await
-                                {
-                                    Ok(Ok(result)) => {
-                                        tracing::info!(job = %job_name, "Cron job completed successfully");
-                                        kernel.cron_scheduler.record_success(job_id);
-                                        // Deliver response to configured channel
-                                        cron_deliver_response(
-                                            &kernel,
-                                            agent_id,
-                                            &result.response,
-                                            &delivery,
-                                        )
-                                        .await;
-                                    }
-                                    Ok(Err(e)) => {
-                                        let err_msg = format!("{e}");
-                                        tracing::warn!(job = %job_name, error = %err_msg, "Cron job failed");
-                                        kernel.cron_scheduler.record_failure(job_id, &err_msg);
-                                    }
-                                    Err(_) => {
-                                        tracing::warn!(job = %job_name, timeout_s, "Cron job timed out");
-                                        kernel.cron_scheduler.record_failure(
-                                            job_id,
-                                            &format!("timed out after {timeout_s}s"),
+                        let job_span = tracing::info_span!(
+                            "cron_job",
+                            job_id = %job_id,
+                            job_name = %job_name,
+                            agent_id = %agent_id,
+                        );
+
+                        let kernel_clone = kernel.clone();
+                        tokio::spawn(
+                            async move {
+                                match &job.action {
+                                    openfang_types::scheduler::CronAction::SystemEvent { text } => {
+                                        tracing::debug!("Cron: firing system event");
+                                        let payload_bytes =
+                                            serde_json::to_vec(&serde_json::json!({
+                                                "type": format!("cron.{}", job_name),
+                                                "text": text,
+                                                "job_id": job_id.to_string(),
+                                            }))
+                                            .unwrap_or_default();
+                                        let event = Event::new(
+                                            AgentId::new(), // system-originated
+                                            EventTarget::Broadcast,
+                                            EventPayload::Custom(payload_bytes),
                                         );
+                                        kernel_clone.publish_event(event).await;
+                                        kernel_clone.cron_scheduler.record_success(job_id);
+                                    }
+                                    openfang_types::scheduler::CronAction::AgentTurn {
+                                        message,
+                                        timeout_secs,
+                                        ..
+                                    } => {
+                                        tracing::debug!("Cron: firing agent turn");
+                                        let timeout_s = timeout_secs.unwrap_or(120);
+                                        let timeout = std::time::Duration::from_secs(timeout_s);
+                                        let delivery = job.delivery.clone();
+                                        let kh: std::sync::Arc<
+                                            dyn openfang_runtime::kernel_handle::KernelHandle,
+                                        > = kernel_clone.clone();
+                                        match tokio::time::timeout(
+                                            timeout,
+                                            kernel_clone.send_message_with_handle(
+                                                agent_id,
+                                                message,
+                                                Some(kh),
+                                            ),
+                                        )
+                                        .await
+                                        {
+                                            Ok(Ok(result)) => {
+                                                tracing::info!("Cron job completed successfully");
+                                                kernel_clone.cron_scheduler.record_success(job_id);
+                                                // Deliver response to configured channel
+                                                cron_deliver_response(
+                                                    &kernel_clone,
+                                                    agent_id,
+                                                    &result.response,
+                                                    &delivery,
+                                                )
+                                                .await;
+                                            }
+                                            Ok(Err(e)) => {
+                                                let err_msg = format!("{e}");
+                                                tracing::warn!(error = %err_msg, "Cron job failed");
+                                                kernel_clone
+                                                    .cron_scheduler
+                                                    .record_failure(job_id, &err_msg);
+                                            }
+                                            Err(_) => {
+                                                tracing::warn!(timeout_s, "Cron job timed out");
+                                                kernel_clone.cron_scheduler.record_failure(
+                                                    job_id,
+                                                    &format!("timed out after {timeout_s}s"),
+                                                );
+                                            }
+                                        }
                                     }
                                 }
                             }
-                        }
+                            .instrument(job_span),
+                        );
                     }
 
                     // Persist every ~5 minutes (20 ticks * 15s)

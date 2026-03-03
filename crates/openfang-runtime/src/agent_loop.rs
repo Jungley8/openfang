@@ -137,62 +137,63 @@ pub async fn run_agent_loop(
         agent_type = %manifest.name,
         model_name = %manifest.model.model,
     );
-    drop(agent_span.enter()); // do not hold EnteredSpan (!Send) across await
-    info!(agent = %manifest.name, "Starting agent loop");
 
-    // Extract hand-allowed env vars from manifest metadata (set by kernel for hand settings)
-    let hand_allowed_env: Vec<String> = manifest
-        .metadata
-        .get("hand_allowed_env")
-        .and_then(|v| serde_json::from_value(v.clone()).ok())
-        .unwrap_or_default();
+    async {
+        info!(agent = %manifest.name, "Starting agent loop");
 
-    // Recall relevant memories — prefer vector similarity search when embedding driver is available
-    let memories = if let Some(emb) = embedding_driver {
-        match emb.embed_one(user_message).await {
-            Ok(query_vec) => {
-                debug!("Using vector recall (dims={})", query_vec.len());
-                memory
-                    .recall_with_embedding_async(
-                        user_message,
-                        5,
-                        Some(MemoryFilter {
-                            agent_id: Some(session.agent_id),
-                            ..Default::default()
-                        }),
-                        Some(&query_vec),
-                    )
-                    .await
-                    .unwrap_or_default()
+        // Extract hand-allowed env vars from manifest metadata (set by kernel for hand settings)
+        let hand_allowed_env: Vec<String> = manifest
+            .metadata
+            .get("hand_allowed_env")
+            .and_then(|v| serde_json::from_value(v.clone()).ok())
+            .unwrap_or_default();
+
+        // Recall relevant memories — prefer vector similarity search when embedding driver is available
+        let memories = if let Some(emb) = embedding_driver {
+            match emb.embed_one(user_message).await {
+                Ok(query_vec) => {
+                    debug!("Using vector recall (dims={})", query_vec.len());
+                    memory
+                        .recall_with_embedding_async(
+                            user_message,
+                            5,
+                            Some(MemoryFilter {
+                                agent_id: Some(session.agent_id),
+                                ..Default::default()
+                            }),
+                            Some(&query_vec),
+                        )
+                        .await
+                        .unwrap_or_default()
+                }
+                Err(e) => {
+                    warn!("Embedding recall failed, falling back to text search: {e}");
+                    memory
+                        .recall(
+                            user_message,
+                            5,
+                            Some(MemoryFilter {
+                                agent_id: Some(session.agent_id),
+                                ..Default::default()
+                            }),
+                        )
+                        .await
+                        .unwrap_or_default()
+                }
             }
-            Err(e) => {
-                warn!("Embedding recall failed, falling back to text search: {e}");
-                memory
-                    .recall(
-                        user_message,
-                        5,
-                        Some(MemoryFilter {
-                            agent_id: Some(session.agent_id),
-                            ..Default::default()
-                        }),
-                    )
-                    .await
-                    .unwrap_or_default()
-            }
-        }
-    } else {
-        memory
-            .recall(
-                user_message,
-                5,
-                Some(MemoryFilter {
-                    agent_id: Some(session.agent_id),
-                    ..Default::default()
-                }),
-            )
-            .await
-            .unwrap_or_default()
-    };
+        } else {
+            memory
+                .recall(
+                    user_message,
+                    5,
+                    Some(MemoryFilter {
+                        agent_id: Some(session.agent_id),
+                        ..Default::default()
+                    }),
+                )
+                .await
+                .unwrap_or_default()
+        };
 
     // Fire BeforePromptBuild hook
     let agent_id_str = session.agent_id.0.to_string();
@@ -797,6 +798,9 @@ pub async fn run_agent_loop(
     }
 
     Err(OpenFangError::MaxIterationsExceeded(max_iterations))
+    }
+    .instrument(agent_span)
+    .await
 }
 
 /// Call an LLM driver with automatic retry on rate-limit and overload errors.
@@ -1051,62 +1055,63 @@ pub async fn run_agent_loop_streaming(
         agent_type = %manifest.name,
         model_name = %manifest.model.model,
     );
-    drop(agent_span.enter());
-    info!(agent = %manifest.name, "Starting streaming agent loop");
 
-    // Extract hand-allowed env vars from manifest metadata (set by kernel for hand settings)
-    let hand_allowed_env: Vec<String> = manifest
-        .metadata
-        .get("hand_allowed_env")
-        .and_then(|v| serde_json::from_value(v.clone()).ok())
-        .unwrap_or_default();
+    async {
+        info!(agent = %manifest.name, "Starting streaming agent loop");
 
-    // Recall relevant memories — prefer vector similarity search when embedding driver is available
-    let memories = if let Some(emb) = embedding_driver {
-        match emb.embed_one(user_message).await {
-            Ok(query_vec) => {
-                debug!("Using vector recall (streaming, dims={})", query_vec.len());
-                memory
-                    .recall_with_embedding_async(
-                        user_message,
-                        5,
-                        Some(MemoryFilter {
-                            agent_id: Some(session.agent_id),
-                            ..Default::default()
-                        }),
-                        Some(&query_vec),
-                    )
-                    .await
-                    .unwrap_or_default()
+        // Extract hand-allowed env vars from manifest metadata (set by kernel for hand settings)
+        let hand_allowed_env: Vec<String> = manifest
+            .metadata
+            .get("hand_allowed_env")
+            .and_then(|v| serde_json::from_value(v.clone()).ok())
+            .unwrap_or_default();
+
+        // Recall relevant memories — prefer vector similarity search when embedding driver is available
+        let memories = if let Some(emb) = embedding_driver {
+            match emb.embed_one(user_message).await {
+                Ok(query_vec) => {
+                    debug!("Using vector recall (streaming, dims={})", query_vec.len());
+                    memory
+                        .recall_with_embedding_async(
+                            user_message,
+                            5,
+                            Some(MemoryFilter {
+                                agent_id: Some(session.agent_id),
+                                ..Default::default()
+                            }),
+                            Some(&query_vec),
+                        )
+                        .await
+                        .unwrap_or_default()
+                }
+                Err(e) => {
+                    warn!("Embedding recall failed (streaming), falling back to text search: {e}");
+                    memory
+                        .recall(
+                            user_message,
+                            5,
+                            Some(MemoryFilter {
+                                agent_id: Some(session.agent_id),
+                                ..Default::default()
+                            }),
+                        )
+                        .await
+                        .unwrap_or_default()
+                }
             }
-            Err(e) => {
-                warn!("Embedding recall failed (streaming), falling back to text search: {e}");
-                memory
-                    .recall(
-                        user_message,
-                        5,
-                        Some(MemoryFilter {
-                            agent_id: Some(session.agent_id),
-                            ..Default::default()
-                        }),
-                    )
-                    .await
-                    .unwrap_or_default()
-            }
-        }
-    } else {
-        memory
-            .recall(
-                user_message,
-                5,
-                Some(MemoryFilter {
-                    agent_id: Some(session.agent_id),
-                    ..Default::default()
-                }),
-            )
-            .await
-            .unwrap_or_default()
-    };
+        } else {
+            memory
+                .recall(
+                    user_message,
+                    5,
+                    Some(MemoryFilter {
+                        agent_id: Some(session.agent_id),
+                        ..Default::default()
+                    }),
+                )
+                .await
+                .unwrap_or_default()
+        };
 
     // Fire BeforePromptBuild hook
     let agent_id_str = session.agent_id.0.to_string();
@@ -1730,6 +1735,9 @@ pub async fn run_agent_loop_streaming(
     }
 
     Err(OpenFangError::MaxIterationsExceeded(max_iterations))
+    }
+    .instrument(agent_span)
+    .await
 }
 
 /// Recover tool calls that LLMs (Groq/Llama, DeepSeek) output as plain text

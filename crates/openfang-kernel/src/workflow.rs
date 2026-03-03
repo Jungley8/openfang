@@ -16,7 +16,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::RwLock;
-use tracing::{debug, info, warn};
+use tracing::{debug, info, warn, Instrument};
 use uuid::Uuid;
 
 /// Unique identifier for a workflow definition.
@@ -341,72 +341,85 @@ impl WorkflowEngine {
         F: Fn(AgentId, String) -> Fut,
         Fut: std::future::Future<Output = Result<(String, u64, u64), String>>,
     {
-        let timeout_dur = std::time::Duration::from_secs(step.timeout_secs);
+        let step_span = tracing::info_span!(
+            "workflow_step",
+            step_name = %step.name,
+            agent_id = %agent_id,
+        );
 
-        match &step.error_mode {
-            ErrorMode::Fail => {
-                let result = tokio::time::timeout(timeout_dur, send_message(agent_id, prompt))
-                    .await
-                    .map_err(|_| {
-                        format!(
-                            "Step '{}' timed out after {}s",
-                            step.name, step.timeout_secs
-                        )
-                    })?
-                    .map_err(|e| format!("Step '{}' failed: {}", step.name, e))?;
-                Ok(Some(result))
-            }
-            ErrorMode::Skip => {
-                match tokio::time::timeout(timeout_dur, send_message(agent_id, prompt)).await {
-                    Ok(Ok(result)) => Ok(Some(result)),
-                    Ok(Err(e)) => {
-                        warn!("Step '{}' failed (skipping): {e}", step.name);
-                        Ok(None)
-                    }
-                    Err(_) => {
-                        warn!(
-                            "Step '{}' timed out (skipping) after {}s",
-                            step.name, step.timeout_secs
-                        );
-                        Ok(None)
-                    }
-                }
-            }
-            ErrorMode::Retry { max_retries } => {
-                let mut last_err = String::new();
-                for attempt in 0..=*max_retries {
-                    match tokio::time::timeout(timeout_dur, send_message(agent_id, prompt.clone()))
+        async {
+            let timeout_dur = std::time::Duration::from_secs(step.timeout_secs);
+
+            match &step.error_mode {
+                ErrorMode::Fail => {
+                    let result = tokio::time::timeout(timeout_dur, send_message(agent_id, prompt))
                         .await
-                    {
-                        Ok(Ok(result)) => return Ok(Some(result)),
+                        .map_err(|_| {
+                            format!(
+                                "Step '{}' timed out after {}s",
+                                step.name, step.timeout_secs
+                            )
+                        })?
+                        .map_err(|e| format!("Step '{}' failed: {}", step.name, e))?;
+                    Ok(Some(result))
+                }
+                ErrorMode::Skip => {
+                    match tokio::time::timeout(timeout_dur, send_message(agent_id, prompt)).await {
+                        Ok(Ok(result)) => Ok(Some(result)),
                         Ok(Err(e)) => {
-                            last_err = e.to_string();
-                            if attempt < *max_retries {
-                                warn!(
-                                    "Step '{}' attempt {} failed: {e}, retrying",
-                                    step.name,
-                                    attempt + 1
-                                );
-                            }
+                            warn!("Step '{}' failed (skipping): {e}", step.name);
+                            Ok(None)
                         }
                         Err(_) => {
-                            last_err = format!("timed out after {}s", step.timeout_secs);
-                            if attempt < *max_retries {
-                                warn!(
-                                    "Step '{}' attempt {} timed out, retrying",
-                                    step.name,
-                                    attempt + 1
-                                );
-                            }
+                            warn!(
+                                "Step '{}' timed out (skipping) after {}s",
+                                step.name, step.timeout_secs
+                            );
+                            Ok(None)
                         }
                     }
                 }
-                Err(format!(
-                    "Step '{}' failed after {} retries: {last_err}",
-                    step.name, max_retries
-                ))
+                ErrorMode::Retry { max_retries } => {
+                    let mut last_err = String::new();
+                    for attempt in 0..=*max_retries {
+                        match tokio::time::timeout(
+                            timeout_dur,
+                            send_message(agent_id, prompt.clone()),
+                        )
+                        .await
+                        {
+                            Ok(Ok(result)) => return Ok(Some(result)),
+                            Ok(Err(e)) => {
+                                last_err = e.to_string();
+                                if attempt < *max_retries {
+                                    warn!(
+                                        "Step '{}' attempt {} failed: {e}, retrying",
+                                        step.name,
+                                        attempt + 1
+                                    );
+                                }
+                            }
+                            Err(_) => {
+                                last_err = format!("timed out after {}s", step.timeout_secs);
+                                if attempt < *max_retries {
+                                    warn!(
+                                        "Step '{}' attempt {} timed out, retrying",
+                                        step.name,
+                                        attempt + 1
+                                    );
+                                }
+                            }
+                        }
+                    }
+                    Err(format!(
+                        "Step '{}' failed after {} retries: {last_err}",
+                        step.name, max_retries
+                    ))
+                }
             }
         }
+        .instrument(step_span)
+        .await
     }
 
     /// Execute a workflow run step-by-step.
@@ -440,14 +453,21 @@ impl WorkflowEngine {
             (workflow, run.input.clone())
         };
 
-        info!(
+        let workflow_span = tracing::info_span!(
+            "workflow_run",
             run_id = %run_id,
-            workflow = %workflow.name,
-            steps = workflow.steps.len(),
-            "Starting workflow execution"
+            workflow_name = %workflow.name,
         );
 
-        let mut current_input = input;
+        async {
+            info!(
+                run_id = %run_id,
+                workflow = %workflow.name,
+                steps = workflow.steps.len(),
+                "Starting workflow execution"
+            );
+
+            let mut current_input = input;
         let mut all_outputs: Vec<String> = Vec::new();
         let mut variables: HashMap<String, String> = HashMap::new();
         let mut i = 0;
@@ -776,6 +796,9 @@ impl WorkflowEngine {
 
         info!(run_id = %run_id, "Workflow completed successfully");
         Ok(final_output)
+        }
+        .instrument(workflow_span)
+        .await
     }
 }
 

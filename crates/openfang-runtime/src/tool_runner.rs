@@ -168,37 +168,39 @@ pub async fn execute_tool(
         }
     }
 
-    let _tool_span = tracing::info_span!("tool", tool_name = %tool_name);
-    debug!(tool_name, "Executing tool");
-    let result = match tool_name {
-        // Filesystem tools
-        "file_read" => tool_file_read(input, workspace_root).await,
-        "file_write" => tool_file_write(input, workspace_root).await,
-        "file_list" => tool_file_list(input, workspace_root).await,
-        "apply_patch" => tool_apply_patch(input, workspace_root).await,
+    let tool_span = tracing::info_span!("tool", tool_name = %tool_name);
 
-        // Web tools (upgraded: multi-provider search, SSRF-protected fetch)
-        "web_fetch" => {
-            // Taint check: block URLs containing secrets/PII from being exfiltrated
-            let url = input["url"].as_str().unwrap_or("");
-            if let Some(violation) = check_taint_net_fetch(url) {
-                return ToolResult {
-                    tool_use_id: tool_use_id.to_string(),
-                    content: format!("Taint violation: {violation}"),
-                    is_error: true,
-                };
+    async {
+        debug!(tool_name, "Executing tool");
+        let result = match tool_name {
+            // Filesystem tools
+            "file_read" => tool_file_read(input, workspace_root).await,
+            "file_write" => tool_file_write(input, workspace_root).await,
+            "file_list" => tool_file_list(input, workspace_root).await,
+            "apply_patch" => tool_apply_patch(input, workspace_root).await,
+
+            // Web tools (upgraded: multi-provider search, SSRF-protected fetch)
+            "web_fetch" => {
+                // Taint check: block URLs containing secrets/PII from being exfiltrated
+                let url = input["url"].as_str().unwrap_or("");
+                if let Some(violation) = check_taint_net_fetch(url) {
+                    return ToolResult {
+                        tool_use_id: tool_use_id.to_string(),
+                        content: format!("Taint violation: {violation}"),
+                        is_error: true,
+                    };
+                }
+                let method = input["method"].as_str().unwrap_or("GET");
+                let headers = input.get("headers").and_then(|v| v.as_object());
+                let body = input["body"].as_str();
+                if let Some(ctx) = web_ctx {
+                    ctx.fetch
+                        .fetch_with_options(url, method, headers, body)
+                        .await
+                } else {
+                    tool_web_fetch_legacy(input).await
+                }
             }
-            let method = input["method"].as_str().unwrap_or("GET");
-            let headers = input.get("headers").and_then(|v| v.as_object());
-            let body = input["body"].as_str();
-            if let Some(ctx) = web_ctx {
-                ctx.fetch
-                    .fetch_with_options(url, method, headers, body)
-                    .await
-            } else {
-                tool_web_fetch_legacy(input).await
-            }
-        }
         "web_search" => {
             if let Some(ctx) = web_ctx {
                 let query = input["query"].as_str().unwrap_or("");
@@ -487,18 +489,21 @@ pub async fn execute_tool(
         }
     };
 
-    match result {
-        Ok(content) => ToolResult {
-            tool_use_id: tool_use_id.to_string(),
-            content,
-            is_error: false,
-        },
-        Err(err) => ToolResult {
-            tool_use_id: tool_use_id.to_string(),
-            content: format!("Error: {err}"),
-            is_error: true,
-        },
+        match result {
+            Ok(content) => ToolResult {
+                tool_use_id: tool_use_id.to_string(),
+                content,
+                is_error: false,
+            },
+            Err(err) => ToolResult {
+                tool_use_id: tool_use_id.to_string(),
+                content: format!("Error: {err}"),
+                is_error: true,
+            },
+        }
     }
+    .instrument(tool_span)
+    .await
 }
 
 /// Get definitions for all built-in tools.
