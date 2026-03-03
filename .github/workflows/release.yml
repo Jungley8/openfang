@@ -4,6 +4,7 @@ on:
   push:
     tags:
       - "v*"
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -13,11 +14,93 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
+  # ── Changelog (git-cliff) → Release body ──────────────────────────────────
+  changelog:
+    name: Changelog
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Generate changelog
+        uses: orhun/git-cliff-action@v4
+        with:
+          args: --latest --strip header
+        env:
+          OUTPUT: release-notes.md
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-notes
+          path: release-notes.md
+
+  # ── 更新仓库内 CHANGELOG.md 并 push 回 default branch ─────────────────────
+  changelog-file:
+    name: Update CHANGELOG.md
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Generate a changelog
+        uses: orhun/git-cliff-action@v4
+        with:
+          config: cliff.toml
+          args: --verbose --prepend
+        env:
+          OUTPUT: CHANGELOG.md
+          GITHUB_REPO: ${{ github.repository }}
+  # ── Create Release with changelog body (desktop/cli upload to this) ────────
+  release:
+    name: Create Release
+    needs: [changelog]
+    runs-on: ubuntu-latest
+    outputs:
+      release_id: ${{ steps.create.outputs.id }}
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: release-notes
+      - name: Build release body
+        run: |
+          cat >> release-notes.md << 'BODY'
+
+          ## Installation
+
+          **Desktop App** — Download the installer for your platform below.
+
+          **CLI (Linux/macOS):**
+          ```bash
+          curl -sSf https://openfang.sh | sh
+          ```
+
+          **Docker:**
+          ```bash
+          docker pull ghcr.io/jungley8/octarq:latest
+          ```
+
+          **Coming from OpenClaw?**
+          ```bash
+          openfang migrate --from openclaw
+          ```
+          BODY
+      - name: Create GitHub Release
+        id: create
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: "OpenFang ${{ github.ref_name }}"
+          body_path: release-notes.md
+          draft: false
+          generate_release_notes: false
+
   # ── Tauri Desktop App (Windows + macOS + Linux) ───────────────────────────
   # Produces: .msi, .exe (Windows) | .dmg, .app (macOS) | .AppImage, .deb (Linux)
   # Also generates and uploads latest.json (the auto-updater manifest)
   desktop:
     name: Desktop / ${{ matrix.platform.name }}
+    needs: [release]
     strategy:
       fail-fast: false
       matrix:
@@ -103,31 +186,7 @@ jobs:
           APPLE_PASSWORD: ${{ secrets.MAC_NOTARIZE_PASSWORD }}
           APPLE_TEAM_ID: ${{ secrets.MAC_NOTARIZE_TEAM_ID }}
         with:
-          tagName: ${{ github.ref_name }}
-          releaseName: "OpenFang ${{ github.ref_name }}"
-          releaseBody: |
-            ## What's New
-
-            See the [CHANGELOG](https://github.com//Jungley8/Octarq/blob/main/CHANGELOG.md) for full details.
-
-            ## Installation
-
-            **Desktop App** — Download the installer for your platform below.
-
-            **CLI (Linux/macOS)**:
-            ```bash
-            curl -sSf https://openfang.sh | sh
-            ```
-
-            **Docker**:
-            ```bash
-            docker pull ghcr.io/jungley8/octarq:latest
-            ```
-
-            **Coming from OpenClaw?**
-            ```bash
-            openfang migrate --from openclaw
-            ```
+          releaseId: ${{ needs.release.outputs.release_id }}
           releaseDraft: false
           prerelease: false
           includeUpdaterJson: true
@@ -137,6 +196,7 @@ jobs:
   # ── CLI Binary (5 platforms) ──────────────────────────────────────────────
   cli:
     name: CLI / ${{ matrix.target }}
+    needs: [release]
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -204,6 +264,7 @@ jobs:
       - name: Upload to GitHub Release
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ github.ref_name }}
           files: openfang-${{ matrix.target }}.*
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
