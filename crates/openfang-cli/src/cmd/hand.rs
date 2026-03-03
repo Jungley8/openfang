@@ -1,7 +1,7 @@
 //! Hand commands: list, activate, deactivate, info.
 
-use crate::{daemon_client, daemon_json};
 use crate::daemon::require_daemon;
+use crate::{daemon_client, daemon_json};
 
 pub fn cmd_hand_list() {
     let base = require_daemon("hand list");
@@ -24,10 +24,7 @@ pub fn cmd_hand_list() {
             println!("No hands available.");
             return;
         }
-        println!(
-            "{:<14} {:<20} {:<10} DESCRIPTION",
-            "ID", "NAME", "CATEGORY"
-        );
+        println!("{:<14} {:<20} {:<10} DESCRIPTION", "ID", "NAME", "CATEGORY");
         println!("{}", "-".repeat(72));
         for h in arr {
             println!(
@@ -35,7 +32,12 @@ pub fn cmd_hand_list() {
                 h["id"].as_str().unwrap_or("?"),
                 h["name"].as_str().unwrap_or("?"),
                 h["category"].as_str().unwrap_or("?"),
-                h["description"].as_str().unwrap_or("").chars().take(40).collect::<String>(),
+                h["description"]
+                    .as_str()
+                    .unwrap_or("")
+                    .chars()
+                    .take(40)
+                    .collect::<String>(),
             );
         }
         println!("\nUse `openfang hand activate <id>` to activate a hand.");
@@ -56,10 +58,7 @@ pub fn cmd_hand_active() {
         println!("No active hands.");
         return;
     }
-    println!(
-        "{:<38} {:<14} {:<10} AGENT",
-        "INSTANCE", "HAND", "STATUS"
-    );
+    println!("{:<38} {:<14} {:<10} AGENT", "INSTANCE", "HAND", "STATUS");
     println!("{}", "-".repeat(72));
     for i in &arr {
         println!(
@@ -145,10 +144,7 @@ pub fn cmd_hand_info(id: &str) {
     let client = daemon_client();
     let body = daemon_json(client.get(format!("{base}/api/hands/{id}")).send());
     if body.get("error").is_some() {
-        eprintln!(
-            "Hand not found: {}",
-            body["error"].as_str().unwrap_or(id)
-        );
+        eprintln!("Hand not found: {}", body["error"].as_str().unwrap_or(id));
         std::process::exit(1);
     }
     println!(
@@ -160,12 +156,13 @@ pub fn cmd_hand_info(id: &str) {
 pub fn cmd_hand_check_deps(id: &str) {
     let base = require_daemon("hand check-deps");
     let client = daemon_client();
-    let body = daemon_json(client.get(format!("{base}/api/hands/{id}/check-deps")).send());
+    let body = daemon_json(
+        client
+            .get(format!("{base}/api/hands/{id}/check-deps"))
+            .send(),
+    );
     if body.get("error").is_some() {
-        eprintln!(
-            "{}",
-            body["error"].as_str().unwrap_or("Unknown error")
-        );
+        eprintln!("{}", body["error"].as_str().unwrap_or("Unknown error"));
         std::process::exit(1);
     }
     println!(
@@ -177,12 +174,13 @@ pub fn cmd_hand_check_deps(id: &str) {
 pub fn cmd_hand_install_deps(id: &str) {
     let base = require_daemon("hand install-deps");
     let client = daemon_client();
-    let body = daemon_json(client.post(format!("{base}/api/hands/{id}/install-deps")).send());
+    let body = daemon_json(
+        client
+            .post(format!("{base}/api/hands/{id}/install-deps"))
+            .send(),
+    );
     if body.get("error").is_some() {
-        eprintln!(
-            "{}",
-            body["error"].as_str().unwrap_or("Unknown error")
-        );
+        eprintln!("{}", body["error"].as_str().unwrap_or("Unknown error"));
         std::process::exit(1);
     }
     println!(
@@ -196,10 +194,7 @@ pub fn cmd_hand_pause(id: &str) {
     let client = daemon_client();
     let body = daemon_json(client.post(format!("{base}/api/hands/{id}/pause")).send());
     if body.get("error").is_some() {
-        eprintln!(
-            "{}",
-            body["error"].as_str().unwrap_or("Unknown error")
-        );
+        eprintln!("{}", body["error"].as_str().unwrap_or("Unknown error"));
         std::process::exit(1);
     }
     crate::ui::success("Hand paused.");
@@ -210,10 +205,7 @@ pub fn cmd_hand_resume(id: &str) {
     let client = daemon_client();
     let body = daemon_json(client.post(format!("{base}/api/hands/{id}/resume")).send());
     if body.get("error").is_some() {
-        eprintln!(
-            "{}",
-            body["error"].as_str().unwrap_or("Unknown error")
-        );
+        eprintln!("{}", body["error"].as_str().unwrap_or("Unknown error"));
         std::process::exit(1);
     }
     crate::ui::success("Hand resumed.");

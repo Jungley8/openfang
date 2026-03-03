@@ -152,7 +152,8 @@ pub struct OpenFangKernel {
     pub channel_adapters:
         dashmap::DashMap<String, Arc<dyn openfang_channels::types::ChannelAdapter>>,
     /// Hot-reloadable default model override (set via config hot-reload, read at agent spawn).
-    pub default_model_override: std::sync::RwLock<Option<openfang_types::config::DefaultModelConfig>>,
+    pub default_model_override:
+        std::sync::RwLock<Option<openfang_types::config::DefaultModelConfig>>,
     /// Weak self-reference for trigger dispatch (set after Arc wrapping).
     self_handle: OnceLock<Weak<OpenFangKernel>>,
 }
@@ -554,11 +555,12 @@ impl OpenFangKernel {
         let driver_config = DriverConfig {
             provider: config.default_model.provider.clone(),
             api_key: std::env::var(&config.default_model.api_key_env).ok(),
-            base_url: config
-                .default_model
-                .base_url
-                .clone()
-                .or_else(|| config.provider_urls.get(&config.default_model.provider).cloned()),
+            base_url: config.default_model.base_url.clone().or_else(|| {
+                config
+                    .provider_urls
+                    .get(&config.default_model.provider)
+                    .cloned()
+            }),
         };
         // Primary driver failure is non-fatal: the dashboard should remain accessible
         // even if the LLM provider is misconfigured. Users can fix config via dashboard.
@@ -959,11 +961,16 @@ impl OpenFangKernel {
                                     Ok(disk_manifest) => {
                                         // Compare key fields to detect changes
                                         let changed = disk_manifest.name != entry.manifest.name
-                                            || disk_manifest.description != entry.manifest.description
-                                            || disk_manifest.model.system_prompt != entry.manifest.model.system_prompt
-                                            || disk_manifest.model.provider != entry.manifest.model.provider
-                                            || disk_manifest.model.model != entry.manifest.model.model
-                                            || disk_manifest.capabilities.tools != entry.manifest.capabilities.tools;
+                                            || disk_manifest.description
+                                                != entry.manifest.description
+                                            || disk_manifest.model.system_prompt
+                                                != entry.manifest.model.system_prompt
+                                            || disk_manifest.model.provider
+                                                != entry.manifest.model.provider
+                                            || disk_manifest.model.model
+                                                != entry.manifest.model.model
+                                            || disk_manifest.capabilities.tools
+                                                != entry.manifest.capabilities.tools;
                                         if changed {
                                             info!(
                                                 agent = %name,
@@ -1146,9 +1153,10 @@ impl OpenFangKernel {
         apply_budget_defaults(&self.config.budget, &mut manifest.resources);
 
         // Create workspace directory for the agent (name-based, so SOUL.md survives recreation)
-        let workspace_dir = manifest.workspace.clone().unwrap_or_else(|| {
-            self.config.effective_workspaces_dir().join(&name)
-        });
+        let workspace_dir = manifest
+            .workspace
+            .clone()
+            .unwrap_or_else(|| self.config.effective_workspaces_dir().join(&name));
         ensure_workspace(&workspace_dir)?;
         if manifest.generate_identity_files {
             generate_identity_files(&workspace_dir, &manifest);
@@ -1571,7 +1579,11 @@ impl OpenFangKernel {
                     None
                 },
                 peer_agents,
-                current_date: Some(chrono::Local::now().format("%A, %B %d, %Y (%Y-%m-%d %H:%M %Z)").to_string()),
+                current_date: Some(
+                    chrono::Local::now()
+                        .format("%A, %B %d, %Y (%Y-%m-%d %H:%M %Z)")
+                        .to_string(),
+                ),
             };
             manifest.model.system_prompt =
                 openfang_runtime::prompt_builder::build_system_prompt(&prompt_ctx);
@@ -2040,7 +2052,11 @@ impl OpenFangKernel {
                     None
                 },
                 peer_agents,
-                current_date: Some(chrono::Local::now().format("%A, %B %d, %Y (%Y-%m-%d %H:%M %Z)").to_string()),
+                current_date: Some(
+                    chrono::Local::now()
+                        .format("%A, %B %d, %Y (%Y-%m-%d %H:%M %Z)")
+                        .to_string(),
+                ),
             };
             manifest.model.system_prompt =
                 openfang_runtime::prompt_builder::build_system_prompt(&prompt_ctx);
@@ -3088,7 +3104,9 @@ impl OpenFangKernel {
         &self,
         new_config: &openfang_types::config::KernelConfig,
     ) -> Result<crate::config_reload::ReloadPlan, String> {
-        use crate::config_reload::{build_reload_plan, should_apply_hot, validate_config_for_reload};
+        use crate::config_reload::{
+            build_reload_plan, should_apply_hot, validate_config_for_reload,
+        };
 
         validate_config_for_reload(new_config)
             .map_err(|errs| format!("Validation failed: {}", errs.join("; ")))?;
@@ -3293,14 +3311,17 @@ impl OpenFangKernel {
     /// `Continuous`, `Periodic`, or `Proactive` schedules.
     pub fn start_background_agents(self: &Arc<Self>) {
         let agents = self.registry.list();
-        let mut bg_agents: Vec<(openfang_types::agent::AgentId, String, ScheduleMode)> =
-            Vec::new();
+        let mut bg_agents: Vec<(openfang_types::agent::AgentId, String, ScheduleMode)> = Vec::new();
 
         for entry in &agents {
             if matches!(entry.manifest.schedule, ScheduleMode::Reactive) {
                 continue;
             }
-            bg_agents.push((entry.id, entry.name.clone(), entry.manifest.schedule.clone()));
+            bg_agents.push((
+                entry.id,
+                entry.name.clone(),
+                entry.manifest.schedule.clone(),
+            ));
         }
 
         if !bg_agents.is_empty() {
@@ -3507,7 +3528,9 @@ impl OpenFangKernel {
                                 let timeout_s = timeout_secs.unwrap_or(120);
                                 let timeout = std::time::Duration::from_secs(timeout_s);
                                 let delivery = job.delivery.clone();
-                                let kh: std::sync::Arc<dyn openfang_runtime::kernel_handle::KernelHandle> = kernel.clone();
+                                let kh: std::sync::Arc<
+                                    dyn openfang_runtime::kernel_handle::KernelHandle,
+                                > = kernel.clone();
                                 match tokio::time::timeout(
                                     timeout,
                                     kernel.send_message_with_handle(agent_id, message, Some(kh)),
@@ -3878,14 +3901,18 @@ impl OpenFangKernel {
             let base_url = if has_custom_url {
                 manifest.model.base_url.clone()
             } else if agent_provider == default_provider {
-                self.config
-                    .default_model
-                    .base_url
-                    .clone()
-                    .or_else(|| self.config.provider_urls.get(agent_provider.as_str()).cloned())
+                self.config.default_model.base_url.clone().or_else(|| {
+                    self.config
+                        .provider_urls
+                        .get(agent_provider.as_str())
+                        .cloned()
+                })
             } else {
                 // Check provider_urls before falling back to hardcoded defaults
-                self.config.provider_urls.get(agent_provider.as_str()).cloned()
+                self.config
+                    .provider_urls
+                    .get(agent_provider.as_str())
+                    .cloned()
             };
 
             let driver_config = DriverConfig {
@@ -3902,8 +3929,10 @@ impl OpenFangKernel {
         // If fallback models are configured, wrap in FallbackDriver
         if !manifest.fallback_models.is_empty() {
             // Primary driver uses the agent's own model name (already set in request)
-            let mut chain: Vec<(std::sync::Arc<dyn openfang_runtime::llm_driver::LlmDriver>, String)> =
-                vec![(primary.clone(), String::new())];
+            let mut chain: Vec<(
+                std::sync::Arc<dyn openfang_runtime::llm_driver::LlmDriver>,
+                String,
+            )> = vec![(primary.clone(), String::new())];
             for fb in &manifest.fallback_models {
                 let config = DriverConfig {
                     provider: fb.provider.clone(),
@@ -4328,7 +4357,12 @@ impl OpenFangKernel {
         // Apply per-agent tool allowlist/blocklist (manifest-level filtering)
         let (tool_allowlist, tool_blocklist) = entry
             .as_ref()
-            .map(|e| (e.manifest.tool_allowlist.clone(), e.manifest.tool_blocklist.clone()))
+            .map(|e| {
+                (
+                    e.manifest.tool_allowlist.clone(),
+                    e.manifest.tool_blocklist.clone(),
+                )
+            })
             .unwrap_or_default();
 
         if !tool_allowlist.is_empty() {

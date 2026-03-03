@@ -975,7 +975,12 @@ pub fn cmd_cron_create(agent: &str, spec: &str, prompt: &str, name: Option<&str>
     if let Some(n) = name {
         payload["name"] = serde_json::json!(n);
     }
-    let body = daemon_json(client.post(format!("{base}/api/cron/jobs")).json(&payload).send());
+    let body = daemon_json(
+        client
+            .post(format!("{base}/api/cron/jobs"))
+            .json(&payload)
+            .send(),
+    );
     if let Some(id) = body["id"].as_str() {
         ui::success(&format!("Cron job created: {id}"));
     } else {

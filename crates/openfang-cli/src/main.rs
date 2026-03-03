@@ -340,9 +340,10 @@ fn main() {
             SystemCommands::Version { json } => cmd::system::cmd_system_version(json),
         },
         Some(Commands::Reset { confirm }) => cmd::config::cmd_reset(confirm),
-        Some(Commands::Uninstall { confirm, keep_config }) => {
-            cmd::config::cmd_uninstall(confirm, keep_config)
-        },
+        Some(Commands::Uninstall {
+            confirm,
+            keep_config,
+        }) => cmd::config::cmd_uninstall(confirm, keep_config),
         Some(Commands::Telos(sub)) => match sub {
             TelosCommands::Init { quick } => cmd::telos::cmd_telos_init(quick),
             TelosCommands::Status => cmd::telos::cmd_telos_status(),

@@ -637,10 +637,7 @@ pub fn cmd_uninstall(confirm: bool, keep_config: bool) {
         } else {
             match std::fs::remove_dir_all(&openfang_dir) {
                 Ok(()) => ui::success(&format!("Removed {}", openfang_dir.display())),
-                Err(e) => ui::error(&format!(
-                    "Failed to remove {}: {e}",
-                    openfang_dir.display()
-                )),
+                Err(e) => ui::error(&format!("Failed to remove {}: {e}", openfang_dir.display())),
             }
         }
     }
@@ -648,10 +645,7 @@ pub fn cmd_uninstall(confirm: bool, keep_config: bool) {
     if cargo_bin.exists() && exe_path.as_ref().is_none_or(|e| *e != cargo_bin) {
         match std::fs::remove_file(&cargo_bin) {
             Ok(()) => ui::success(&format!("Removed {}", cargo_bin.display())),
-            Err(e) => ui::error(&format!(
-                "Failed to remove {}: {e}",
-                cargo_bin.display()
-            )),
+            Err(e) => ui::error(&format!("Failed to remove {}: {e}", cargo_bin.display())),
         }
     }
 
@@ -867,6 +861,9 @@ fn remove_self_binary(exe_path: &std::path::Path) {
             .args(["/C", &del_cmd])
             .creation_flags(CREATE_NEW_PROCESS_GROUP | DETACHED_PROCESS)
             .spawn();
-        ui::success(&format!("Removed {} (deferred cleanup)", exe_path.display()));
+        ui::success(&format!(
+            "Removed {} (deferred cleanup)",
+            exe_path.display()
+        ));
     }
 }
