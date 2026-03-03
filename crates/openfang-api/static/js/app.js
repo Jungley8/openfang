@@ -6,9 +6,9 @@ if (typeof marked !== 'undefined') {
   marked.setOptions({
     breaks: true,
     gfm: true,
-    highlight: function(code, lang) {
+    highlight: function (code, lang) {
       if (typeof hljs !== 'undefined' && lang && hljs.getLanguage(lang)) {
-        try { return hljs.highlight(code, { language: lang }).value; } catch(e) {}
+        try { return hljs.highlight(code, { language: lang }).value; } catch (e) { }
       }
       return code;
     }
@@ -35,10 +35,10 @@ function renderMarkdown(text) {
 function copyCode(btn) {
   var code = btn.nextElementSibling;
   if (code) {
-    navigator.clipboard.writeText(code.textContent).then(function() {
+    navigator.clipboard.writeText(code.textContent).then(function () {
       btn.textContent = 'Copied!';
       btn.classList.add('copied');
-      setTimeout(function() { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 1500);
+      setTimeout(function () { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 1500);
     });
   }
 }
@@ -86,7 +86,7 @@ function toolIcon(toolName) {
 }
 
 // Alpine.js global store
-document.addEventListener('alpine:init', function() {
+document.addEventListener('alpine:init', function () {
   // Restore saved API key on load
   var savedKey = localStorage.getItem('openfang-api-key');
   if (savedKey) OpenFangAPI.setAuthToken(savedKey);
@@ -115,7 +115,7 @@ document.addEventListener('alpine:init', function() {
         var agents = await OpenFangAPI.get('/api/agents');
         this.agents = Array.isArray(agents) ? agents : [];
         this.agentCount = this.agents.length;
-      } catch(e) { /* silent */ }
+      } catch (e) { /* silent */ }
     },
 
     async checkStatus() {
@@ -126,7 +126,7 @@ document.addEventListener('alpine:init', function() {
         this.lastError = '';
         this.version = s.version || '0.1.0';
         this.agentCount = s.agent_count || 0;
-      } catch(e) {
+      } catch (e) {
         this.connected = false;
         this.lastError = e.message || 'Unknown error';
         console.warn('[OpenFang] Status check failed:', e.message);
@@ -142,7 +142,7 @@ document.addEventListener('alpine:init', function() {
         if (noKey && this.agentCount === 0) {
           this.showOnboarding = true;
         }
-      } catch(e) {
+      } catch (e) {
         // If config endpoint fails, still show onboarding if no agents
         if (this.agentCount === 0) this.showOnboarding = true;
       }
@@ -159,7 +159,7 @@ document.addEventListener('alpine:init', function() {
         // whether the server requires an API key.
         await OpenFangAPI.get('/api/tools');
         this.showAuthPrompt = false;
-      } catch(e) {
+      } catch (e) {
         if (e.message && (e.message.indexOf('Not authorized') >= 0 || e.message.indexOf('401') >= 0 || e.message.indexOf('Missing Authorization') >= 0 || e.message.indexOf('Unauthorized') >= 0)) {
           // Only show prompt if we don't already have a saved key
           var saved = localStorage.getItem('openfang-api-key');
@@ -211,14 +211,14 @@ function app() {
       var self = this;
 
       // Listen for OS theme changes (only matters when mode is 'system')
-      window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function(e) {
+      window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function (e) {
         if (self.themeMode === 'system') {
           self.theme = e.matches ? 'dark' : 'light';
         }
       });
 
       // Hash routing
-      var validPages = ['overview','agents','sessions','approvals','comms','workflows','scheduler','channels','skills','hands','analytics','logs','runtime','settings','wizard'];
+      var validPages = ['overview', 'agents', 'sessions', 'approvals', 'comms', 'workflows', 'scheduler', 'channels', 'skills', 'hands', 'analytics', 'logs', 'runtime', 'settings', 'wizard'];
       var pageRedirects = {
         'chat': 'agents',
         'templates': 'agents',
@@ -245,7 +245,7 @@ function app() {
       handleHash();
 
       // Keyboard shortcuts
-      document.addEventListener('keydown', function(e) {
+      document.addEventListener('keydown', function (e) {
         // Ctrl+K — focus agent switch / go to agents
         if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
           e.preventDefault();
@@ -268,7 +268,7 @@ function app() {
       });
 
       // Connection state listener
-      OpenFangAPI.onConnectionChange(function(state) {
+      OpenFangAPI.onConnectionChange(function (state) {
         Alpine.store('app').connectionState = state;
       });
 
@@ -276,7 +276,7 @@ function app() {
       this.pollStatus();
       Alpine.store('app').checkOnboarding();
       Alpine.store('app').checkAuth();
-      setInterval(function() { self.pollStatus(); }, 5000);
+      setInterval(function () { self.pollStatus(); }, 5000);
     },
 
     navigate(p) {

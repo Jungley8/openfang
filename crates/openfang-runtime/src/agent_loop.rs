@@ -132,6 +132,12 @@ pub async fn run_agent_loop(
     context_window_tokens: Option<usize>,
     process_manager: Option<&crate::process_manager::ProcessManager>,
 ) -> OpenFangResult<AgentLoopResult> {
+    let agent_span = tracing::info_span!(
+        "agent",
+        agent_type = %manifest.name,
+        model_name = %manifest.model.model,
+    );
+    drop(agent_span.enter()); // do not hold EnteredSpan (!Send) across await
     info!(agent = %manifest.name, "Starting agent loop");
 
     // Extract hand-allowed env vars from manifest metadata (set by kernel for hand settings)
@@ -367,6 +373,8 @@ pub async fn run_agent_loop(
                     memory
                         .save_session(session)
                         .map_err(|e| OpenFangError::Memory(e.to_string()))?;
+                    agent_span.record("input_tokens", total_usage.input_tokens);
+                    agent_span.record("output_tokens", total_usage.output_tokens);
                     return Ok(AgentLoopResult {
                         response: String::new(),
                         total_usage,
@@ -490,6 +498,8 @@ pub async fn run_agent_loop(
                     let _ = hook_reg.fire(&ctx);
                 }
 
+                agent_span.record("input_tokens", total_usage.input_tokens);
+                agent_span.record("output_tokens", total_usage.output_tokens);
                 return Ok(AgentLoopResult {
                     response: final_response,
                     total_usage,
@@ -745,6 +755,8 @@ pub async fn run_agent_loop(
                         };
                         let _ = hook_reg.fire(&ctx);
                     }
+                    agent_span.record("input_tokens", total_usage.input_tokens);
+                    agent_span.record("output_tokens", total_usage.output_tokens);
                     return Ok(AgentLoopResult {
                         response: text,
                         total_usage,
@@ -1034,6 +1046,12 @@ pub async fn run_agent_loop_streaming(
     context_window_tokens: Option<usize>,
     process_manager: Option<&crate::process_manager::ProcessManager>,
 ) -> OpenFangResult<AgentLoopResult> {
+    let agent_span = tracing::info_span!(
+        "agent",
+        agent_type = %manifest.name,
+        model_name = %manifest.model.model,
+    );
+    drop(agent_span.enter());
     info!(agent = %manifest.name, "Starting streaming agent loop");
 
     // Extract hand-allowed env vars from manifest metadata (set by kernel for hand settings)
@@ -1285,6 +1303,8 @@ pub async fn run_agent_loop_streaming(
                     memory
                         .save_session(session)
                         .map_err(|e| OpenFangError::Memory(e.to_string()))?;
+                    agent_span.record("input_tokens", total_usage.input_tokens);
+                    agent_span.record("output_tokens", total_usage.output_tokens);
                     return Ok(AgentLoopResult {
                         response: String::new(),
                         total_usage,
@@ -1406,6 +1426,8 @@ pub async fn run_agent_loop_streaming(
                     let _ = hook_reg.fire(&ctx);
                 }
 
+                agent_span.record("input_tokens", total_usage.input_tokens);
+                agent_span.record("output_tokens", total_usage.output_tokens);
                 return Ok(AgentLoopResult {
                     response: final_response,
                     total_usage,
@@ -1668,6 +1690,8 @@ pub async fn run_agent_loop_streaming(
                         };
                         let _ = hook_reg.fire(&ctx);
                     }
+                    agent_span.record("input_tokens", total_usage.input_tokens);
+                    agent_span.record("output_tokens", total_usage.output_tokens);
                     return Ok(AgentLoopResult {
                         response: text,
                         total_usage,

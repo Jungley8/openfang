@@ -1,0 +1,21 @@
+{
+  "name": "daily-growth-engine",
+  "description": "Multi-agent: Scout tech trends -> CGO writes & syncs blog.",
+  "steps": [
+    {
+      "name": "scout-trends",
+      "agent_name": "tech-scout",
+      "prompt": "搜集过去 24 小时内关于 AI、大模型和智能体的最热门 3 个技术趋势。输出结构化的事实总结。",
+      "mode": "sequential",
+      "timeout_secs": 300,
+      "output_var": "raw_facts"
+    },
+    {
+      "name": "cgo-create",
+      "agent_name": "growth-cgo",
+      "prompt": "基于这些事实：\n\n{{raw_facts}}\n\n请执行以下操作：\n1. 撰写一篇标准的 Markdown 博客（带 Frontmatter）。\n2. 撰写一份小红书图文脚本。\n3. 将 Markdown 博客保存到 `/root/code/jungley.net/content/posts/`。",
+      "mode": "sequential",
+      "timeout_secs": 600
+    }
+  ]
+}

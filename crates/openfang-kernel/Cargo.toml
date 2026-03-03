@@ -38,6 +38,22 @@ cron = "0.15"
 [target.'cfg(unix)'.dependencies]
 libc = "0.2"
 
+[features]
+default = []
+# Enable mock LLM driver for tracing benchmark (openfang-runtime provider "mock").
+bench = ["openfang-runtime/bench"]
+
 [dev-dependencies]
 tokio-test = { workspace = true }
 tempfile = { workspace = true }
+criterion = { version = "0.5", features = ["html_reports"] }
+tokio = { workspace = true }
+opentelemetry = { workspace = true }
+opentelemetry_sdk = { workspace = true }
+opentelemetry-otlp = { workspace = true }
+tracing-opentelemetry = { workspace = true }
+
+[[bench]]
+name = "tracing_bench"
+harness = false
+required-features = ["bench"]

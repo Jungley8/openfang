@@ -13,6 +13,7 @@ mod mcp;
 pub mod progress;
 pub mod table;
 mod templates;
+mod tracing_init;
 mod tui;
 mod ui;
 
@@ -66,41 +67,12 @@ fn install_ctrlc_handler() {
 }
 
 fn init_tracing_stderr() {
-    tracing_subscriber::fmt()
-        .with_env_filter(
-            tracing_subscriber::EnvFilter::try_from_default_env()
-                .unwrap_or_else(|_| tracing_subscriber::EnvFilter::new("info")),
-        )
-        .init();
+    tracing_init::init_tracing_stderr();
 }
 
 /// Redirect tracing to a log file so it doesn't corrupt the ratatui TUI.
 fn init_tracing_file() {
-    let log_dir = dirs::home_dir()
-        .map(|h| h.join(".openfang"))
-        .unwrap_or_else(|| std::path::PathBuf::from("."));
-    let _ = std::fs::create_dir_all(&log_dir);
-    let log_path = log_dir.join("tui.log");
-
-    match std::fs::File::create(&log_path) {
-        Ok(file) => {
-            tracing_subscriber::fmt()
-                .with_env_filter(
-                    tracing_subscriber::EnvFilter::try_from_default_env()
-                        .unwrap_or_else(|_| tracing_subscriber::EnvFilter::new("info")),
-                )
-                .with_writer(std::sync::Mutex::new(file))
-                .with_ansi(false)
-                .init();
-        }
-        Err(_) => {
-            // Fallback: suppress all output rather than corrupt the TUI
-            tracing_subscriber::fmt()
-                .with_max_level(tracing::Level::ERROR)
-                .with_writer(std::io::sink)
-                .init();
-        }
-    }
+    tracing_init::init_tracing_file();
 }
 
 fn main() {
@@ -453,7 +425,6 @@ pub(crate) fn open_in_browser(url: &str) -> bool {
         false
     }
 }
-
 // ---------------------------------------------------------------------------
 // Background daemon start
 // ---------------------------------------------------------------------------

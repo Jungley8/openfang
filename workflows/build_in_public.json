@@ -1,0 +1,21 @@
+{
+  "name": "bip-tweet-engine",
+  "description": "Multi-agent: Tech Scout reads git -> Growth CGO writes BiP tweet.",
+  "steps": [
+    {
+      "name": "analyze-git",
+      "agent_name": "tech-scout",
+      "prompt": "执行 `git log -n 5` 和 `git diff`。总结出最近最重要的 2 个功能改进或技术突破。",
+      "mode": "sequential",
+      "timeout_secs": 120,
+      "output_var": "tech_facts"
+    },
+    {
+      "name": "write-tweet",
+      "agent_name": "growth-cgo",
+      "prompt": "基于以下进展：\n\n{{tech_facts}}\n\n撰写一条 'Build in Public' Twitter 推文。要求：第一人称，讲故事，包含话题标签。",
+      "mode": "sequential",
+      "timeout_secs": 120
+    }
+  ]
+}

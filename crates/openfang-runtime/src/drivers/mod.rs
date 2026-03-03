@@ -9,6 +9,8 @@ pub mod claude_code;
 pub mod copilot;
 pub mod fallback;
 pub mod gemini;
+#[cfg(feature = "bench")]
+pub mod mock;
 pub mod openai;
 
 use crate::llm_driver::{DriverConfig, LlmDriver, LlmError};
@@ -179,6 +181,8 @@ fn provider_defaults(provider: &str) -> Option<ProviderDefaults> {
 
 /// Create an LLM driver based on provider name and configuration.
 ///
+/// When feature "bench" is enabled, provider "mock" returns a driver that completes immediately.
+///
 /// Supported providers:
 /// - `anthropic` — Anthropic Claude (Messages API)
 /// - `openai` — OpenAI GPT models
@@ -202,6 +206,11 @@ fn provider_defaults(provider: &str) -> Option<ProviderDefaults> {
 /// - Any custom provider with `base_url` set uses OpenAI-compatible format
 pub fn create_driver(config: &DriverConfig) -> Result<Arc<dyn LlmDriver>, LlmError> {
     let provider = config.provider.as_str();
+
+    #[cfg(feature = "bench")]
+    if provider == "mock" {
+        return Ok(mock::MockLlmDriver::new());
+    }
 
     // Anthropic uses a different API format — special case
     if provider == "anthropic" {
