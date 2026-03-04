@@ -386,6 +386,11 @@ pub enum HandCommands {
     List,
     /// Show currently active hand instances.
     Active,
+    /// Install a hand from a local directory containing HAND.toml.
+    Install {
+        /// Path to the hand directory (must contain HAND.toml).
+        path: String,
+    },
     /// Activate a hand by ID.
     Activate {
         /// Hand ID (e.g. "clip", "lead", "researcher").

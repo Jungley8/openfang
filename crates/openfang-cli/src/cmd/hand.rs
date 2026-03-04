@@ -45,6 +45,55 @@ pub fn cmd_hand_list() {
     }
 }
 
+pub fn cmd_hand_install(path: &str) {
+    let base = require_daemon("hand install");
+    let dir = std::path::Path::new(path);
+    let toml_path = dir.join("HAND.toml");
+    let skill_path = dir.join("SKILL.md");
+
+    if !toml_path.exists() {
+        eprintln!(
+            "Error: No HAND.toml found in {}",
+            dir.canonicalize()
+                .unwrap_or_else(|_| dir.to_path_buf())
+                .display()
+        );
+        std::process::exit(1);
+    }
+
+    let toml_content = std::fs::read_to_string(&toml_path).unwrap_or_else(|e| {
+        eprintln!("Error reading {}: {e}", toml_path.display());
+        std::process::exit(1);
+    });
+    let skill_content = std::fs::read_to_string(&skill_path).unwrap_or_default();
+
+    let client = daemon_client();
+    let body = daemon_json(
+        client
+            .post(format!("{base}/api/hands/install"))
+            .json(&serde_json::json!({
+                "toml_content": toml_content,
+                "skill_content": skill_content,
+            }))
+            .send(),
+    );
+
+    if let Some(err) = body.get("error").and_then(|v| v.as_str()) {
+        eprintln!("Error: {err}");
+        std::process::exit(1);
+    }
+
+    println!(
+        "Installed hand: {} ({})",
+        body["name"].as_str().unwrap_or("?"),
+        body["id"].as_str().unwrap_or("?"),
+    );
+    println!(
+        "Use `openfang hand activate {}` to start it.",
+        body["id"].as_str().unwrap_or("?")
+    );
+}
+
 pub fn cmd_hand_active() {
     let base = require_daemon("hand active");
     let client = daemon_client();
