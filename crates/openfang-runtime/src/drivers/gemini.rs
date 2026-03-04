@@ -64,23 +64,23 @@ struct GeminiSafetySetting {
 fn default_safety_settings() -> Vec<GeminiSafetySetting> {
     vec![
         GeminiSafetySetting {
-            category: "HATE_SPEECH".to_string(),
+            category: "HARM_CATEGORY_HATE_SPEECH".to_string(),
             threshold: "BLOCK_NONE".to_string(),
         },
         GeminiSafetySetting {
-            category: "HARASSMENT".to_string(),
+            category: "HARM_CATEGORY_HARASSMENT".to_string(),
             threshold: "BLOCK_NONE".to_string(),
         },
         GeminiSafetySetting {
-            category: "SEXUALLY_EXPLICIT".to_string(),
+            category: "HARM_CATEGORY_SEXUALLY_EXPLICIT".to_string(),
             threshold: "BLOCK_NONE".to_string(),
         },
         GeminiSafetySetting {
-            category: "DANGEROUS_CONTENT".to_string(),
+            category: "HARM_CATEGORY_DANGEROUS_CONTENT".to_string(),
             threshold: "BLOCK_NONE".to_string(),
         },
         GeminiSafetySetting {
-            category: "CIVIC_INTEGRITY".to_string(),
+            category: "HARM_CATEGORY_CIVIC_INTEGRITY".to_string(),
             threshold: "BLOCK_NONE".to_string(),
         },
     ]
@@ -1040,7 +1040,10 @@ mod tests {
 
         let json = serde_json::to_value(&req).unwrap();
         assert!(json["safetySettings"].is_array());
-        assert_eq!(json["safetySettings"][0]["category"], "HATE_SPEECH");
+        assert_eq!(
+            json["safetySettings"][0]["category"],
+            "HARM_CATEGORY_HATE_SPEECH"
+        );
         assert_eq!(json["safetySettings"][0]["threshold"], "BLOCK_NONE");
     }
 }
