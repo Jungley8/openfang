@@ -443,7 +443,30 @@ async fn dispatch_message(
         ChannelContent::Text(t) => t.clone(),
         ChannelContent::Command { name, args } => {
             let result = handle_command(name, args, handle, router, &message.sender).await;
-            send_response(adapter, &message.sender, result, thread_id, output_format).await;
+            match result {
+                CommandResult::Message(s) => {
+                    send_response(adapter, &message.sender, s, thread_id, output_format).await;
+                }
+                CommandResult::AgentPicker {
+                    message: picker_msg,
+                    agents,
+                } => {
+                    let text = formatter::format_for_channel(&picker_msg, output_format);
+                    let options: Vec<(String, String)> = agents
+                        .into_iter()
+                        .map(|name| (name.clone(), format!("agent:{name}")))
+                        .collect();
+                    let content = ChannelContent::Choice { text, options };
+                    let send_result = if let Some(tid) = thread_id {
+                        adapter.send_in_thread(&message.sender, content, tid).await
+                    } else {
+                        adapter.send(&message.sender, content).await
+                    };
+                    if let Err(e) = send_result {
+                        error!("Failed to send agent picker: {e}");
+                    }
+                }
+            }
             return;
         }
         _ => {
@@ -500,7 +523,30 @@ async fn dispatch_message(
                 | "a2a"
         ) {
             let result = handle_command(cmd, &args, handle, router, &message.sender).await;
-            send_response(adapter, &message.sender, result, thread_id, output_format).await;
+            match result {
+                CommandResult::Message(s) => {
+                    send_response(adapter, &message.sender, s, thread_id, output_format).await;
+                }
+                CommandResult::AgentPicker {
+                    message: picker_msg,
+                    agents,
+                } => {
+                    let text = formatter::format_for_channel(&picker_msg, output_format);
+                    let options: Vec<(String, String)> = agents
+                        .into_iter()
+                        .map(|name| (name.clone(), format!("agent:{name}")))
+                        .collect();
+                    let content = ChannelContent::Choice { text, options };
+                    let send_result = if let Some(tid) = thread_id {
+                        adapter.send_in_thread(&message.sender, content, tid).await
+                    } else {
+                        adapter.send(&message.sender, content).await
+                    };
+                    if let Err(e) = send_result {
+                        error!("Failed to send agent picker: {e}");
+                    }
+                }
+            }
             return;
         }
         // Other slash commands pass through to the agent
@@ -654,14 +700,23 @@ async fn dispatch_message(
     }
 }
 
-/// Handle a bot command (returns the response text).
+/// Result of handling a bot command — plain text or text + agent picker (inline keyboard on Telegram).
+enum CommandResult {
+    Message(String),
+    AgentPicker {
+        message: String,
+        agents: Vec<String>,
+    },
+}
+
+/// Handle a bot command (returns the response content).
 async fn handle_command(
     name: &str,
     args: &[String],
     handle: &Arc<dyn ChannelBridgeHandle>,
     router: &Arc<AgentRouter>,
     sender: &ChannelUser,
-) -> String {
+) -> CommandResult {
     match name {
         "start" => {
             let agents = handle.list_agents().await.unwrap_or_default();
@@ -675,9 +730,10 @@ async fn handle_command(
                 }
             }
             msg.push_str("\nCommands:\n/agents - list agents\n/agent <name> - select an agent\n/help - show this help");
-            msg
+            CommandResult::Message(msg)
         }
-        "help" => "OpenFang Bot Commands:\n\
+        "help" => CommandResult::Message(
+            "OpenFang Bot Commands:\n\
              \n\
              Session:\n\
              /agents - list running agents\n\
@@ -717,11 +773,12 @@ async fn handle_command(
              \n\
              /start - show welcome message\n\
              /help - show this help"
-            .to_string(),
-        "status" => handle.uptime_info().await,
+                .to_string(),
+        ),
+        "status" => CommandResult::Message(handle.uptime_info().await),
         "agents" => {
             let agents = handle.list_agents().await.unwrap_or_default();
-            if agents.is_empty() {
+            let msg = if agents.is_empty() {
                 "No agents running.".to_string()
             } else {
                 let mut msg = "Running agents:\n".to_string();
@@ -729,47 +786,51 @@ async fn handle_command(
                     msg.push_str(&format!("  - {name}\n"));
                 }
                 msg
-            }
+            };
+            CommandResult::Message(msg)
         }
         "agent" => {
             if args.is_empty() {
-                return "Usage: /agent <name>".to_string();
+                let agents = handle.list_agents().await.unwrap_or_default();
+                let agent_names: Vec<String> = agents.into_iter().map(|(_, n)| n).collect();
+                return CommandResult::AgentPicker {
+                    message: "Select an agent:".to_string(),
+                    agents: agent_names,
+                };
             }
             let agent_name = &args[0];
-            match handle.find_agent_by_name(agent_name).await {
+            let msg = match handle.find_agent_by_name(agent_name).await {
                 Ok(Some(agent_id)) => {
                     router.set_user_default(sender.platform_id.clone(), agent_id);
                     format!("Now talking to agent: {agent_name}")
                 }
-                Ok(None) => {
-                    // Try to spawn it
-                    match handle.spawn_agent_by_name(agent_name).await {
-                        Ok(agent_id) => {
-                            router.set_user_default(sender.platform_id.clone(), agent_id);
-                            format!("Spawned and connected to agent: {agent_name}")
-                        }
-                        Err(e) => {
-                            format!("Agent '{agent_name}' not found and could not spawn: {e}")
-                        }
+                Ok(None) => match handle.spawn_agent_by_name(agent_name).await {
+                    Ok(agent_id) => {
+                        router.set_user_default(sender.platform_id.clone(), agent_id);
+                        format!("Spawned and connected to agent: {agent_name}")
                     }
-                }
+                    Err(e) => {
+                        format!("Agent '{agent_name}' not found and could not spawn: {e}")
+                    }
+                },
                 Err(e) => format!("Error finding agent: {e}"),
-            }
+            };
+            CommandResult::Message(msg)
         }
         "new" => {
-            // Need to resolve the user's current agent
             let agent_id = router.resolve(
                 &crate::types::ChannelType::CLI,
                 &sender.platform_id,
                 sender.openfang_user.as_deref(),
             );
-            match agent_id {
+            let msg = match agent_id {
                 Some(aid) => handle
                     .reset_session(aid)
                     .await
                     .unwrap_or_else(|e| format!("Error: {e}")),
                 None => "No agent selected. Use /agent <name> first.".to_string(),
-            }
+            };
+            CommandResult::Message(msg)
         }
         "compact" => {
             let agent_id = router.resolve(
@@ -777,13 +838,14 @@ async fn handle_command(
                 &sender.platform_id,
                 sender.openfang_user.as_deref(),
             );
-            match agent_id {
+            let msg = match agent_id {
                 Some(aid) => handle
                     .compact_session(aid)
                     .await
                     .unwrap_or_else(|e| format!("Error: {e}")),
                 None => "No agent selected. Use /agent <name> first.".to_string(),
-            }
+            };
+            CommandResult::Message(msg)
         }
         "model" => {
             let agent_id = router.resolve(
@@ -791,10 +853,9 @@ async fn handle_command(
                 &sender.platform_id,
                 sender.openfang_user.as_deref(),
             );
-            match agent_id {
+            let msg = match agent_id {
                 Some(aid) => {
                     if args.is_empty() {
-                        // Show current model
                         handle
                             .set_model(aid, "")
                             .await
@@ -807,7 +868,8 @@ async fn handle_command(
                     }
                 }
                 None => "No agent selected. Use /agent <name> first.".to_string(),
-            }
+            };
+            CommandResult::Message(msg)
         }
         "stop" => {
             let agent_id = router.resolve(
@@ -815,13 +877,14 @@ async fn handle_command(
                 &sender.platform_id,
                 sender.openfang_user.as_deref(),
             );
-            match agent_id {
+            let msg = match agent_id {
                 Some(aid) => handle
                     .stop_run(aid)
                     .await
                     .unwrap_or_else(|e| format!("Error: {e}")),
                 None => "No agent selected. Use /agent <name> first.".to_string(),
-            }
+            };
+            CommandResult::Message(msg)
         }
         "usage" => {
             let agent_id = router.resolve(
@@ -829,13 +892,14 @@ async fn handle_command(
                 &sender.platform_id,
                 sender.openfang_user.as_deref(),
             );
-            match agent_id {
+            let msg = match agent_id {
                 Some(aid) => handle
                     .session_usage(aid)
                     .await
                     .unwrap_or_else(|e| format!("Error: {e}")),
                 None => "No agent selected. Use /agent <name> first.".to_string(),
-            }
+            };
+            CommandResult::Message(msg)
         }
         "think" => {
             let agent_id = router.resolve(
@@ -843,7 +907,7 @@ async fn handle_command(
                 &sender.platform_id,
                 sender.openfang_user.as_deref(),
             );
-            match agent_id {
+            let msg = match agent_id {
                 Some(aid) => {
                     let on = args.first().map(|a| a == "on").unwrap_or(true);
                     handle
@@ -852,17 +916,17 @@ async fn handle_command(
                         .unwrap_or_else(|e| format!("Error: {e}"))
                 }
                 None => "No agent selected. Use /agent <name> first.".to_string(),
-            }
+            };
+            CommandResult::Message(msg)
         }
-        "models" => handle.list_models_text().await,
-        "providers" => handle.list_providers_text().await,
-        "skills" => handle.list_skills_text().await,
-        "hands" => handle.list_hands_text().await,
+        "models" => CommandResult::Message(handle.list_models_text().await),
+        "providers" => CommandResult::Message(handle.list_providers_text().await),
+        "skills" => CommandResult::Message(handle.list_skills_text().await),
+        "hands" => CommandResult::Message(handle.list_hands_text().await),
 
-        // ── Automation: workflows, triggers, schedules, approvals ──
-        "workflows" => handle.list_workflows_text().await,
+        "workflows" => CommandResult::Message(handle.list_workflows_text().await),
         "workflow" => {
-            if args.len() >= 2 && args[0] == "run" {
+            let msg = if args.len() >= 2 && args[0] == "run" {
                 let wf_name = &args[1];
                 let input = if args.len() > 2 {
                     args[2..].join(" ")
@@ -872,11 +936,12 @@ async fn handle_command(
                 handle.run_workflow_text(wf_name, &input).await
             } else {
                 "Usage: /workflow run <name> [input]".to_string()
-            }
+            };
+            CommandResult::Message(msg)
         }
-        "triggers" => handle.list_triggers_text().await,
+        "triggers" => CommandResult::Message(handle.list_triggers_text().await),
         "trigger" => {
-            if args.len() >= 4 && args[0] == "add" {
+            let msg = if args.len() >= 4 && args[0] == "add" {
                 let agent_name = &args[1];
                 let pattern = &args[2];
                 let prompt = args[3..].join(" ");
@@ -888,43 +953,48 @@ async fn handle_command(
             } else {
                 "Usage:\n  /trigger add <agent> <pattern> <prompt>\n  /trigger del <id-prefix>"
                     .to_string()
-            }
+            };
+            CommandResult::Message(msg)
         }
-        "schedules" => handle.list_schedules_text().await,
+        "schedules" => CommandResult::Message(handle.list_schedules_text().await),
         "schedule" => {
             if args.is_empty() {
-                return "Usage:\n  /schedule add <agent> <cron-5-fields> <message>\n  /schedule del <id-prefix>\n  /schedule run <id-prefix>".to_string();
+                return CommandResult::Message(
+                    "Usage:\n  /schedule add <agent> <cron-5-fields> <message>\n  /schedule del <id-prefix>\n  /schedule run <id-prefix>".to_string(),
+                );
             }
             let action = args[0].as_str();
-            match action {
+            let msg = match action {
                 "add" | "del" | "run" => {
                     handle.manage_schedule_text(action, &args[1..]).await
                 }
                 _ => "Usage:\n  /schedule add <agent> <cron-5-fields> <message>\n  /schedule del <id-prefix>\n  /schedule run <id-prefix>".to_string(),
-            }
+            };
+            CommandResult::Message(msg)
         }
-        "approvals" => handle.list_approvals_text().await,
+        "approvals" => CommandResult::Message(handle.list_approvals_text().await),
         "approve" => {
-            if args.is_empty() {
+            let msg = if args.is_empty() {
                 "Usage: /approve <id-prefix>".to_string()
             } else {
                 handle.resolve_approval_text(&args[0], true).await
-            }
+            };
+            CommandResult::Message(msg)
         }
         "reject" => {
-            if args.is_empty() {
+            let msg = if args.is_empty() {
                 "Usage: /reject <id-prefix>".to_string()
             } else {
                 handle.resolve_approval_text(&args[0], false).await
-            }
+            };
+            CommandResult::Message(msg)
         }
 
-        // ── Budget, Network, A2A ──
-        "budget" => handle.budget_text().await,
-        "peers" => handle.peers_text().await,
-        "a2a" => handle.a2a_agents_text().await,
+        "budget" => CommandResult::Message(handle.budget_text().await),
+        "peers" => CommandResult::Message(handle.peers_text().await),
+        "a2a" => CommandResult::Message(handle.a2a_agents_text().await),
 
-        _ => format!("Unknown command: /{name}"),
+        _ => CommandResult::Message(format!("Unknown command: /{name}")),
     }
 }
 
@@ -1007,10 +1077,16 @@ mod tests {
         };
 
         let result = handle_command("agents", &[], &handle, &router, &sender).await;
-        assert!(result.contains("coder"));
+        match &result {
+            CommandResult::Message(s) => assert!(s.contains("coder")),
+            CommandResult::AgentPicker { .. } => panic!("expected Message"),
+        }
 
         let result = handle_command("help", &[], &handle, &router, &sender).await;
-        assert!(result.contains("/agents"));
+        match &result {
+            CommandResult::Message(s) => assert!(s.contains("/agents")),
+            CommandResult::AgentPicker { .. } => panic!("expected Message"),
+        }
     }
 
     #[tokio::test]
@@ -1029,11 +1105,37 @@ mod tests {
         // Select existing agent
         let result =
             handle_command("agent", &["coder".to_string()], &handle, &router, &sender).await;
-        assert!(result.contains("Now talking to agent: coder"));
+        match &result {
+            CommandResult::Message(s) => assert!(s.contains("Now talking to agent: coder")),
+            CommandResult::AgentPicker { .. } => panic!("expected Message"),
+        }
 
         // Verify router was updated
         let resolved = router.resolve(&ChannelType::Telegram, "user1", None);
         assert_eq!(resolved, Some(agent_id));
+    }
+
+    #[tokio::test]
+    async fn test_handle_command_agent_picker_when_empty_args() {
+        let agent_id = AgentId::new();
+        let handle: Arc<dyn ChannelBridgeHandle> = Arc::new(MockHandle {
+            agents: Mutex::new(vec![(agent_id, "coder".to_string())]),
+        });
+        let router = Arc::new(AgentRouter::new());
+        let sender = ChannelUser {
+            platform_id: "user1".to_string(),
+            display_name: "Test".to_string(),
+            openfang_user: None,
+        };
+
+        let result = handle_command("agent", &[], &handle, &router, &sender).await;
+        match &result {
+            CommandResult::AgentPicker { message, agents } => {
+                assert!(message.contains("Select"));
+                assert_eq!(agents.as_slice(), &["coder"]);
+            }
+            CommandResult::Message(_) => panic!("expected AgentPicker for /agent with no args"),
+        }
     }
 
     #[test]

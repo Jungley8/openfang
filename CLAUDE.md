@@ -11,7 +11,7 @@ After every feature implementation, run ALL THREE checks:
 ```bash
 cargo build --workspace --lib          # Must compile (use --lib if exe is locked)
 # cargo test --workspace                 # All tests must pass (currently 1744+)
-cargo nextest run --workspace          # more fast test tool
+cargo nextest run --workspace          # more fast test tool or `cargo nextest run -p openfang-channels` for package
 cargo clippy --workspace --all-targets -- -D warnings  # Zero warnings
 cargo fmt --all  # format code styles
 ```

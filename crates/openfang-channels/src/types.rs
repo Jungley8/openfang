@@ -61,6 +61,12 @@ pub enum ChannelContent {
         name: String,
         args: Vec<String>,
     },
+    /// Text plus a list of choices as buttons (Telegram: InlineKeyboardMarkup; other adapters send text only).
+    /// Each option is (button_label, callback_data). Callback data is channel-specific (e.g. Telegram sends it back on button tap).
+    Choice {
+        text: String,
+        options: Vec<(String, String)>,
+    },
 }
 
 /// A unified message from any channel.
@@ -358,11 +364,15 @@ mod tests {
             lat: 40.7128,
             lon: -74.0060,
         };
+        let choice = ChannelContent::Choice {
+            text: "Pick one".to_string(),
+            options: vec![("A".to_string(), "opt:a".to_string())],
+        };
 
-        // Just verify they serialize without panic
         serde_json::to_string(&text).unwrap();
         serde_json::to_string(&cmd).unwrap();
         serde_json::to_string(&loc).unwrap();
+        serde_json::to_string(&choice).unwrap();
     }
 
     // ----- AgentPhase tests -----
