@@ -5,11 +5,11 @@ RUN apt-get update && apt-get install -y ca-certificates && rm -rf /var/lib/apt/
 
 # The release workflow will place binaries in bin/linux/amd64/ and bin/linux/arm64/
 # TARGETPLATFORM is set automatically by docker buildx (e.g., linux/amd64, linux/arm64)
-COPY bin/${TARGETPLATFORM}/openfang /usr/local/bin/openfang
-COPY agents /opt/openfang/agents
+COPY bin/${TARGETPLATFORM}/octarq /usr/local/bin/octarq
+COPY agents /opt/octarq/agents
 
 EXPOSE 4200
 VOLUME /data
 ENV OPENFANG_HOME=/data
-ENTRYPOINT ["openfang"]
+ENTRYPOINT ["octarq"]
 CMD ["start"]

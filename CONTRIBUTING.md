@@ -1,6 +1,6 @@
-# Contributing to OpenFang
+# Contributing to Octarq
 
-Thank you for your interest in contributing to OpenFang. This guide covers everything you need to get started, from setting up your development environment to submitting pull requests.
+Thank you for your interest in contributing to Octarq. This guide covers everything you need to get started, from setting up your development environment to submitting pull requests.
 
 ## Table of Contents
 
@@ -105,7 +105,7 @@ cargo run -- doctor
 - **Documentation**: All public types and functions must have doc comments (`///`).
 - **Error Handling**: Use `thiserror` for error types. Avoid `unwrap()` in library code; prefer `?` propagation.
 - **Naming**:
-  - Types: `PascalCase` (e.g., `OpenFangKernel`, `AgentManifest`)
+  - Types: `PascalCase` (e.g., `OctarqKernel`, `AgentManifest`)
   - Functions/methods: `snake_case`
   - Constants: `SCREAMING_SNAKE_CASE`
   - Crate names: `openfang-{name}` (kebab-case)
@@ -117,7 +117,7 @@ cargo run -- doctor
 
 ## Architecture Overview
 
-OpenFang is organized as a Cargo workspace with 14 crates:
+Octarq is organized as a Cargo workspace with 14 crates:
 
 | Crate | Role |
 |-------|------|
@@ -129,7 +129,7 @@ OpenFang is organized as a Cargo workspace with 14 crates:
 | `openfang-kernel` | Assembles all subsystems: workflow engine, RBAC auth, heartbeat monitor, cron scheduler, config hot-reload |
 | `openfang-api` | REST/WS/SSE API (Axum 0.8), 76 endpoints, 14-page SPA dashboard, OpenAI-compatible `/v1/chat/completions` |
 | `openfang-channels` | 40 channel adapters (Telegram, Discord, Slack, WhatsApp, and 36 more), formatter, rate limiter |
-| `openfang-wire` | OFP (OpenFang Protocol): TCP P2P networking with HMAC-SHA256 mutual authentication |
+| `openfang-wire` | OFP (Octarq Protocol): TCP P2P networking with HMAC-SHA256 mutual authentication |
 | `openfang-cli` | Clap CLI with daemon auto-detect (HTTP mode vs. in-process fallback), MCP server |
 | `openfang-migrate` | Migration engine for importing from OpenClaw (and future frameworks) |
 | `openfang-skills` | Skill system: 60 bundled skills, FangHub marketplace, OpenClaw compatibility, prompt injection scanning |
@@ -138,7 +138,7 @@ OpenFang is organized as a Cargo workspace with 14 crates:
 
 ### Key Architectural Patterns
 
-- **`KernelHandle` trait**: Defined in `openfang-runtime`, implemented on `OpenFangKernel` in `openfang-kernel`. This avoids circular crate dependencies while enabling inter-agent tools.
+- **`KernelHandle` trait**: Defined in `openfang-runtime`, implemented on `OctarqKernel` in `openfang-kernel`. This avoids circular crate dependencies while enabling inter-agent tools.
 - **Shared memory**: A fixed UUID (`AgentId(Uuid::from_bytes([0..0, 0x01]))`) provides a cross-agent KV namespace.
 - **Daemon detection**: The CLI checks `~/.openfang/daemon.json` and pings the health endpoint. If a daemon is running, commands use HTTP; otherwise, they boot an in-process kernel.
 - **Capability-based security**: Every agent operation is checked against the agent's granted capabilities before execution.

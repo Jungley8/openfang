@@ -134,7 +134,7 @@ document.addEventListener('alpine:init', function () {
     },
 
     async checkOnboarding() {
-      if (localStorage.getItem('openfang-onboarded')) return;
+      if (localStorage.getItem('octarq-onboarded')) return;
       try {
         var config = await OpenFangAPI.get('/api/config');
         var apiKey = config && config.api_key;
@@ -150,7 +150,7 @@ document.addEventListener('alpine:init', function () {
 
     dismissOnboarding() {
       this.showOnboarding = false;
-      localStorage.setItem('openfang-onboarded', 'true');
+      localStorage.setItem('octarq-onboarded', 'true');
     },
 
     async checkAuth() {

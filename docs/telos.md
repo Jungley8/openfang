@@ -8,7 +8,7 @@
 
 ### 当前格局的缺失
 
-所有现有的 Agent OS（Octarq/OpenFang、OpenClaw、ZeroClaw、LangGraph、CrewAI）都回答了同一个问题：
+所有现有的 Agent OS（Octarq/Octarq、OpenClaw、ZeroClaw、LangGraph、CrewAI）都回答了同一个问题：
 
 > **"怎么执行任务？"**
 

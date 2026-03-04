@@ -1,15 +1,15 @@
 #!/usr/bin/env bash
-# OpenFang installer — works on Linux, macOS, WSL
-# Usage: curl -sSf https://openfang.sh | sh
+# Octarq installer — works on Linux, macOS, WSL
+# Usage: curl -sSf https://octarq.sh | sh
 #
 # Environment variables:
-#   OPENFANG_INSTALL_DIR  — custom install directory (default: ~/.openfang/bin)
-#   OPENFANG_VERSION      — install a specific version tag (default: latest)
+#   OCTARQ_INSTALL_DIR  — custom install directory (default: ~/.octarq/bin)
+#   OCTARQ_VERSION      — install a specific version tag (default: latest)
 
 set -euo pipefail
 
-REPO="RightNow-AI/openfang"
-INSTALL_DIR="${OPENFANG_INSTALL_DIR:-$HOME/.openfang/bin}"
+REPO="RightNow-AI/Octarq"
+INSTALL_DIR="${OCTARQ_INSTALL_DIR:-$HOME/.octarq/bin}"
 
 detect_platform() {
     OS=$(uname -s | tr '[:upper:]' '[:lower:]')
@@ -25,7 +25,7 @@ detect_platform() {
         mingw*|msys*|cygwin*)
             echo ""
             echo "  For Windows, use PowerShell instead:"
-            echo "    irm https://openfang.sh/install.ps1 | iex"
+            echo "    irm https://octarq.sh/install.ps1 | iex"
             echo ""
             echo "  Or download the .msi installer from:"
             echo "    https://github.com/$REPO/releases/latest"
@@ -42,13 +42,13 @@ install() {
     detect_platform
 
     echo ""
-    echo "  OpenFang Installer"
+    echo "  Octarq Installer"
     echo "  =================="
     echo ""
 
     # Get latest version
-    if [ -n "${OPENFANG_VERSION:-}" ]; then
-        VERSION="$OPENFANG_VERSION"
+    if [ -n "${OCTARQ_VERSION:-}" ]; then
+        VERSION="$OCTARQ_VERSION"
         echo "  Using specified version: $VERSION"
     else
         echo "  Fetching latest release..."
@@ -62,15 +62,15 @@ install() {
         exit 1
     fi
 
-    URL="https://github.com/$REPO/releases/download/$VERSION/openfang-$PLATFORM.tar.gz"
+    URL="https://github.com/$REPO/releases/download/$VERSION/octarq-$PLATFORM.tar.gz"
     CHECKSUM_URL="$URL.sha256"
 
-    echo "  Installing OpenFang $VERSION for $PLATFORM..."
+    echo "  Installing Octarq $VERSION for $PLATFORM..."
     mkdir -p "$INSTALL_DIR"
 
     # Download to temp
     TMPDIR=$(mktemp -d)
-    ARCHIVE="$TMPDIR/openfang.tar.gz"
+    ARCHIVE="$TMPDIR/octarq.tar.gz"
     CHECKSUM_FILE="$TMPDIR/checksum.sha256"
 
     cleanup() { rm -rf "$TMPDIR"; }
@@ -108,7 +108,7 @@ install() {
 
     # Extract
     tar xzf "$ARCHIVE" -C "$INSTALL_DIR"
-    chmod +x "$INSTALL_DIR/openfang"
+    chmod +x "$INSTALL_DIR/octarq"
 
     # Add to PATH
     SHELL_RC=""
@@ -118,7 +118,7 @@ install() {
         */fish) SHELL_RC="$HOME/.config/fish/config.fish" ;;
     esac
 
-    if [ -n "$SHELL_RC" ] && ! grep -q "openfang" "$SHELL_RC" 2>/dev/null; then
+    if [ -n "$SHELL_RC" ] && ! grep -q "octarq" "$SHELL_RC" 2>/dev/null; then
         case "${SHELL:-}" in
             */fish)
                 mkdir -p "$(dirname "$SHELL_RC")"
@@ -132,18 +132,18 @@ install() {
     fi
 
     # Verify installation
-    if "$INSTALL_DIR/openfang" --version >/dev/null 2>&1; then
-        INSTALLED_VERSION=$("$INSTALL_DIR/openfang" --version 2>/dev/null || echo "$VERSION")
+    if "$INSTALL_DIR/octarq" --version >/dev/null 2>&1; then
+        INSTALLED_VERSION=$("$INSTALL_DIR/octarq" --version 2>/dev/null || echo "$VERSION")
         echo ""
-        echo "  OpenFang installed successfully! ($INSTALLED_VERSION)"
+        echo "  Octarq installed successfully! ($INSTALLED_VERSION)"
     else
         echo ""
-        echo "  OpenFang binary installed to $INSTALL_DIR/openfang"
+        echo "  Octarq binary installed to $INSTALL_DIR/octarq"
     fi
 
     echo ""
     echo "  Get started:"
-    echo "    openfang init"
+    echo "    octarq init"
     echo ""
     echo "  The setup wizard will guide you through provider selection"
     echo "  and configuration."

@@ -1,6 +1,6 @@
 # Troubleshooting & FAQ
 
-Common issues, diagnostics, and answers to frequently asked questions about OpenFang.
+Common issues, diagnostics, and answers to frequently asked questions about Octarq.
 
 ## Table of Contents
 
@@ -22,7 +22,7 @@ Common issues, diagnostics, and answers to frequently asked questions about Open
 Run the built-in diagnostic tool:
 
 ```bash
-openfang doctor
+octarq doctor
 ```
 
 This checks:
@@ -36,7 +36,7 @@ This checks:
 ### Check Daemon Status
 
 ```bash
-openfang status
+octarq status
 ```
 
 ### Check Health via API
@@ -48,12 +48,12 @@ curl http://127.0.0.1:4200/api/health/detail  # Requires auth
 
 ### View Logs
 
-OpenFang uses `tracing` for structured logging. Set the log level via environment:
+Octarq uses `tracing` for structured logging. Set the log level via environment:
 
 ```bash
-RUST_LOG=info openfang start          # Default
-RUST_LOG=debug openfang start         # Verbose
-RUST_LOG=openfang=debug openfang start  # Only OpenFang debug, deps at info
+RUST_LOG=info octarq start          # Default
+RUST_LOG=debug octarq start         # Verbose
+RUST_LOG=openfang=debug octarq start  # Only Octarq debug, deps at info
 ```
 
 ---
@@ -80,7 +80,7 @@ sudo apt install pkg-config libssl-dev libsqlite3-dev
 sudo dnf install openssl-devel sqlite-devel
 ```
 
-### `openfang` command not found after install
+### `octarq` command not found after install
 
 **Fix**: Ensure `~/.cargo/bin` is in your PATH:
 ```bash
@@ -91,7 +91,7 @@ export PATH="$HOME/.cargo/bin:$PATH"
 ### Docker container won't start
 
 **Common causes**:
-- No API key provided: `docker run -e GROQ_API_KEY=... ghcr.io/RightNow-AI/openfang`
+- No API key provided: `docker run -e GROQ_API_KEY=... ghcr.io/RightNow-AI/octarq`
 - Port already in use: change the port mapping `-p 3001:4200`
 - Permission denied on volume mount: check directory permissions
 
@@ -101,9 +101,9 @@ export PATH="$HOME/.cargo/bin:$PATH"
 
 ### "Config file not found"
 
-**Fix**: Run `openfang init` to create the default config:
+**Fix**: Run `octarq init` to create the default config:
 ```bash
-openfang init
+octarq init
 ```
 
 This creates `~/.openfang/config.toml` with sensible defaults.
@@ -127,7 +127,7 @@ Add to your shell profile to persist across sessions.
 
 Run validation manually:
 ```bash
-openfang config show
+octarq config show
 ```
 
 Common issues:
@@ -272,7 +272,7 @@ python -m vllm.entrypoints.openai.api_server --model ...
 
 Check logs for the specific error:
 ```bash
-RUST_LOG=openfang_channels=debug openfang start
+RUST_LOG=openfang_channels=debug octarq start
 ```
 
 ---
@@ -283,7 +283,7 @@ RUST_LOG=openfang_channels=debug openfang start
 
 **Cause**: The agent is repeatedly calling the same tool with the same parameters.
 
-**Automatic protection**: OpenFang has a built-in loop guard:
+**Automatic protection**: Octarq has a built-in loop guard:
 - **Warn** at 3 identical tool calls
 - **Block** at 5 identical tool calls
 - **Circuit breaker** at 30 total blocked calls (stops the agent)
@@ -333,7 +333,7 @@ tools = ["file_read", "web_fetch", "shell_exec"]  # Must list each tool
 ### Agent spawning fails
 
 **Check**:
-1. TOML manifest is valid: `openfang agent spawn --dry-run manifest.toml`
+1. TOML manifest is valid: `octarq agent spawn --dry-run manifest.toml`
 2. LLM provider is configured and has a valid key
 3. Model specified in manifest exists in the catalog
 
@@ -463,11 +463,11 @@ Yes. Each agent can use a different provider via its manifest `[model]` section.
 2. Set the required environment variables (tokens, secrets)
 3. Restart the daemon
 
-### How do I update OpenFang?
+### How do I update Octarq?
 
 ```bash
 # From source
-cd openfang && git pull && cargo install --path crates/openfang-cli
+cd octarq && git pull && cargo install --path crates/openfang-cli
 
 # Docker
 docker pull ghcr.io/RightNow-AI/openfang:latest
@@ -492,10 +492,10 @@ Back up these files:
 
 ```bash
 rm -rf ~/.openfang
-openfang init  # Start fresh
+octarq init  # Start fresh
 ```
 
-### Can I run OpenFang without an internet connection?
+### Can I run Octarq without an internet connection?
 
 Yes, if you use a local LLM provider:
 - **Ollama**: `ollama serve` + `ollama pull llama3.2`
@@ -509,9 +509,9 @@ provider = "ollama"
 model = "llama3.2"
 ```
 
-### What's the difference between OpenFang and OpenClaw?
+### What's the difference between Octarq and OpenClaw?
 
-| Aspect | OpenFang | OpenClaw |
+| Aspect | Octarq | OpenClaw |
 |--------|----------|----------|
 | Language | Rust | Python |
 | Channels | 40 | 38 |
@@ -521,7 +521,7 @@ model = "llama3.2"
 | Binary size | ~30 MB | ~200 MB |
 | Startup | <200 ms | ~3 s |
 
-OpenFang can import OpenClaw configs: `openfang migrate --from openclaw`
+Octarq can import OpenClaw configs: `octarq migrate --from openclaw`
 
 ### How do I report a bug or request a feature?
 
@@ -542,10 +542,10 @@ OpenFang can import OpenClaw configs: `openfang migrate --from openclaw`
 ### How do I enable debug logging for a specific crate?
 
 ```bash
-RUST_LOG=openfang_runtime=debug,openfang_channels=info openfang start
+RUST_LOG=openfang_runtime=debug,openfang_channels=info octarq start
 ```
 
-### Can I use OpenFang as a library?
+### Can I use Octarq as a library?
 
 Yes. Each crate is independently usable:
 ```toml

@@ -1,4 +1,4 @@
-# OpenFang Launch Roadmap
+# Octarq Launch Roadmap
 
 > Competitive gap analysis vs OpenClaw. Organized into 4 sprints.
 > Each item has: what, why, files to touch, and done criteria.
@@ -80,7 +80,7 @@ These are showstoppers. The app literally crashes or looks broken without them.
 - `openfang-animated.svg` (310KB) — for loading screens
 
 **Done when:**
-- Desktop app shows OpenFang logo in taskbar, title bar, and installer
+- Desktop app shows Octarq logo in taskbar, title bar, and installer
 - Web UI shows correct logo in sidebar and favicon
 
 ---
@@ -103,7 +103,7 @@ These are showstoppers. The app literally crashes or looks broken without them.
 
 ## Sprint 2 — Competitive Parity (4-5 days)
 
-These close the gaps that would make users pick OpenClaw over OpenFang.
+These close the gaps that would make users pick OpenClaw over Octarq.
 
 ### 2.1 Browser Screenshot Rendering in Chat -- DONE
 
@@ -169,17 +169,17 @@ These close the gaps that would make users pick OpenClaw over OpenFang.
 
 ### 2.4 Install Script Deployment
 
-**Problem:** `openfang.sh` domain isn't set up. Users can't do `curl -sSf https://openfang.sh | sh`.
+**Problem:** `octarq.sh` domain isn't set up. Users can't do `curl -sSf https://octarq.sh | sh`.
 
 **What to do:**
-1. Set up GitHub Pages or Cloudflare Worker for openfang.sh
+1. Set up GitHub Pages or Cloudflare Worker for octarq.sh
 2. Serve `scripts/install.sh` at root
 3. Serve `scripts/install.ps1` at `/install.ps1`
 4. Test on fresh Linux, macOS, and Windows machines
 
 **Done when:**
-- `curl -sSf https://openfang.sh | sh` installs the latest release
-- `irm https://openfang.sh/install.ps1 | iex` works on Windows PowerShell
+- `curl -sSf https://octarq.sh | sh` installs the latest release
+- `irm https://octarq.sh/install.ps1 | iex` works on Windows PowerShell
 
 ---
 
@@ -206,7 +206,7 @@ These close the gaps that would make users pick OpenClaw over OpenFang.
 
 ## Sprint 3 — Differentiation (5-7 days)
 
-These are features where OpenFang can leapfrog OpenClaw.
+These are features where Octarq can leapfrog OpenClaw.
 
 ### 3.1 Voice Input/Output in Web UI -- DONE
 
@@ -262,7 +262,7 @@ These are features where OpenFang can leapfrog OpenClaw.
    - Publish to npm as `@openfang/sdk`
 2. Create `sdks/python/` — thin wrapper with httpx
    - Same operations
-   - Publish to PyPI as `openfang`
+   - Publish to PyPI as `octarq`
 3. Include usage examples in README
 
 **Done when:**
@@ -276,7 +276,7 @@ These are features where OpenFang can leapfrog OpenClaw.
 
 **Status: COMPLETE** — Added `GET /api/metrics` endpoint returning Prometheus text format. Metrics: `openfang_uptime_seconds`, `openfang_agents_active`, `openfang_agents_total`, `openfang_tokens_total{agent,provider,model}`, `openfang_tool_calls_total{agent}`, `openfang_panics_total`, `openfang_restarts_total`, `openfang_info{version}`.
 
-**Problem (was):** No way to monitor OpenFang in production (no Prometheus, no OpenTelemetry).
+**Problem (was):** No way to monitor Octarq in production (no Prometheus, no OpenTelemetry).
 
 **What to do:**
 1. Add `/api/metrics` endpoint with Prometheus format
@@ -300,7 +300,7 @@ These are features where OpenFang can leapfrog OpenClaw.
 
 **Status: COMPLETE** — Added `workflow-builder.js` with full SVG canvas-based visual builder. Node palette with 7 types (Agent, Parallel Fan-out, Condition, Loop, Collect, Start, End). Drag-and-drop from palette, node dragging, bezier curve connections between ports, zoom/pan, auto-layout. Node editor panel for configuring agent, condition expression, loop iterations, fan-out count, collect strategy. TOML export, save-to-API, and clipboard copy. CSS styles in components.css. Integrated into workflows page as "Visual Builder" tab.
 
-**Problem (was):** Both OpenFang and OpenClaw define workflows in TOML/config only. No visual builder exists in either. First to ship this wins.
+**Problem (was):** Both Octarq and OpenClaw define workflows in TOML/config only. No visual builder exists in either. First to ship this wins.
 
 **What to do:**
 1. Add drag-and-drop workflow builder to the Workflows page
@@ -394,29 +394,29 @@ These are features where OpenFang can leapfrog OpenClaw.
 
 ## Feature Comparison Scoreboard
 
-| Feature | OpenClaw | OpenFang | Winner |
+| Feature | OpenClaw | Octarq | Winner |
 |---------|----------|----------|--------|
-| Language/Performance | Node.js (~200MB) | Rust (~30MB single binary) | **OpenFang** |
-| Channels | ~15 | **40** | **OpenFang** |
-| Built-in Tools | ~19 | **41** | **OpenFang** |
-| Security Systems | Token + sandbox | **16 defense systems** | **OpenFang** |
-| Agent Templates | Manual config | **30 pre-configured** | **OpenFang** |
-| Hands (autonomous) | None | **7 packages** | **OpenFang** |
-| Workflow Engine | Cron + webhooks | **Full DAG with parallel/loops** | **OpenFang** |
-| Knowledge Graph | Flat vector store | **Entity-relation graph** | **OpenFang** |
-| P2P Networking | None | **OFP wire protocol** | **OpenFang** |
-| WASM Sandbox | Docker only | **Dual-metered WASM** | **OpenFang** |
-| Desktop App | Electron (~200MB) | **Tauri (~30MB)** | **OpenFang** |
-| Migration | N/A | **`migrate --from openclaw`** | **OpenFang** |
-| Skills | 54 bundled | **60 bundled** | **OpenFang** |
-| LLM Providers | ~15 | **27 providers, 130+ models** | **OpenFang** |
+| Language/Performance | Node.js (~200MB) | Rust (~30MB single binary) | **Octarq** |
+| Channels | ~15 | **40** | **Octarq** |
+| Built-in Tools | ~19 | **41** | **Octarq** |
+| Security Systems | Token + sandbox | **16 defense systems** | **Octarq** |
+| Agent Templates | Manual config | **30 pre-configured** | **Octarq** |
+| Hands (autonomous) | None | **7 packages** | **Octarq** |
+| Workflow Engine | Cron + webhooks | **Full DAG with parallel/loops** | **Octarq** |
+| Knowledge Graph | Flat vector store | **Entity-relation graph** | **Octarq** |
+| P2P Networking | None | **OFP wire protocol** | **Octarq** |
+| WASM Sandbox | Docker only | **Dual-metered WASM** | **Octarq** |
+| Desktop App | Electron (~200MB) | **Tauri (~30MB)** | **Octarq** |
+| Migration | N/A | **`migrate --from openclaw`** | **Octarq** |
+| Skills | 54 bundled | **60 bundled** | **Octarq** |
+| LLM Providers | ~15 | **27 providers, 130+ models** | **Octarq** |
 | Plugin SDK | TypeScript published | JS + Python SDK | **Tie** |
 | Native Mobile | iOS + Android + macOS | Web responsive only | OpenClaw |
 | Voice/Talk Mode | Wake word + TTS + overlay | Mic + TTS playback | OpenClaw (slight) |
 | Browser Automation | Playwright with inline screenshots | Playwright + inline screenshots | **Tie** |
-| Visual Workflow Builder | None | **Drag-and-drop builder** | **OpenFang** |
+| Visual Workflow Builder | None | **Drag-and-drop builder** | **Octarq** |
 
-**OpenFang wins 15/18 categories.** The remaining gaps are: mobile apps (OpenClaw), voice wake word (OpenClaw slight edge).
+**Octarq wins 15/18 categories.** The remaining gaps are: mobile apps (OpenClaw), voice wake word (OpenClaw slight edge).
 
 ---
 
@@ -451,7 +451,7 @@ Sprint 4: COMPLETE
   4.5 Final release ................ READY (tag + build)
 
 Production audit:
-  - OpenFangAPI.delete() bug ....... FIXED
+  - OctarqAPI.delete() bug ....... FIXED
   - /api/config/set missing ........ FIXED
   - Tauri CSP hardened ............. FIXED
   - Middleware CSP narrowed ........ FIXED

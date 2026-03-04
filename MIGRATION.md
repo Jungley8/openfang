@@ -1,6 +1,6 @@
-# Migrating to OpenFang
+# Migrating to Octarq
 
-This guide covers migrating from OpenClaw (and other frameworks) to OpenFang. The migration engine handles config conversion, agent import, memory transfer, channel re-configuration, and skill scanning.
+This guide covers migrating from OpenClaw (and other frameworks) to Octarq. The migration engine handles config conversion, agent import, memory transfer, channel re-configuration, and skill scanning.
 
 ## Table of Contents
 
@@ -51,7 +51,7 @@ openfang migrate --from autogpt     # Coming soon
 
 ## What Gets Migrated
 
-| Item | Source (OpenClaw) | Destination (OpenFang) | Status |
+| Item | Source (OpenClaw) | Destination (Octarq) | Status |
 |------|-------------------|------------------------|--------|
 | **Config** | `~/.openclaw/config.yaml` | `~/.openfang/config.toml` | Fully automated |
 | **Agents** | `~/.openclaw/agents/*/agent.yaml` | `~/.openfang/agents/*/agent.toml` | Fully automated |
@@ -73,7 +73,7 @@ OpenClaw skills (Node.js) are detected and listed in the migration report but no
 openfang skill install <skill-name-or-path>
 ```
 
-OpenFang automatically detects OpenClaw-format skills and converts them during installation.
+Octarq automatically detects OpenClaw-format skills and converts them during installation.
 
 ---
 
@@ -81,7 +81,7 @@ OpenFang automatically detects OpenClaw-format skills and converts them during i
 
 If you prefer migrating by hand (or need to handle edge cases), follow these steps:
 
-### 1. Initialize OpenFang
+### 1. Initialize Octarq
 
 ```bash
 openfang init
@@ -103,7 +103,7 @@ memory:
   decay_rate: 0.05
 ```
 
-**OpenFang** (`~/.openfang/config.toml`):
+**Octarq** (`~/.openfang/config.toml`):
 ```toml
 [default_model]
 provider = "anthropic"
@@ -136,7 +136,7 @@ tags:
   - dev
 ```
 
-**OpenFang** (`~/.openfang/agents/coder/agent.toml`):
+**Octarq** (`~/.openfang/agents/coder/agent.toml`):
 ```toml
 name = "coder"
 version = "0.1.0"
@@ -166,7 +166,7 @@ allowed_users:
   - "123456789"
 ```
 
-**OpenFang** (add to `~/.openfang/config.toml`):
+**Octarq** (add to `~/.openfang/config.toml`):
 ```toml
 [channels.telegram]
 bot_token_env = "TELEGRAM_BOT_TOKEN"
@@ -176,7 +176,7 @@ allowed_users = ["123456789"]
 
 ### 5. Import Memory
 
-Copy any `MEMORY.md` files from OpenClaw agents to OpenFang agent directories:
+Copy any `MEMORY.md` files from OpenClaw agents to Octarq agent directories:
 
 ```bash
 cp ~/.openclaw/agents/coder/MEMORY.md ~/.openfang/agents/coder/imported_memory.md
@@ -188,7 +188,7 @@ The kernel will ingest these on first boot.
 
 ## Config Format Differences
 
-| Aspect | OpenClaw | OpenFang |
+| Aspect | OpenClaw | Octarq |
 |--------|----------|----------|
 | Format | YAML | TOML |
 | Config location | `~/.openclaw/config.yaml` | `~/.openfang/config.toml` |
@@ -205,9 +205,9 @@ The kernel will ingest these on first boot.
 
 ## Tool Name Mapping
 
-Tools were renamed between OpenClaw and OpenFang for consistency. The migration engine handles this automatically.
+Tools were renamed between OpenClaw and Octarq for consistency. The migration engine handles this automatically.
 
-| OpenClaw Tool | OpenFang Tool | Notes |
+| OpenClaw Tool | Octarq Tool | Notes |
 |---------------|---------------|-------|
 | `read_file` | `file_read` | Noun-first naming |
 | `write_file` | `file_write` | |
@@ -225,7 +225,7 @@ Tools were renamed between OpenClaw and OpenFang for consistency. The migration 
 | `agents_list` | `agent_list` | |
 | `agent_list` | `agent_list` | |
 
-### New Tools in OpenFang
+### New Tools in Octarq
 
 These tools have no OpenClaw equivalent:
 
@@ -251,7 +251,7 @@ These tools have no OpenClaw equivalent:
 
 OpenClaw's tool profiles map to explicit tool lists:
 
-| OpenClaw Profile | OpenFang Tools |
+| OpenClaw Profile | Octarq Tools |
 |------------------|----------------|
 | `minimal` | `file_read`, `file_list` |
 | `coding` | `file_read`, `file_write`, `file_list`, `shell_exec`, `web_fetch` |
@@ -263,7 +263,7 @@ OpenClaw's tool profiles map to explicit tool lists:
 
 ## Provider Mapping
 
-| OpenClaw Name | OpenFang Name | API Key Env Var |
+| OpenClaw Name | Octarq Name | API Key Env Var |
 |---------------|---------------|-----------------|
 | `anthropic` | `anthropic` | `ANTHROPIC_API_KEY` |
 | `claude` | `anthropic` | `ANTHROPIC_API_KEY` |
@@ -277,7 +277,7 @@ OpenClaw's tool profiles map to explicit tool lists:
 | `mistral` | `mistral` | `MISTRAL_API_KEY` |
 | `fireworks` | `fireworks` | `FIREWORKS_API_KEY` |
 
-### New Providers in OpenFang
+### New Providers in Octarq
 
 | Provider | Description |
 |----------|-------------|
@@ -288,7 +288,7 @@ OpenClaw's tool profiles map to explicit tool lists:
 
 ## Feature Comparison
 
-| Feature | OpenClaw | OpenFang |
+| Feature | OpenClaw | Octarq |
 |---------|----------|----------|
 | **Language** | Node.js / TypeScript | Rust |
 | **Config format** | YAML | TOML |
@@ -305,7 +305,7 @@ OpenClaw's tool profiles map to explicit tool lists:
 | **Event triggers** | None | Pattern-matching event triggers with templated prompts |
 | **WASM sandbox** | None | Wasmtime-based sandboxed execution |
 | **Python runtime** | None | Subprocess-based Python agent execution |
-| **Networking** | None | OFP (OpenFang Protocol) peer-to-peer |
+| **Networking** | None | OFP (Octarq Protocol) peer-to-peer |
 | **API server** | Basic REST | REST + WebSocket + SSE streaming |
 | **WebChat UI** | Separate | Embedded in daemon |
 | **Channel adapters** | Telegram, Discord | Telegram, Discord, Slack, WhatsApp, Signal, Matrix, Email |

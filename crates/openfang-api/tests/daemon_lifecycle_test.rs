@@ -119,7 +119,7 @@ async fn test_full_daemon_lifecycle() {
         telos,
         shutdown_notify: Arc::new(tokio::sync::Notify::new()),
         restart_requested: std::sync::atomic::AtomicBool::new(false),
-        restart_argv: vec!["openfang".to_string(), "start".to_string()],
+        restart_argv: vec!["octarq".to_string(), "start".to_string()],
         clawhub_cache: dashmap::DashMap::new(),
     });
 
@@ -250,7 +250,7 @@ async fn test_server_immediate_responsiveness() {
         telos,
         shutdown_notify: Arc::new(tokio::sync::Notify::new()),
         restart_requested: std::sync::atomic::AtomicBool::new(false),
-        restart_argv: vec!["openfang".to_string(), "start".to_string()],
+        restart_argv: vec!["octarq".to_string(), "start".to_string()],
         clawhub_cache: dashmap::DashMap::new(),
     });
 

@@ -187,7 +187,7 @@ function logsPage() {
       var url = URL.createObjectURL(blob);
       var a = document.createElement('a');
       a.href = url;
-      a.download = 'openfang-logs-' + new Date().toISOString().slice(0, 10) + '.txt';
+      a.download = 'octarq-logs-' + new Date().toISOString().slice(0, 10) + '.txt';
       a.click();
       URL.revokeObjectURL(url);
     },

@@ -1,7 +1,7 @@
-# OpenFang — Agent Instructions
+# Octarq — Agent Instructions
 
 ## Project Overview
-OpenFang is an open-source Agent Operating System written in Rust (14 crates).
+Octarq is an open-source Agent Operating System written in Rust (14 crates).
 - Config: `~/.openfang/config.toml`
 - Default API: `http://127.0.0.1:4200`
 - CLI binary: `target/release/openfang.exe` (or `target/debug/openfang.exe`)

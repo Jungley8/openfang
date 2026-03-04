@@ -82,7 +82,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.ref_name }}
-          name: "OpenFang ${{ github.ref_name }}"
+          name: "Octarq ${{ github.ref_name }}"
           body_path: release-notes.md
           draft: false
           generate_release_notes: false
@@ -179,11 +179,11 @@ jobs:
           APPLE_TEAM_ID: ${{ secrets.MAC_NOTARIZE_TEAM_ID }}
         with:
           tagName: ${{ github.ref_name }}
-          releaseName: "OpenFang ${{ github.ref_name }}"
+          releaseName: "Octarq ${{ github.ref_name }}"
           releaseBody: |
             ## What's New
 
-            See the [CHANGELOG](https://github.com/RightNow-AI/openfang/blob/main/CHANGELOG.md) for full details.
+            See the [CHANGELOG](https://github.com/RightNow-AI/Octarq/blob/main/CHANGELOG.md) for full details.
 
             ## Installation
 
@@ -191,17 +191,17 @@ jobs:
 
             **CLI (Linux/macOS)**:
             ```bash
-            curl -sSf https://openfang.sh | sh
+            curl -sSf https://octarq.sh | sh
             ```
 
             **Docker**:
             ```bash
-            docker pull ghcr.io/rightnow-ai/openfang:latest
+            docker pull ghcr.io/rightnow-ai/octarq:latest
             ```
 
             **Coming from OpenClaw?**
             ```bash
-            openfang migrate --from openclaw
+            octarq migrate --from openclaw
             ```
           releaseDraft: false
           prerelease: false
@@ -253,35 +253,35 @@ jobs:
           key: cli-${{ matrix.target }}
       - name: Build CLI (cross)
         if: matrix.target == 'aarch64-unknown-linux-gnu'
-        run: cross build --release --target ${{ matrix.target }} --bin openfang
+        run: cross build --release --target ${{ matrix.target }} --bin octarq
       - name: Build CLI
         if: matrix.target != 'aarch64-unknown-linux-gnu'
-        run: cargo build --release --target ${{ matrix.target }} --bin openfang
+        run: cargo build --release --target ${{ matrix.target }} --bin octarq
       - name: Package (Unix)
         if: matrix.archive == 'tar.gz'
         run: |
           cd target/${{ matrix.target }}/release
-          tar czf ../../../openfang-${{ matrix.target }}.tar.gz openfang
+          tar czf ../../../octarq-${{ matrix.target }}.tar.gz octarq
           cd ../../..
-          sha256sum openfang-${{ matrix.target }}.tar.gz > openfang-${{ matrix.target }}.tar.gz.sha256
+          sha256sum octarq-${{ matrix.target }}.tar.gz > octarq-${{ matrix.target }}.tar.gz.sha256
       - name: Package (Windows)
         if: matrix.archive == 'zip'
         shell: pwsh
         run: |
-          Compress-Archive -Path "target/${{ matrix.target }}/release/openfang.exe" -DestinationPath "openfang-${{ matrix.target }}.zip"
-          $hash = (Get-FileHash "openfang-${{ matrix.target }}.zip" -Algorithm SHA256).Hash.ToLower()
-          "$hash  openfang-${{ matrix.target }}.zip" | Out-File -Encoding ASCII "openfang-${{ matrix.target }}.zip.sha256"
+          Compress-Archive -Path "target/${{ matrix.target }}/release/octarq.exe" -DestinationPath "octarq-${{ matrix.target }}.zip"
+          $hash = (Get-FileHash "octarq-${{ matrix.target }}.zip" -Algorithm SHA256).Hash.ToLower()
+          "$hash  octarq-${{ matrix.target }}.zip" | Out-File -Encoding ASCII "octarq-${{ matrix.target }}.zip.sha256"
       - name: Upload Binary Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: openfang-${{ matrix.target }}
-          path: target/${{ matrix.target }}/release/openfang${{ runner.os == 'Windows' && '.exe' || '' }}
+          name: octarq-${{ matrix.target }}
+          path: target/${{ matrix.target }}/release/octarq${{ runner.os == 'Windows' && '.exe' || '' }}
           if-no-files-found: error
       - name: Upload to GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.ref_name }}
-          files: openfang-${{ matrix.target }}.*
+          files: octarq-${{ matrix.target }}.*
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -303,19 +303,19 @@ jobs:
       - name: Download x86_64 Binary
         uses: actions/download-artifact@v4
         with:
-          name: openfang-x86_64-unknown-linux-gnu
+          name: octarq-x86_64-unknown-linux-gnu
           path: bin/linux/amd64/
 
       - name: Download aarch64 Binary
         uses: actions/download-artifact@v4
         with:
-          name: openfang-aarch64-unknown-linux-gnu
+          name: octarq-aarch64-unknown-linux-gnu
           path: bin/linux/arm64/
 
       - name: Fix permissions
         run: |
-          chmod +x bin/linux/amd64/openfang
-          chmod +x bin/linux/arm64/openfang
+          chmod +x bin/linux/amd64/octarq
+          chmod +x bin/linux/arm64/octarq
 
       - name: Set up QEMU (for arm64 emulation of apt-get)
         uses: docker/setup-qemu-action@v3

@@ -3,10 +3,10 @@ name = "openfang-cli"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
-description = "CLI tool for the OpenFang Agent OS"
+description = "CLI tool for the Octarq Agent OS"
 
 [[bin]]
-name = "openfang"
+name = "octarq"
 path = "src/main.rs"
 
 [dependencies]

@@ -13,14 +13,14 @@ RUN cargo chef cook --release --recipe-json recipe.json
 
 # Build the application
 COPY . .
-RUN cargo build --release --bin openfang
+RUN cargo build --release --bin octarq
 
 FROM debian:bookworm-slim
 RUN apt-get update && apt-get install -y ca-certificates && rm -rf /var/lib/apt/lists/*
-COPY --from=builder /app/target/release/openfang /usr/local/bin/
-COPY --from=builder /app/agents /opt/openfang/agents
+COPY --from=builder /app/target/release/octarq /usr/local/bin/
+COPY --from=builder /app/agents /opt/octarq/agents
 EXPOSE 4200
 VOLUME /data
 ENV OPENFANG_HOME=/data
-ENTRYPOINT ["openfang"]
+ENTRYPOINT ["octarq"]
 CMD ["start"]

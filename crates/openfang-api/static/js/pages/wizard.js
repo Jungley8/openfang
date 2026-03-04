@@ -523,7 +523,7 @@ function wizardPage() {
     // ── Step 6: Finish ──
 
     finish() {
-      localStorage.setItem('openfang-onboarded', 'true');
+      localStorage.setItem('octarq-onboarded', 'true');
       Alpine.store('app').showOnboarding = false;
       // Navigate to agents with chat if an agent was created, otherwise overview
       if (this.createdAgent) {
@@ -536,7 +536,7 @@ function wizardPage() {
     },
 
     finishAndDismiss() {
-      localStorage.setItem('openfang-onboarded', 'true');
+      localStorage.setItem('octarq-onboarded', 'true');
       Alpine.store('app').showOnboarding = false;
       window.location.hash = 'overview';
     }

@@ -113,14 +113,14 @@ convert icon.svg -resize 256x256 -define icon:auto-resize=256,128,64,48,32,16 ic
 
 ---
 
-## 5. Set Up the `openfang.sh` Domain
+## 5. Set Up the `octarq.sh` Domain
 
 **Status:** BLOCKING for install scripts — users run `curl -sSf https://openfang.sh | sh`.
 
 Options:
-- **GitHub Pages**: Point `openfang.sh` to a GitHub Pages site that redirects `/` to `scripts/install.sh` and `/install.ps1` to `scripts/install.ps1` from the repo's latest release.
+- **GitHub Pages**: Point `octarq.sh` to a GitHub Pages site that redirects `/` to `scripts/install.sh` and `/install.ps1` to `scripts/install.ps1` from the repo's latest release.
 - **Cloudflare Workers / Vercel**: Serve the install scripts with proper `Content-Type: text/plain` headers.
-- **Raw GitHub redirect**: Use `openfang.sh` as a CNAME to `raw.githubusercontent.com/RightNow-AI/openfang/main/scripts/install.sh` (less reliable).
+- **Raw GitHub redirect**: Use `octarq.sh` as a CNAME to `raw.githubusercontent.com/RightNow-AI/Octarq/main/scripts/install.sh` (less reliable).
 
 The install scripts reference:
 - `https://openfang.sh` → serves `scripts/install.sh`
@@ -258,7 +258,7 @@ docker run --rm ghcr.io/RightNow-AI/openfang:latest --version
 2. Tag v0.1.1 and push
 3. Wait for release workflow to complete
 4. Open the v0.1.0 app — after 10 seconds it should:
-   - Show "OpenFang Updating..." notification
+   - Show "Octarq Updating..." notification
    - Download and install v0.1.1
    - Restart automatically to v0.1.1
 5. Right-click tray → "Check for Updates" → should show "Up to Date"
@@ -267,11 +267,11 @@ docker run --rm ghcr.io/RightNow-AI/openfang:latest --version
 ```bash
 # Linux/macOS
 curl -sSf https://openfang.sh | sh
-openfang --version  # Should print v0.1.0
+octarq --version  # Should print v0.1.0
 
 # Windows PowerShell
 irm https://openfang.sh/install.ps1 | iex
-openfang --version
+octarq --version
 ```
 
 ---

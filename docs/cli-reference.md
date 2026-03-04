@@ -1,15 +1,15 @@
-# OpenFang CLI Reference
+# Octarq CLI Reference
 
-Complete command-line reference for `openfang`, the CLI tool for the OpenFang Agent OS.
+Complete command-line reference for `octarq`, the CLI tool for the Octarq Agent OS.
 
 ## Overview
 
-The `openfang` binary is the primary interface for managing the OpenFang Agent OS. It supports two modes of operation:
+The `octarq` binary is the primary interface for managing the Octarq Agent OS. It supports two modes of operation:
 
-- **Daemon mode** -- When a daemon is running (`openfang start`), CLI commands communicate with it over HTTP. This is the recommended mode for production use.
+- **Daemon mode** -- When a daemon is running (`octarq start`), CLI commands communicate with it over HTTP. This is the recommended mode for production use.
 - **In-process mode** -- When no daemon is detected, commands that support it will boot an ephemeral in-process kernel. Agents spawned in this mode are not persisted and will be lost when the process exits.
 
-Running `openfang` with no subcommand launches the interactive TUI (terminal user interface) built with ratatui, which provides a full dashboard experience in the terminal.
+Running `octarq` with no subcommand launches the interactive TUI (terminal user interface) built with ratatui, which provides a full dashboard experience in the terminal.
 
 ## Installation
 
@@ -46,7 +46,7 @@ These options apply to all commands.
 |---|---|
 | `--config <PATH>` | Path to a custom config file. Overrides the default `~/.openfang/config.toml`. |
 | `--help` | Print help information for any command or subcommand. |
-| `--version` | Print the version of the `openfang` binary. |
+| `--version` | Print the version of the `octarq` binary. |
 
 **Environment variables:**
 
@@ -54,18 +54,18 @@ These options apply to all commands.
 |---|---|
 | `RUST_LOG` | Controls log verbosity (e.g. `info`, `debug`, `openfang_kernel=trace`). |
 | `OPENFANG_AGENTS_DIR` | Override the agent templates directory. |
-| `EDITOR` / `VISUAL` | Editor used by `openfang config edit`. Falls back to `notepad` (Windows) or `vi` (Unix). |
+| `EDITOR` / `VISUAL` | Editor used by `octarq config edit`. Falls back to `notepad` (Windows) or `vi` (Unix). |
 
 ---
 
 ## Command Reference
 
-### openfang (no subcommand)
+### octarq (no subcommand)
 
 Launch the interactive TUI dashboard.
 
 ```
-openfang [--config <PATH>]
+octarq [--config <PATH>]
 ```
 
 The TUI provides a full-screen terminal interface with panels for agents, chat, workflows, channels, skills, settings, and more. Tracing output is redirected to `~/.openfang/tui.log` to avoid corrupting the terminal display.
@@ -74,12 +74,12 @@ Press `Ctrl+C` to exit. A second `Ctrl+C` force-exits the process.
 
 ---
 
-### openfang init
+### octarq init
 
-Initialize the OpenFang workspace. Creates `~/.openfang/` with subdirectories (`data/`, `agents/`) and a default `config.toml`.
+Initialize the Octarq workspace. Creates `~/.openfang/` with subdirectories (`data/`, `agents/`) and a default `config.toml`.
 
 ```
-openfang init [--quick]
+octarq init [--quick]
 ```
 
 **Options:**
@@ -98,27 +98,27 @@ openfang init [--quick]
 
 ```bash
 # Interactive setup
-openfang init
+octarq init
 
 # Non-interactive (CI/scripts)
 export GROQ_API_KEY="gsk_..."
-openfang init --quick
+octarq init --quick
 ```
 
 ---
 
-### openfang start
+### octarq start
 
-Start the OpenFang daemon (kernel + API server).
+Start the Octarq daemon (kernel + API server).
 
 ```
-openfang start [--config <PATH>]
+octarq start [--config <PATH>]
 ```
 
 **Behavior:**
 
 - Checks if a daemon is already running; exits with an error if so.
-- Boots the OpenFang kernel (loads config, initializes SQLite database, loads agents, connects MCP servers, starts background tasks).
+- Boots the Octarq kernel (loads config, initializes SQLite database, loads agents, connects MCP servers, starts background tasks).
 - Starts the HTTP API server on the address specified in `config.toml` (default: `127.0.0.1:4200`).
 - Writes `daemon.json` to `~/.openfang/` so other CLI commands can discover the running daemon.
 - Blocks until interrupted with `Ctrl+C`.
@@ -126,7 +126,7 @@ openfang start [--config <PATH>]
 **Output:**
 
 ```
-  OpenFang Agent OS v0.1.0
+  Octarq Agent OS v0.1.0
 
   Starting daemon...
 
@@ -139,7 +139,7 @@ openfang start [--config <PATH>]
   Provider:   groq
   Model:      llama-3.3-70b-versatile
 
-  hint: Open the dashboard in your browser, or run `openfang chat`
+  hint: Open the dashboard in your browser, or run `octarq chat`
   hint: Press Ctrl+C to stop the daemon
 ```
 
@@ -147,20 +147,20 @@ openfang start [--config <PATH>]
 
 ```bash
 # Start with default config
-openfang start
+octarq start
 
 # Start with custom config
-openfang start --config /path/to/config.toml
+octarq start --config /path/to/config.toml
 ```
 
 ---
 
-### openfang status
+### octarq status
 
 Show the current kernel/daemon status.
 
 ```
-openfang status [--json]
+octarq status [--json]
 ```
 
 **Options:**
@@ -177,19 +177,19 @@ openfang status [--json]
 **Example:**
 
 ```bash
-openfang status
+octarq status
 
-openfang status --json | jq '.agent_count'
+octarq status --json | jq '.agent_count'
 ```
 
 ---
 
-### openfang doctor
+### octarq doctor
 
-Run diagnostic checks on the OpenFang installation.
+Run diagnostic checks on the Octarq installation.
 
 ```
-openfang doctor [--json] [--repair]
+octarq doctor [--json] [--repair]
 ```
 
 **Options:**
@@ -201,7 +201,7 @@ openfang doctor [--json] [--repair]
 
 **Checks performed:**
 
-1. **OpenFang directory** -- `~/.openfang/` exists
+1. **Octarq directory** -- `~/.openfang/` exists
 2. **.env file** -- exists and has correct permissions (0600 on Unix)
 3. **Config TOML syntax** -- `config.toml` parses without errors
 4. **Daemon status** -- whether a daemon is running
@@ -218,21 +218,21 @@ openfang doctor [--json] [--repair]
 **Example:**
 
 ```bash
-openfang doctor
+octarq doctor
 
-openfang doctor --repair
+octarq doctor --repair
 
-openfang doctor --json
+octarq doctor --json
 ```
 
 ---
 
-### openfang dashboard
+### octarq dashboard
 
 Open the web dashboard in the default browser.
 
 ```
-openfang dashboard
+octarq dashboard
 ```
 
 **Behavior:**
@@ -244,17 +244,17 @@ openfang dashboard
 **Example:**
 
 ```bash
-openfang dashboard
+octarq dashboard
 ```
 
 ---
 
-### openfang completion
+### octarq completion
 
 Generate shell completion scripts.
 
 ```
-openfang completion <SHELL>
+octarq completion <SHELL>
 ```
 
 **Arguments:**
@@ -267,28 +267,28 @@ openfang completion <SHELL>
 
 ```bash
 # Bash
-openfang completion bash > ~/.bash_completion.d/openfang
+octarq completion bash > ~/.bash_completion.d/openfang
 
 # Zsh
-openfang completion zsh > ~/.zfunc/_openfang
+octarq completion zsh > ~/.zfunc/_openfang
 
 # Fish
-openfang completion fish > ~/.config/fish/completions/openfang.fish
+octarq completion fish > ~/.config/fish/completions/openfang.fish
 
 # PowerShell
-openfang completion powershell > openfang.ps1
+octarq completion powershell > openfang.ps1
 ```
 
 ---
 
 ## Agent Commands
 
-### openfang agent new
+### octarq agent new
 
 Spawn an agent from a built-in template.
 
 ```
-openfang agent new [<TEMPLATE>]
+octarq agent new [<TEMPLATE>]
 ```
 
 **Arguments:**
@@ -308,23 +308,23 @@ openfang agent new [<TEMPLATE>]
 
 ```bash
 # Interactive picker
-openfang agent new
+octarq agent new
 
 # Spawn by name
-openfang agent new coder
+octarq agent new coder
 
 # Spawn the assistant template
-openfang agent new assistant
+octarq agent new assistant
 ```
 
 ---
 
-### openfang agent spawn
+### octarq agent spawn
 
 Spawn an agent from a custom manifest file.
 
 ```
-openfang agent spawn <MANIFEST>
+octarq agent spawn <MANIFEST>
 ```
 
 **Arguments:**
@@ -342,17 +342,17 @@ openfang agent spawn <MANIFEST>
 **Example:**
 
 ```bash
-openfang agent spawn ./my-agent/agent.toml
+octarq agent spawn ./my-agent/agent.toml
 ```
 
 ---
 
-### openfang agent list
+### octarq agent list
 
 List all running agents.
 
 ```
-openfang agent list [--json]
+octarq agent list [--json]
 ```
 
 **Options:**
@@ -366,26 +366,26 @@ openfang agent list [--json]
 **Example:**
 
 ```bash
-openfang agent list
+octarq agent list
 
-openfang agent list --json | jq '.[].name'
+octarq agent list --json | jq '.[].name'
 ```
 
 ---
 
-### openfang agent chat
+### octarq agent chat
 
 Start an interactive chat session with a specific agent.
 
 ```
-openfang agent chat <AGENT_ID>
+octarq agent chat <AGENT_ID>
 ```
 
 **Arguments:**
 
 | Argument | Description |
 |---|---|
-| `<AGENT_ID>` | Agent UUID. Obtain from `openfang agent list`. |
+| `<AGENT_ID>` | Agent UUID. Obtain from `octarq agent list`. |
 
 **Behavior:**
 
@@ -397,17 +397,17 @@ openfang agent chat <AGENT_ID>
 **Example:**
 
 ```bash
-openfang agent chat a1b2c3d4-e5f6-7890-abcd-ef1234567890
+octarq agent chat a1b2c3d4-e5f6-7890-abcd-ef1234567890
 ```
 
 ---
 
-### openfang agent kill
+### octarq agent kill
 
 Terminate a running agent.
 
 ```
-openfang agent kill <AGENT_ID>
+octarq agent kill <AGENT_ID>
 ```
 
 **Arguments:**
@@ -419,7 +419,7 @@ openfang agent kill <AGENT_ID>
 **Example:**
 
 ```bash
-openfang agent kill a1b2c3d4-e5f6-7890-abcd-ef1234567890
+octarq agent kill a1b2c3d4-e5f6-7890-abcd-ef1234567890
 ```
 
 ---
@@ -428,24 +428,24 @@ openfang agent kill a1b2c3d4-e5f6-7890-abcd-ef1234567890
 
 All workflow commands require a running daemon.
 
-### openfang workflow list
+### octarq workflow list
 
 List all registered workflows.
 
 ```
-openfang workflow list
+octarq workflow list
 ```
 
 **Output columns:** ID, NAME, STEPS, CREATED.
 
 ---
 
-### openfang workflow create
+### octarq workflow create
 
 Create a workflow from a JSON definition file.
 
 ```
-openfang workflow create <FILE>
+octarq workflow create <FILE>
 ```
 
 **Arguments:**
@@ -457,30 +457,30 @@ openfang workflow create <FILE>
 **Example:**
 
 ```bash
-openfang workflow create ./my-workflow.json
+octarq workflow create ./my-workflow.json
 ```
 
 ---
 
-### openfang workflow run
+### octarq workflow run
 
 Execute a workflow by ID.
 
 ```
-openfang workflow run <WORKFLOW_ID> <INPUT>
+octarq workflow run <WORKFLOW_ID> <INPUT>
 ```
 
 **Arguments:**
 
 | Argument | Description |
 |---|---|
-| `<WORKFLOW_ID>` | Workflow UUID. Obtain from `openfang workflow list`. |
+| `<WORKFLOW_ID>` | Workflow UUID. Obtain from `octarq workflow list`. |
 | `<INPUT>` | Input text to pass to the workflow. |
 
 **Example:**
 
 ```bash
-openfang workflow run abc123 "Analyze this code for security issues"
+octarq workflow run abc123 "Analyze this code for security issues"
 ```
 
 ---
@@ -489,12 +489,12 @@ openfang workflow run abc123 "Analyze this code for security issues"
 
 All trigger commands require a running daemon.
 
-### openfang trigger list
+### octarq trigger list
 
 List all event triggers.
 
 ```
-openfang trigger list [--agent-id <ID>]
+octarq trigger list [--agent-id <ID>]
 ```
 
 **Options:**
@@ -507,12 +507,12 @@ openfang trigger list [--agent-id <ID>]
 
 ---
 
-### openfang trigger create
+### octarq trigger create
 
 Create an event trigger for an agent.
 
 ```
-openfang trigger create <AGENT_ID> <PATTERN_JSON> [--prompt <TEMPLATE>] [--max-fires <N>]
+octarq trigger create <AGENT_ID> <PATTERN_JSON> [--prompt <TEMPLATE>] [--max-fires <N>]
 ```
 
 **Arguments:**
@@ -533,26 +533,26 @@ openfang trigger create <AGENT_ID> <PATTERN_JSON> [--prompt <TEMPLATE>] [--max-f
 
 ```bash
 # Fire on any lifecycle event
-openfang trigger create <AGENT_ID> '{"lifecycle":{}}'
+octarq trigger create <AGENT_ID> '{"lifecycle":{}}'
 
 # Fire when a specific agent is spawned
-openfang trigger create <AGENT_ID> '{"agent_spawned":{"name_pattern":"*"}}'
+octarq trigger create <AGENT_ID> '{"agent_spawned":{"name_pattern":"*"}}'
 
 # Fire on agent termination
-openfang trigger create <AGENT_ID> '{"agent_terminated":{}}'
+octarq trigger create <AGENT_ID> '{"agent_terminated":{}}'
 
 # Fire on all events (limited to 10 fires)
-openfang trigger create <AGENT_ID> '{"all":{}}' --max-fires 10
+octarq trigger create <AGENT_ID> '{"all":{}}' --max-fires 10
 ```
 
 ---
 
-### openfang trigger delete
+### octarq trigger delete
 
 Delete a trigger by ID.
 
 ```
-openfang trigger delete <TRIGGER_ID>
+octarq trigger delete <TRIGGER_ID>
 ```
 
 **Arguments:**
@@ -565,12 +565,12 @@ openfang trigger delete <TRIGGER_ID>
 
 ## Skill Commands
 
-### openfang skill list
+### octarq skill list
 
 List all installed skills.
 
 ```
-openfang skill list
+octarq skill list
 ```
 
 **Output columns:** NAME, VERSION, TOOLS, DESCRIPTION.
@@ -579,12 +579,12 @@ Loads skills from `~/.openfang/skills/` plus bundled skills compiled into the bi
 
 ---
 
-### openfang skill install
+### octarq skill install
 
 Install a skill from a local directory, git URL, or FangHub marketplace.
 
 ```
-openfang skill install <SOURCE>
+octarq skill install <SOURCE>
 ```
 
 **Arguments:**
@@ -602,23 +602,23 @@ openfang skill install <SOURCE>
 
 ```bash
 # Install from local directory
-openfang skill install ./my-skill/
+octarq skill install ./my-skill/
 
 # Install from FangHub
-openfang skill install web-search
+octarq skill install web-search
 
 # Install an OpenClaw-format skill
-openfang skill install ./openclaw-skill/
+octarq skill install ./openclaw-skill/
 ```
 
 ---
 
-### openfang skill remove
+### octarq skill remove
 
 Remove an installed skill.
 
 ```
-openfang skill remove <NAME>
+octarq skill remove <NAME>
 ```
 
 **Arguments:**
@@ -630,17 +630,17 @@ openfang skill remove <NAME>
 **Example:**
 
 ```bash
-openfang skill remove web-search
+octarq skill remove web-search
 ```
 
 ---
 
-### openfang skill search
+### octarq skill search
 
 Search the FangHub marketplace for skills.
 
 ```
-openfang skill search <QUERY>
+octarq skill search <QUERY>
 ```
 
 **Arguments:**
@@ -652,17 +652,17 @@ openfang skill search <QUERY>
 **Example:**
 
 ```bash
-openfang skill search "docker kubernetes"
+octarq skill search "docker kubernetes"
 ```
 
 ---
 
-### openfang skill create
+### octarq skill create
 
 Interactively scaffold a new skill project.
 
 ```
-openfang skill create
+octarq skill create
 ```
 
 **Behavior:**
@@ -679,7 +679,7 @@ Creates a directory under `~/.openfang/skills/<name>/` with:
 **Example:**
 
 ```bash
-openfang skill create
+octarq skill create
 # Skill name: my-tool
 # Description: A custom analysis tool
 # Runtime (python/node/wasm) [python]: python
@@ -689,12 +689,12 @@ openfang skill create
 
 ## Channel Commands
 
-### openfang channel list
+### octarq channel list
 
 List configured channels and their status.
 
 ```
-openfang channel list
+octarq channel list
 ```
 
 **Output columns:** CHANNEL, ENV VAR, STATUS.
@@ -705,12 +705,12 @@ Checks `config.toml` for channel configuration sections and environment variable
 
 ---
 
-### openfang channel setup
+### octarq channel setup
 
 Interactive setup wizard for a channel integration.
 
 ```
-openfang channel setup [<CHANNEL>]
+octarq channel setup [<CHANNEL>]
 ```
 
 **Arguments:**
@@ -732,22 +732,22 @@ Each wizard:
 
 ```bash
 # Interactive picker
-openfang channel setup
+octarq channel setup
 
 # Direct setup
-openfang channel setup telegram
-openfang channel setup discord
-openfang channel setup slack
+octarq channel setup telegram
+octarq channel setup discord
+octarq channel setup slack
 ```
 
 ---
 
-### openfang channel test
+### octarq channel test
 
 Send a test message through a configured channel.
 
 ```
-openfang channel test <CHANNEL>
+octarq channel test <CHANNEL>
 ```
 
 **Arguments:**
@@ -761,17 +761,17 @@ Requires a running daemon. Sends `POST /api/channels/<channel>/test`.
 **Example:**
 
 ```bash
-openfang channel test telegram
+octarq channel test telegram
 ```
 
 ---
 
-### openfang channel enable
+### octarq channel enable
 
 Enable a channel integration.
 
 ```
-openfang channel enable <CHANNEL>
+octarq channel enable <CHANNEL>
 ```
 
 **Arguments:**
@@ -784,12 +784,12 @@ In daemon mode: sends `POST /api/channels/<channel>/enable`. Without a daemon: p
 
 ---
 
-### openfang channel disable
+### octarq channel disable
 
 Disable a channel without removing its configuration.
 
 ```
-openfang channel disable <CHANNEL>
+octarq channel disable <CHANNEL>
 ```
 
 **Arguments:**
@@ -804,36 +804,36 @@ In daemon mode: sends `POST /api/channels/<channel>/disable`. Without a daemon: 
 
 ## Config Commands
 
-### openfang config show
+### octarq config show
 
 Display the current configuration file.
 
 ```
-openfang config show
+octarq config show
 ```
 
 Prints the contents of `~/.openfang/config.toml` with the file path as a header comment.
 
 ---
 
-### openfang config edit
+### octarq config edit
 
 Open the configuration file in your editor.
 
 ```
-openfang config edit
+octarq config edit
 ```
 
 Uses `$EDITOR`, then `$VISUAL`, then falls back to `notepad` (Windows) or `vi` (Unix).
 
 ---
 
-### openfang config get
+### octarq config get
 
 Get a single configuration value by dotted key path.
 
 ```
-openfang config get <KEY>
+octarq config get <KEY>
 ```
 
 **Arguments:**
@@ -845,24 +845,24 @@ openfang config get <KEY>
 **Example:**
 
 ```bash
-openfang config get default_model.provider
+octarq config get default_model.provider
 # groq
 
-openfang config get api_listen
+octarq config get api_listen
 # 127.0.0.1:4200
 
-openfang config get memory.decay_rate
+octarq config get memory.decay_rate
 # 0.05
 ```
 
 ---
 
-### openfang config set
+### octarq config set
 
 Set a configuration value by dotted key path.
 
 ```
-openfang config set <KEY> <VALUE>
+octarq config set <KEY> <VALUE>
 ```
 
 **Arguments:**
@@ -877,19 +877,19 @@ openfang config set <KEY> <VALUE>
 **Example:**
 
 ```bash
-openfang config set default_model.provider anthropic
-openfang config set default_model.model claude-sonnet-4-20250514
-openfang config set api_listen "0.0.0.0:4200"
+octarq config set default_model.provider anthropic
+octarq config set default_model.model claude-sonnet-4-20250514
+octarq config set api_listen "0.0.0.0:4200"
 ```
 
 ---
 
-### openfang config set-key
+### octarq config set-key
 
 Save an LLM provider API key to `~/.openfang/.env`.
 
 ```
-openfang config set-key <PROVIDER>
+octarq config set-key <PROVIDER>
 ```
 
 **Arguments:**
@@ -908,7 +908,7 @@ openfang config set-key <PROVIDER>
 **Example:**
 
 ```bash
-openfang config set-key groq
+octarq config set-key groq
 # Paste your groq API key: gsk_...
 # [ok] Saved GROQ_API_KEY to ~/.openfang/.env
 # Testing key... OK
@@ -916,12 +916,12 @@ openfang config set-key groq
 
 ---
 
-### openfang config delete-key
+### octarq config delete-key
 
 Remove an API key from `~/.openfang/.env`.
 
 ```
-openfang config delete-key <PROVIDER>
+octarq config delete-key <PROVIDER>
 ```
 
 **Arguments:**
@@ -933,17 +933,17 @@ openfang config delete-key <PROVIDER>
 **Example:**
 
 ```bash
-openfang config delete-key openai
+octarq config delete-key openai
 ```
 
 ---
 
-### openfang config test-key
+### octarq config test-key
 
 Test provider connectivity with the stored API key.
 
 ```
-openfang config test-key <PROVIDER>
+octarq config test-key <PROVIDER>
 ```
 
 **Arguments:**
@@ -962,7 +962,7 @@ openfang config test-key <PROVIDER>
 **Example:**
 
 ```bash
-openfang config test-key groq
+octarq config test-key groq
 # Testing groq (GROQ_API_KEY)... OK
 ```
 
@@ -970,12 +970,12 @@ openfang config test-key groq
 
 ## Quick Chat
 
-### openfang chat
+### octarq chat
 
 Quick alias for starting a chat session.
 
 ```
-openfang chat [<AGENT>]
+octarq chat [<AGENT>]
 ```
 
 **Arguments:**
@@ -986,7 +986,7 @@ openfang chat [<AGENT>]
 
 **Behavior:**
 
-- **Daemon mode:** Finds the agent by name or ID among running agents. If no agent name is given, uses the first available agent. If no agents exist, suggests `openfang agent new`.
+- **Daemon mode:** Finds the agent by name or ID among running agents. If no agent name is given, uses the first available agent. If no agents exist, suggests `octarq agent new`.
 - **Standalone mode (no daemon):** Boots an in-process kernel and auto-spawns an agent from templates. Searches for an agent matching the given name, then falls back to `assistant`, then to the first available template.
 
 This is the simplest way to start chatting -- it works with or without a daemon.
@@ -995,25 +995,25 @@ This is the simplest way to start chatting -- it works with or without a daemon.
 
 ```bash
 # Chat with the default agent
-openfang chat
+octarq chat
 
 # Chat with a specific agent by name
-openfang chat coder
+octarq chat coder
 
 # Chat with a specific agent by UUID
-openfang chat a1b2c3d4-e5f6-7890-abcd-ef1234567890
+octarq chat a1b2c3d4-e5f6-7890-abcd-ef1234567890
 ```
 
 ---
 
 ## Migration
 
-### openfang migrate
+### octarq migrate
 
 Migrate configuration and agents from another agent framework.
 
 ```
-openfang migrate --from <FRAMEWORK> [--source-dir <PATH>] [--dry-run]
+octarq migrate --from <FRAMEWORK> [--source-dir <PATH>] [--dry-run]
 ```
 
 **Options:**
@@ -1026,7 +1026,7 @@ openfang migrate --from <FRAMEWORK> [--source-dir <PATH>] [--dry-run]
 
 **Behavior:**
 
-- Converts agent configurations, YAML manifests, and settings from the source framework into OpenFang format.
+- Converts agent configurations, YAML manifests, and settings from the source framework into Octarq format.
 - Saves imported data to `~/.openfang/`.
 - Writes a `migration_report.md` summarizing what was imported.
 
@@ -1034,33 +1034,33 @@ openfang migrate --from <FRAMEWORK> [--source-dir <PATH>] [--dry-run]
 
 ```bash
 # Dry run migration from OpenClaw
-openfang migrate --from openclaw --dry-run
+octarq migrate --from openclaw --dry-run
 
 # Migrate from OpenClaw (auto-detect source)
-openfang migrate --from openclaw
+octarq migrate --from openclaw
 
 # Migrate from LangChain with explicit source
-openfang migrate --from langchain --source-dir /home/user/.langchain
+octarq migrate --from langchain --source-dir /home/user/.langchain
 
 # Migrate from AutoGPT
-openfang migrate --from autogpt
+octarq migrate --from autogpt
 ```
 
 ---
 
 ## MCP Server
 
-### openfang mcp
+### octarq mcp
 
 Start an MCP (Model Context Protocol) server over stdio.
 
 ```
-openfang mcp
+octarq mcp
 ```
 
 **Behavior:**
 
-- Exposes running OpenFang agents as MCP tools via JSON-RPC 2.0 over stdin/stdout with Content-Length framing.
+- Exposes running Octarq agents as MCP tools via JSON-RPC 2.0 over stdin/stdout with Content-Length framing.
 - Each agent becomes a callable tool named `openfang_agent_<name>` (hyphens replaced with underscores).
 - Connects to a running daemon via HTTP if available; otherwise boots an in-process kernel.
 - Protocol version: `2024-11-05`.
@@ -1108,19 +1108,19 @@ If either step fails (no `daemon.json`, stale file, health check timeout), the C
 **Daemon lifecycle:**
 
 ```
-openfang start          # Starts daemon, writes daemon.json
+octarq start          # Starts daemon, writes daemon.json
                         # Other CLI instances detect daemon.json
-openfang status         # Connects to daemon via HTTP
+octarq status         # Connects to daemon via HTTP
 Ctrl+C                  # Daemon shuts down, daemon.json removed
 
-openfang doctor --repair  # Cleans up stale daemon.json from crashes
+octarq doctor --repair  # Cleans up stale daemon.json from crashes
 ```
 
 ---
 
 ## Environment File
 
-OpenFang loads `~/.openfang/.env` into the process environment on every CLI invocation. System environment variables take priority over `.env` values.
+Octarq loads `~/.openfang/.env` into the process environment on every CLI invocation. System environment variables take priority over `.env` values.
 
 The `.env` file stores API keys and secrets:
 
@@ -1153,188 +1153,188 @@ Manage keys with the `config set-key` / `config delete-key` commands rather than
 # 1. Set your API key
 export GROQ_API_KEY="gsk_your_key_here"
 
-# 2. Initialize OpenFang
-openfang init --quick
+# 2. Initialize Octarq
+octarq init --quick
 
 # 3. Start the daemon
-openfang start
+octarq start
 ```
 
 ### Daily usage
 
 ```bash
 # Quick chat (auto-spawns agent if needed)
-openfang chat
+octarq chat
 
 # Chat with a specific agent
-openfang chat coder
+octarq chat coder
 
 # Check what's running
-openfang status
+octarq status
 
 # Open the web dashboard
-openfang dashboard
+octarq dashboard
 ```
 
 ### Agent management
 
 ```bash
 # Spawn from a template
-openfang agent new assistant
+octarq agent new assistant
 
 # Spawn from a custom manifest
-openfang agent spawn ./agents/custom-agent/agent.toml
+octarq agent spawn ./agents/custom-agent/agent.toml
 
 # List running agents
-openfang agent list
+octarq agent list
 
 # Chat with an agent by UUID
-openfang agent chat <UUID>
+octarq agent chat <UUID>
 
 # Kill an agent
-openfang agent kill <UUID>
+octarq agent kill <UUID>
 ```
 
 ### Workflow automation
 
 ```bash
 # Create a workflow
-openfang workflow create ./review-pipeline.json
+octarq workflow create ./review-pipeline.json
 
 # List workflows
-openfang workflow list
+octarq workflow list
 
 # Run a workflow
-openfang workflow run <WORKFLOW_ID> "Review the latest PR"
+octarq workflow run <WORKFLOW_ID> "Review the latest PR"
 ```
 
 ### Event triggers
 
 ```bash
 # Create a trigger that fires on agent spawn
-openfang trigger create <AGENT_ID> '{"agent_spawned":{"name_pattern":"*"}}' \
+octarq trigger create <AGENT_ID> '{"agent_spawned":{"name_pattern":"*"}}' \
   --prompt "New agent spawned: {{event}}" \
   --max-fires 100
 
 # List all triggers
-openfang trigger list
+octarq trigger list
 
 # List triggers for a specific agent
-openfang trigger list --agent-id <AGENT_ID>
+octarq trigger list --agent-id <AGENT_ID>
 
 # Delete a trigger
-openfang trigger delete <TRIGGER_ID>
+octarq trigger delete <TRIGGER_ID>
 ```
 
 ### Skill management
 
 ```bash
 # Search FangHub
-openfang skill search "code review"
+octarq skill search "code review"
 
 # Install a skill
-openfang skill install code-reviewer
+octarq skill install code-reviewer
 
 # List installed skills
-openfang skill list
+octarq skill list
 
 # Create a new skill
-openfang skill create
+octarq skill create
 
 # Remove a skill
-openfang skill remove code-reviewer
+octarq skill remove code-reviewer
 ```
 
 ### Channel setup
 
 ```bash
 # Interactive channel picker
-openfang channel setup
+octarq channel setup
 
 # Direct channel setup
-openfang channel setup telegram
+octarq channel setup telegram
 
 # Check channel status
-openfang channel list
+octarq channel list
 
 # Test a channel
-openfang channel test telegram
+octarq channel test telegram
 
 # Enable/disable channels
-openfang channel enable discord
-openfang channel disable slack
+octarq channel enable discord
+octarq channel disable slack
 ```
 
 ### Configuration
 
 ```bash
 # View config
-openfang config show
+octarq config show
 
 # Get a specific value
-openfang config get default_model.provider
+octarq config get default_model.provider
 
 # Change provider
-openfang config set default_model.provider anthropic
-openfang config set default_model.model claude-sonnet-4-20250514
-openfang config set default_model.api_key_env ANTHROPIC_API_KEY
+octarq config set default_model.provider anthropic
+octarq config set default_model.model claude-sonnet-4-20250514
+octarq config set default_model.api_key_env ANTHROPIC_API_KEY
 
 # Manage API keys
-openfang config set-key anthropic
-openfang config test-key anthropic
-openfang config delete-key openai
+octarq config set-key anthropic
+octarq config test-key anthropic
+octarq config delete-key openai
 
 # Open in editor
-openfang config edit
+octarq config edit
 ```
 
 ### Migration from other frameworks
 
 ```bash
 # Preview migration
-openfang migrate --from openclaw --dry-run
+octarq migrate --from openclaw --dry-run
 
 # Run migration
-openfang migrate --from openclaw
+octarq migrate --from openclaw
 
 # Migrate from LangChain
-openfang migrate --from langchain --source-dir ~/.langchain
+octarq migrate --from langchain --source-dir ~/.langchain
 ```
 
 ### MCP integration
 
 ```bash
 # Start MCP server for Claude Desktop or other MCP clients
-openfang mcp
+octarq mcp
 ```
 
 ### Diagnostics
 
 ```bash
 # Run all diagnostic checks
-openfang doctor
+octarq doctor
 
 # Auto-repair issues
-openfang doctor --repair
+octarq doctor --repair
 
 # Machine-readable diagnostics
-openfang doctor --json
+octarq doctor --json
 ```
 
 ### Shell completions
 
 ```bash
 # Generate and install completions for your shell
-openfang completion bash >> ~/.bashrc
-openfang completion zsh > "${fpath[1]}/_openfang"
-openfang completion fish > ~/.config/fish/completions/openfang.fish
+octarq completion bash >> ~/.bashrc
+octarq completion zsh > "${fpath[1]}/_openfang"
+octarq completion fish > ~/.config/fish/completions/openfang.fish
 ```
 
 ---
 
 ## Supported LLM Providers
 
-The following providers are recognized by `openfang config set-key` and `openfang doctor`:
+The following providers are recognized by `octarq config set-key` and `octarq doctor`:
 
 | Provider | Environment Variable | Default Model |
 |---|---|---|

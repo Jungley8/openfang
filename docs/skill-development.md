@@ -1,6 +1,6 @@
 # Skill Development
 
-Skills are pluggable tool bundles that extend agent capabilities in OpenFang. A skill packages one or more tools with their implementation, letting agents do things that built-in tools do not cover. This guide covers skill creation, the manifest format, Python and WASM runtimes, publishing to FangHub, and CLI management.
+Skills are pluggable tool bundles that extend agent capabilities in Octarq. A skill packages one or more tools with their implementation, letting agents do things that built-in tools do not cover. This guide covers skill creation, the manifest format, Python and WASM runtimes, publishing to FangHub, and CLI management.
 
 ## Table of Contents
 
@@ -24,7 +24,7 @@ A skill consists of:
 1. A **manifest** (`skill.toml` or `SKILL.md`) that declares metadata, runtime type, provided tools, and requirements.
 2. An **entry point** (Python script, WASM module, Node.js module, or prompt-only Markdown) that implements the tool logic.
 
-Skills are installed to `~/.openfang/skills/` and made available to agents through the skill registry. OpenFang ships with **60 bundled skills** that are compiled into the binary and available immediately.
+Skills are installed to `~/.openfang/skills/` and made available to agents through the skill registry. Octarq ships with **60 bundled skills** that are compiled into the binary and available immediately.
 
 ### Supported Runtimes
 
@@ -38,7 +38,7 @@ Skills are installed to `~/.openfang/skills/` and made available to agents throu
 
 ### 60 Bundled Skills
 
-OpenFang includes 60 expert knowledge skills compiled into the binary (no installation needed):
+Octarq includes 60 expert knowledge skills compiled into the binary (no installation needed):
 
 | Category | Skills |
 |----------|--------|
@@ -170,7 +170,7 @@ Python skills are the simplest to write. They run as subprocesses and communicat
 
 ### Protocol
 
-1. OpenFang sends a JSON payload to the script's stdin:
+1. Octarq sends a JSON payload to the script's stdin:
 
 ```json
 {
@@ -205,7 +205,7 @@ If an error occurs, return an error object:
 
 ```python
 #!/usr/bin/env python3
-"""OpenFang skill: web-summarizer"""
+"""Octarq skill: web-summarizer"""
 import json
 import sys
 import urllib.request
@@ -213,7 +213,7 @@ import urllib.request
 
 def summarize_url(url: str) -> str:
     """Fetch a URL and return a basic summary."""
-    req = urllib.request.Request(url, headers={"User-Agent": "OpenFang-Skill/1.0"})
+    req = urllib.request.Request(url, headers={"User-Agent": "Octarq-Skill/1.0"})
     with urllib.request.urlopen(req, timeout=30) as resp:
         content = resp.read().decode("utf-8", errors="replace")
 
@@ -226,7 +226,7 @@ def extract_links(url: str) -> str:
     """Extract all links from a web page."""
     import re
 
-    req = urllib.request.Request(url, headers={"User-Agent": "OpenFang-Skill/1.0"})
+    req = urllib.request.Request(url, headers={"User-Agent": "Octarq-Skill/1.0"})
     with urllib.request.urlopen(req, timeout=30) as resp:
         content = resp.read().decode("utf-8", errors="replace")
 
@@ -258,7 +258,7 @@ if __name__ == "__main__":
     main()
 ```
 
-### Using the OpenFang Python SDK
+### Using the Octarq Python SDK
 
 For more advanced skills, use the Python SDK (`sdk/python/openfang_sdk.py`):
 
@@ -374,7 +374,7 @@ capabilities = ["NetConnect(*)", "ShellExec(python3)"]
 ### From a Local Directory
 
 ```bash
-openfang skill install /path/to/my-skill
+octarq skill install /path/to/my-skill
 ```
 
 This reads the `skill.toml`, validates the manifest, and copies the skill to `~/.openfang/skills/my-skill/`.
@@ -382,7 +382,7 @@ This reads the `skill.toml`, validates the manifest, and copies the skill to `~/
 ### From FangHub
 
 ```bash
-openfang skill install web-summarizer
+octarq skill install web-summarizer
 ```
 
 This downloads the skill from the FangHub marketplace registry.
@@ -390,13 +390,13 @@ This downloads the skill from the FangHub marketplace registry.
 ### From a Git Repository
 
 ```bash
-openfang skill install https://github.com/user/openfang-skill-example.git
+octarq skill install https://github.com/user/openfang-skill-example.git
 ```
 
 ### Listing Installed Skills
 
 ```bash
-openfang skill list
+octarq skill list
 ```
 
 Output:
@@ -414,14 +414,14 @@ code-formatter       1.0.0      1        Format code in 20+ languages
 ### Removing Skills
 
 ```bash
-openfang skill remove web-summarizer
+octarq skill remove web-summarizer
 ```
 
 ---
 
 ## Publishing to FangHub
 
-FangHub is the community skill marketplace for OpenFang.
+FangHub is the community skill marketplace for Octarq.
 
 ### Preparing Your Skill
 
@@ -431,14 +431,14 @@ FangHub is the community skill marketplace for OpenFang.
 3. Test your skill locally:
 
 ```bash
-openfang skill install /path/to/my-skill
+octarq skill install /path/to/my-skill
 # Spawn an agent with the skill's tools and test them
 ```
 
 ### Searching FangHub
 
 ```bash
-openfang skill search "web scraping"
+octarq skill search "web scraping"
 ```
 
 Output:
@@ -460,7 +460,7 @@ Skills matching "web scraping":
 Publishing to FangHub will be available via:
 
 ```bash
-openfang skill publish
+octarq skill publish
 ```
 
 This validates the manifest, packages the skill, and uploads it to the FangHub registry.
@@ -473,25 +473,25 @@ This validates the manifest, packages the skill, and uploads it to the FangHub r
 
 ```bash
 # Install a skill (local directory, FangHub name, or git URL)
-openfang skill install <source>
+octarq skill install <source>
 
 # List all installed skills
-openfang skill list
+octarq skill list
 
 # Remove an installed skill
-openfang skill remove <name>
+octarq skill remove <name>
 
 # Search FangHub for skills
-openfang skill search <query>
+octarq skill search <query>
 
 # Create a new skill scaffold (interactive)
-openfang skill create
+octarq skill create
 ```
 
 ### Creating a Skill Scaffold
 
 ```bash
-openfang skill create
+octarq skill create
 ```
 
 This interactive command prompts for:
@@ -538,20 +538,20 @@ The kernel loads skill tools and prompts at agent spawn time, merging them with 
 
 ## OpenClaw Compatibility
 
-OpenFang can install and run OpenClaw-format skills. The skill installer auto-detects OpenClaw skills (by looking for `package.json` + `index.ts`/`index.js`) and converts them.
+Octarq can install and run OpenClaw-format skills. The skill installer auto-detects OpenClaw skills (by looking for `package.json` + `index.ts`/`index.js`) and converts them.
 
 ### Automatic Conversion
 
 ```bash
-openfang skill install /path/to/openclaw-skill
+octarq skill install /path/to/openclaw-skill
 ```
 
-If the directory contains an OpenClaw-style skill (Node.js package), OpenFang:
+If the directory contains an OpenClaw-style skill (Node.js package), Octarq:
 
 1. Detects the OpenClaw format.
 2. Generates a `skill.toml` manifest from `package.json`.
-3. Maps tool names to OpenFang conventions.
-4. Copies the skill to the OpenFang skills directory.
+3. Maps tool names to Octarq conventions.
+4. Copies the skill to the Octarq skills directory.
 
 ### Manual Conversion
 
@@ -576,10 +576,10 @@ input_schema = { type = "object", properties = { input = { type = "string" } }, 
 Place this alongside the existing `index.js`/`index.ts` and install:
 
 ```bash
-openfang skill install /path/to/skill-directory
+octarq skill install /path/to/skill-directory
 ```
 
-Skills imported via `openfang migrate --from openclaw` are also scanned and reported in the migration report, with instructions for manual reinstallation.
+Skills imported via `octarq migrate --from openclaw` are also scanned and reported in the migration report, with instructions for manual reinstallation.
 
 ---
 

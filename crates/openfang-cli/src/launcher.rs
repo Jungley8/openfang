@@ -1,6 +1,6 @@
 //! Interactive launcher — lightweight Ratatui one-shot menu.
 //!
-//! Shown when `openfang` is run with no subcommand in a TTY.
+//! Shown when `octarq` is run with no subcommand in a TTY.
 //! Full-width left-aligned layout, adapts for first-time vs returning users.
 
 use ratatui::crossterm::event::{self, Event as CtEvent, KeyCode, KeyEventKind};
