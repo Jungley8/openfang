@@ -10,21 +10,14 @@ use openfang_kernel::OpenFangKernel;
 use std::path::PathBuf;
 
 pub fn cmd_init(quick: bool) {
-    let home = match dirs::home_dir() {
-        Some(h) => h,
-        None => {
-            ui::error("Could not determine home directory");
-            std::process::exit(1);
-        }
-    };
-
-    let openfang_dir = home.join(".openfang");
+    let openfang_dir = crate::openfang_home();
 
     if !openfang_dir.exists() {
+        let parent = openfang_dir.parent().unwrap_or(openfang_dir.as_path());
         std::fs::create_dir_all(&openfang_dir).unwrap_or_else(|e| {
             ui::error_with_fix(
                 &format!("Failed to create {}", openfang_dir.display()),
-                &format!("Check permissions on {}", home.display()),
+                &format!("Check permissions on {}", parent.display()),
             );
             eprintln!("  {e}");
             std::process::exit(1);
