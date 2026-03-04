@@ -121,7 +121,7 @@ impl TelegramAdapter {
         let rows: Vec<Vec<serde_json::Value>> = options
             .iter()
             .filter_map(|(label, callback_data)| {
-                if callback_data.as_bytes().len() > MAX_CALLBACK_DATA {
+                if callback_data.len() > MAX_CALLBACK_DATA {
                     return None;
                 }
                 Some(vec![serde_json::json!({
@@ -420,7 +420,7 @@ impl ChannelAdapter for TelegramAdapter {
                                 .unwrap_or(0);
                             if !allowed_users.is_empty() && !allowed_users.contains(&user_id) {
                                 let _ = client
-                                    .post(&format!("https://api.telegram.org/bot{}/answerCallbackQuery", token.as_str()))
+                                    .post(format!("https://api.telegram.org/bot{}/answerCallbackQuery", token.as_str()))
                                     .json(&serde_json::json!({ "callback_query_id": callback_query_id }))
                                     .send()
                                     .await;
@@ -434,7 +434,7 @@ impl ChannelAdapter for TelegramAdapter {
                                 .and_then(|v| v.as_i64())
                             else {
                                 let _ = client
-                                    .post(&format!("https://api.telegram.org/bot{}/answerCallbackQuery", token.as_str()))
+                                    .post(format!("https://api.telegram.org/bot{}/answerCallbackQuery", token.as_str()))
                                     .json(&serde_json::json!({ "callback_query_id": callback_query_id }))
                                     .send()
                                     .await;
@@ -488,7 +488,7 @@ impl ChannelAdapter for TelegramAdapter {
                                 return;
                             }
                             let _ = client
-                                .post(&format!(
+                                .post(format!(
                                     "https://api.telegram.org/bot{}/answerCallbackQuery",
                                     token.as_str()
                                 ))
