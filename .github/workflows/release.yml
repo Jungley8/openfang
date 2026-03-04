@@ -30,7 +30,7 @@ jobs:
       - name: Generate changelog
         uses: orhun/git-cliff-action@v4
         with:
-          args: --latest --strip header
+          args: --strip header
         env:
           OUTPUT: release-notes.md
       - uses: actions/upload-artifact@v4
@@ -52,10 +52,8 @@ jobs:
         uses: orhun/git-cliff-action@v4
         with:
           config: cliff.toml
-          args: --verbose --prepend
-        env:
-          OUTPUT: CHANGELOG.md
-          GITHUB_REPO: ${{ github.repository }}
+          args: --verbose --prepend CHANGELOG.md
+
   # ── Create Release with changelog body (desktop/cli upload to this) ────────
   release:
     name: Create Release
@@ -67,29 +65,6 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           name: release-notes
-      - name: Build release body
-        run: |
-          cat >> release-notes.md << 'BODY'
-
-          ## Installation
-
-          **Desktop App** — Download the installer for your platform below.
-
-          **CLI (Linux/macOS):**
-          ```bash
-          curl -sSf https://openfang.sh | sh
-          ```
-
-          **Docker:**
-          ```bash
-          docker pull ghcr.io/jungley8/octarq:latest
-          ```
-
-          **Coming from OpenClaw?**
-          ```bash
-          openfang migrate --from openclaw
-          ```
-          BODY
       - name: Create GitHub Release
         id: create
         uses: softprops/action-gh-release@v2
@@ -191,7 +166,31 @@ jobs:
           APPLE_PASSWORD: ${{ secrets.MAC_NOTARIZE_PASSWORD }}
           APPLE_TEAM_ID: ${{ secrets.MAC_NOTARIZE_TEAM_ID }}
         with:
-          releaseId: ${{ needs.release.outputs.release_id }}
+          tagName: ${{ github.ref_name }}
+          releaseName: "OpenFang ${{ github.ref_name }}"
+          releaseBody: |
+            ## What's New
+
+            See the [CHANGELOG](https://github.com/RightNow-AI/openfang/blob/main/CHANGELOG.md) for full details.
+
+            ## Installation
+
+            **Desktop App** — Download the installer for your platform below.
+
+            **CLI (Linux/macOS)**:
+            ```bash
+            curl -sSf https://openfang.sh | sh
+            ```
+
+            **Docker**:
+            ```bash
+            docker pull ghcr.io/rightnow-ai/openfang:latest
+            ```
+
+            **Coming from OpenClaw?**
+            ```bash
+            openfang migrate --from openclaw
+            ```
           releaseDraft: false
           prerelease: false
           includeUpdaterJson: true
