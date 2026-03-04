@@ -12,7 +12,7 @@ use openfang_types::tool::{ToolDefinition, ToolResult};
 use std::collections::HashSet;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
-use tracing::{debug, warn};
+use tracing::{debug, warn, Instrument};
 
 /// Maximum inter-agent call depth to prevent infinite recursion (A->B->C->...).
 const MAX_AGENT_CALL_DEPTH: u32 = 5;

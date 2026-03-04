@@ -29,7 +29,7 @@ use std::path::Path;
 use std::sync::Arc;
 use std::time::Duration;
 use tokio::sync::mpsc;
-use tracing::{debug, info, warn};
+use tracing::{debug, info, warn, Instrument};
 
 /// Maximum iterations in the agent loop before giving up.
 const MAX_ITERATIONS: u32 = 50;
@@ -799,7 +799,7 @@ pub async fn run_agent_loop(
 
     Err(OpenFangError::MaxIterationsExceeded(max_iterations))
     }
-    .instrument(agent_span)
+    .instrument(agent_span.clone())
     .await
 }
 
@@ -1736,7 +1736,7 @@ pub async fn run_agent_loop_streaming(
 
     Err(OpenFangError::MaxIterationsExceeded(max_iterations))
     }
-    .instrument(agent_span)
+    .instrument(agent_span.clone())
     .await
 }
 
