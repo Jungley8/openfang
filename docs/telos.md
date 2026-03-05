@@ -268,7 +268,7 @@ TELOS 包含用户极度私密的个人目标与价值观。
 
 1.  **端侧解析**：所有的 TELOS 解析、过滤和注入逻辑都在本地 Rust 运行时完成，不经过任何中间服务器。
 2.  **隐私分级**：支持在文件内通过 HTML 注释标记敏感字段，例如 `<!-- PRIVATE START --> 敏感内容 <!-- PRIVATE END -->`，这些内容仅在使用本地 LLM 或受信任的 Provider 时才会注入。
-3.  **可选加密**：Phase 3 将支持对 `~/.octarq/telos/` 目录进行 AES-256 加密存储，启动时需通过 `octarq unlock` 解锁。
+3.  **可选加密**：Phase 3 将支持对 `~/.openfang/telos/` 目录进行 AES-256 加密存储，启动时需通过 `octarq unlock` 解锁。
 4.  **透明性**：用户可随时通过 `octarq telos preview` 查看即将发送给 LLM 的具体脱敏上下文。
 
 ---
@@ -712,7 +712,7 @@ TELOS 文件: 8/10 已加载 (缺少 NARRATIVES.md, LEARNED.md)
 
 理由：强制注入对 Clip 等无关 Hand 增加无意义 token 消耗。HAND.toml 中必须显式声明 `[telos]` 块，默认 `mode = "none"`。（与 PAI 精神不同，PAI 默认 opt-in，但 Octarq 作为通用平台更保守）
 
-**ADR-003：TELOS 目录位于 `~/.octarq/telos/`，而非项目目录**
+**ADR-003：TELOS 目录位于 `~/.openfang/telos/`，而非项目目录**
 
 理由：TELOS 是个人身份档案，不是项目配置。用户可能有多个 Octarq 项目/实例，但 TELOS 应该是单一真相来源。
 

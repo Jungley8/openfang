@@ -29,7 +29,7 @@ Octarq is organized as a Cargo workspace with 14 crates (13 code crates + xtask)
 ```
 openfang-cli            CLI interface, daemon auto-detect, MCP server
     |
-openfang-desktop        Tauri 2.0 desktop app (WebView + system tray)
+octarq-desktop        Tauri 2.0 desktop app (WebView + system tray)
     |
 openfang-api            REST/WS/SSE API server (Axum 0.8), 76 endpoints
     |
@@ -59,7 +59,7 @@ openfang-types          Shared types: Agent, Capability, Event, Memory, Message,
 | **openfang-channels** | Channel bridge layer with 40 adapters. Each adapter implements the `ChannelAdapter` trait. Includes: Telegram, Discord, Slack, WhatsApp, Signal, Matrix, Email, SMS, Webhook, Teams, Mattermost, IRC, Google Chat, Twitch, Rocket.Chat, Zulip, XMPP, LINE, Viber, Messenger, Reddit, Mastodon, Bluesky, Feishu, Revolt, Nextcloud, Guilded, Keybase, Threema, Nostr, Webex, Pumble, Flock, Twist, Mumble, DingTalk, Discourse, Gitter, Ntfy, Gotify, LinkedIn. Features: `AgentRouter` for message routing, `BridgeManager` for lifecycle coordination, `ChannelRateLimiter` (per-user DashMap tracking), `formatter.rs` (Markdown to TelegramHTML/SlackMrkdwn/PlainText), `ChannelOverrides` (model/system_prompt/dm_policy/group_policy/rate_limit/threading/output_format), DM/group policy enforcement. |
 | **openfang-wire**     | Octarq Protocol (OFP) for peer-to-peer agent communication. JSON-framed messages over TCP with HMAC-SHA256 mutual authentication (nonce + constant-time verify via `subtle`). `PeerNode` listens for connections and manages peers. `PeerRegistry` tracks known remote peers and their agents.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
 | **openfang-cli**      | Clap-based CLI. Supports all commands: `init`, `start`, `status`, `doctor`, `agent spawn/list/chat/kill`, `workflow list/create/run`, `trigger list/create/delete`, `migrate`, `skill install/list/remove/search/create`, `channel list/setup/test/enable/disable`, `config show/edit`, `chat`, `mcp`. Daemon auto-detect: checks `~/.openfang/daemon.json` and health pings; uses HTTP when a daemon is running, boots an in-process kernel as fallback. Built-in MCP server mode.                                                                                                                                                                                                                                                                                                                         |
-| **openfang-desktop**  | Tauri 2.0 native desktop application. Boots the kernel in-process, runs the axum server on a background thread, and points a WebView at `http://127.0.0.1:{random_port}`. Features: system tray (Show/Browser/Status/Quit), single-instance enforcement, desktop notifications, hide-to-tray on close. IPC commands: `get_port`, `get_status`. Mobile-ready with `#[cfg(desktop)]` guards.                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| **octarq-desktop**  | Tauri 2.0 native desktop application. Boots the kernel in-process, runs the axum server on a background thread, and points a WebView at `http://127.0.0.1:{random_port}`. Features: system tray (Show/Browser/Status/Quit), single-instance enforcement, desktop notifications, hide-to-tray on close. IPC commands: `get_port`, `get_status`. Mobile-ready with `#[cfg(desktop)]` guards.                                                                                                                                                                                                                                                                                                                                                                                                                  |
 | **openfang-migrate**  | Migration engine. Supports OpenClaw (`~/.openclaw/`). Converts YAML configs to TOML, maps tool names, maps provider names, imports agent manifests, copies memory files, converts channel configs. Produces a `MigrationReport` with imported items, skipped items, and warnings.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
 | **openfang-skills**   | Skill system for pluggable tool bundles. 60 bundled skills compiled via `include_str!()`. Skills are `skill.toml` + Python/WASM/Node.js/PromptOnly code. `SkillManifest` defines metadata, runtime config, provided tools, and requirements. `SkillRegistry` manages installed and bundled skills. `FangHubClient` connects to FangHub marketplace. `ClawHubClient` connects to clawhub.ai for cross-ecosystem skill discovery. `SKILL.md` parser for OpenClaw compatibility (YAML frontmatter + Markdown body). `SkillVerifier` with SHA256 verification. Prompt injection scanner (`scan_prompt_content()`) detects override attempts, data exfiltration, and shell references.                                                                                                                           |
 | **xtask**             | Build automation tasks (cargo-xtask pattern).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
@@ -80,7 +80,7 @@ When `OctarqKernel::boot_with_config()` is called (either by the daemon or in-pr
    - Ensure ~/.openfang/data/ exists
 
 3. Initialize memory substrate
-   - Open SQLite database (openfang.db)
+   - Open SQLite database (octarq.db)
    - Run schema migrations (up to v5)
    - Set memory decay rate
 
@@ -748,7 +748,7 @@ OFP operations require capabilities:
 
 ## Desktop Application
 
-The desktop app (`openfang-desktop`) wraps the full Octarq stack in a native Tauri 2.0 application.
+The desktop app (`octarq-desktop`) wraps the full Octarq stack in a native Tauri 2.0 application.
 
 ### Architecture
 
@@ -931,7 +931,7 @@ The desktop app (`openfang-desktop`) wraps the full Octarq stack in a native Tau
          %% Entry Points
          CLI[openfang-cli] --> API[openfang-api]
          CLI --> KERNEL[openfang-kernel]
-         DESKTOP[openfang-desktop] --> API
+         DESKTOP[octarq-desktop] --> API
          DESKTOP --> KERNEL
     
          %% Interface & Protocol

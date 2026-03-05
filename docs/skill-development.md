@@ -518,7 +518,7 @@ Reference skills in the agent manifest's `skills` field:
 name = "my-assistant"
 version = "0.1.0"
 description = "An assistant with extra skills"
-author = "openfang"
+author = "octarq"
 module = "builtin:chat"
 skills = ["web-summarizer", "data-analyzer"]
 

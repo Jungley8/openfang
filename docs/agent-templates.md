@@ -938,7 +938,7 @@ DELETE /api/agents/{id}
 # Use any agent through the OpenAI-compatible endpoint
 POST /v1/chat/completions
 {
-  "model": "openfang:coder",
+  "model": "octarq:coder",
   "messages": [{"role": "user", "content": "Write a Rust HTTP server"}],
   "stream": true
 }

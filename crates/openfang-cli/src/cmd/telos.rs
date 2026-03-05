@@ -24,9 +24,9 @@ pub fn cmd_telos_init(quick: bool) {
     ui::success("TELOS initialized successfully!");
     ui::blank();
     ui::next_steps(&[
-        "Edit your mission:  openfang telos edit mission",
-        "Edit your goals:    openfang telos edit goals",
-        "Check status:       openfang telos status",
+        "Edit your mission:  octarq telos edit mission",
+        "Edit your goals:    octarq telos edit goals",
+        "Check status:       octarq telos status",
     ]);
 }
 
@@ -37,7 +37,7 @@ pub fn cmd_telos_status() {
     let rt = tokio::runtime::Runtime::new().unwrap();
     if let Err(e) = rt.block_on(engine.load_all()) {
         ui::error(&format!("Failed to load TELOS: {e}"));
-        ui::hint("Run `openfang telos init` to set up templates.");
+        ui::hint("Run `octarq telos init` to set up templates.");
         return;
     }
 
@@ -98,7 +98,7 @@ pub fn cmd_telos_edit(file: &str) {
     let path = dir.join(filename);
     if !path.exists() {
         ui::error(&format!("File does not exist: {}", path.display()));
-        ui::hint("Run `openfang telos init` to create it.");
+        ui::hint("Run `octarq telos init` to create it.");
         return;
     }
 
@@ -239,7 +239,7 @@ pub fn cmd_telos_export(output: Option<&std::path::Path>) {
         let rt = tokio::runtime::Runtime::new().unwrap();
         if let Err(e) = rt.block_on(engine.load_all()) {
             ui::error(&format!("Failed to load TELOS: {e}"));
-            ui::hint("Run `openfang telos init` to set up templates.");
+            ui::hint("Run `octarq telos init` to set up templates.");
             std::process::exit(1);
         }
         let ctx = rt.block_on(engine.get_context());
@@ -312,13 +312,13 @@ pub fn cmd_telos_report(days: u32) {
             }
             Err(e) => {
                 ui::error(&format!("Failed to contact daemon: {e}"));
-                ui::hint("Start the daemon with `openfang start` to use telos report.");
+                ui::hint("Start the daemon with `octarq start` to use telos report.");
                 std::process::exit(1);
             }
         }
     } else {
         ui::error("No daemon running.");
-        ui::hint("Start the daemon with `openfang start` to use telos report.");
+        ui::hint("Start the daemon with `octarq start` to use telos report.");
         std::process::exit(1);
     }
 }

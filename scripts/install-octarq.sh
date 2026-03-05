@@ -1,13 +1,13 @@
 #!/bin/sh
 set -eu
 
-# OpenFang Installer
-# https://openfang.sh
+# Octarq Installer
+# https://octarq.jungley.net
 
 REPO="Jungley8/Octarq"
 INSTALL_DIR="$HOME/.openfang"
 BIN_DIR="$HOME/.openfang/bin"
-BINARY="openfang"
+BINARY="octarq"
 
 main() {
   need_cmd curl
@@ -33,28 +33,28 @@ main() {
       esac
       ;;
     *)
-      err "Unsupported OS: $_os (use irm https://openfang.sh/install.ps1 | iex on Windows)"
+      err "Unsupported OS: $_os (use irm https://octarq.jungley.net/install.ps1 | iex on Windows)"
       ;;
   esac
 
-  _url="https://github.com/${REPO}/releases/latest/download/openfang-${_target}.tar.gz"
+  _url="https://github.com/${REPO}/releases/latest/download/octarq-${_target}.tar.gz"
 
   say "Detected: $_os $_arch -> $_target"
   say "Downloading from: $_url"
 
-  _tmpdir="$(mktemp -d 2>/dev/null || mktemp -d -t openfang)"
+  _tmpdir="$(mktemp -d 2>/dev/null || mktemp -d -t octarq)"
   trap 'rm -rf "$_tmpdir"' EXIT
 
-  _code=$(curl -fsSL -w "%{http_code}" "$_url" -o "${_tmpdir}/openfang.tar.gz") || true
+  _code=$(curl -fsSL -w "%{http_code}" "$_url" -o "${_tmpdir}/octarq.tar.gz") || true
   if [ "$_code" = "404" ]; then
     err "Release not found for ${_target}. Check https://github.com/${REPO}/releases"
   fi
-  if [ ! -f "${_tmpdir}/openfang.tar.gz" ] || [ "$(wc -c < "${_tmpdir}/openfang.tar.gz")" -lt 1000 ]; then
+  if [ ! -f "${_tmpdir}/octarq.tar.gz" ] || [ "$(wc -c < "${_tmpdir}/octarq.tar.gz")" -lt 1000 ]; then
     err "Download failed (HTTP ${_code}). Check https://github.com/${REPO}/releases"
   fi
 
   say "Extracting..."
-  tar -xzf "${_tmpdir}/openfang.tar.gz" -C "$_tmpdir"
+  tar -xzf "${_tmpdir}/octarq.tar.gz" -C "$_tmpdir"
 
   # Find the binary
   _bin="$(find "$_tmpdir" -name "$BINARY" -type f -perm +111 2>/dev/null | head -1)"
@@ -62,7 +62,7 @@ main() {
     _bin="$(find "$_tmpdir" -name "$BINARY" -type f | head -1)"
   fi
   if [ -z "$_bin" ]; then
-    err "Could not find openfang binary in archive"
+    err "Could not find octarq binary in archive"
   fi
 
   mkdir -p "$BIN_DIR"
@@ -80,14 +80,14 @@ main() {
   add_to_path
 
   say ""
-  say "OpenFang installed successfully!"
+  say "Octarq installed successfully!"
   say ""
-  say "  Run: openfang init"
-  say "  Docs: https://openfang.sh/docs"
+  say "  Run: octarq init"
+  say "  Docs: https://octarq.jungley.net/docs"
   say ""
 
   # Check if binary is reachable
-  if ! command -v openfang >/dev/null 2>&1; then
+  if ! command -v octarq >/dev/null 2>&1; then
     say "Note: restart your shell or run:"
     say "  export PATH="${BIN_DIR}:\$PATH""
     say ""
@@ -122,18 +122,18 @@ add_to_path() {
 
   if [ -n "$_profile" ] && [ -f "$_profile" ]; then
     if ! grep -q "/.openfang/bin" "$_profile" 2>/dev/null; then
-      printf "\n# OpenFang\n%s\n" "$_line" >> "$_profile"
+      printf "\n# Octarq\n%s\n" "$_line" >> "$_profile"
       say "Added to PATH via $_profile"
     fi
   fi
 }
 
 say() {
-  printf "  \033[1;36mopenfang\033[0m %s\n" "$1"
+  printf "  \033[1;36moctarq\033[0m %s\n" "$1"
 }
 
 err() {
-  printf "  \033[1;36mopenfang\033[0m \033[1;31merror:\033[0m %s\n" "$1" >&2
+  printf "  \033[1;36moctarq\033[0m \033[1;31merror:\033[0m %s\n" "$1" >&2
   exit 1
 }
 

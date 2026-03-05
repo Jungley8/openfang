@@ -18,20 +18,20 @@ This guide walks you through installing Octarq, configuring your first LLM provi
 
 ### Option 1: Desktop App (Windows / macOS / Linux)
 
-Download the installer for your platform from the [latest release](https://github.com/RightNow-AI/openfang/releases/latest):
+Download the installer for your platform from the [latest release](https://github.com/Jungley8/Octarq/releases/latest):
 
-| Platform | File |
-|---|---|
-| Windows | `.msi` installer |
-| macOS | `.dmg` disk image |
-| Linux | `.AppImage` or `.deb` |
+| Platform | File                  |
+| -------- | --------------------- |
+| Windows  | `.msi` installer      |
+| macOS    | `.dmg` disk image     |
+| Linux    | `.AppImage` or `.deb` |
 
 The desktop app includes the full Octarq system with a native window, system tray, auto-updates, and OS notifications. Updates are installed automatically in the background.
 
 ### Option 2: Shell Installer (Linux / macOS)
 
 ```bash
-curl -sSf https://openfang.sh | sh
+curl -sSf https://octarq.jungley.net | sh
 ```
 
 This downloads the latest CLI binary and installs it to `~/.openfang/bin/`.
@@ -39,7 +39,7 @@ This downloads the latest CLI binary and installs it to `~/.openfang/bin/`.
 ### Option 3: PowerShell Installer (Windows)
 
 ```powershell
-irm https://openfang.sh/install.ps1 | iex
+irm https://octarq.jungley.net/install.ps1 | iex
 ```
 
 Downloads the latest CLI binary, verifies its SHA256 checksum, and adds it to your user PATH.
@@ -49,35 +49,35 @@ Downloads the latest CLI binary, verifies its SHA256 checksum, and adds it to yo
 Requires Rust 1.75+:
 
 ```bash
-cargo install --git https://github.com/RightNow-AI/openfang openfang-cli
+cargo install --git https://github.com/Jungley8/Octarq openfang-cli
 ```
 
 Or build from source:
 
 ```bash
-git clone https://github.com/RightNow-AI/openfang.git
-cd openfang
+git clone https://github.com/Jungley8/Octarq.git
+cd octarq
 cargo install --path crates/openfang-cli
 ```
 
 ### Option 5: Docker
 
 ```bash
-docker pull ghcr.io/RightNow-AI/openfang:latest
+docker pull ghcr.io/jungley8/octarq:latest
 
 docker run -d \
   --name octarq \
   -p 4200:4200 \
   -e ANTHROPIC_API_KEY=$ANTHROPIC_API_KEY \
   -v openfang-data:/data \
-  ghcr.io/RightNow-AI/openfang:latest
+  ghcr.io/jungley8/octarq:latest
 ```
 
 Or use Docker Compose:
 
 ```bash
-git clone https://github.com/RightNow-AI/openfang.git
-cd openfang
+git clone https://github.com/Jungley8/Octarq.git
+cd octarq
 # Set your API keys in environment or .env file
 docker compose up -d
 ```

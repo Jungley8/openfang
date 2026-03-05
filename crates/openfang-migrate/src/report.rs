@@ -72,7 +72,7 @@ impl MigrationReport {
         let mode = if self.dry_run { " (Dry Run)" } else { "" };
 
         out.push_str(&format!(
-            "# Migration Report: {} -> OpenFang{}\n\n",
+            "# Migration Report: {} -> Octarq{}\n\n",
             self.source, mode
         ));
 
@@ -126,8 +126,8 @@ impl MigrationReport {
             "2. Review `~/.openfang/secrets.env` — verify tokens were migrated correctly\n",
         );
         out.push_str("3. Set any remaining API keys referenced in `~/.openfang/config.toml`\n");
-        out.push_str("4. Start the daemon: `openfang start`\n");
-        out.push_str("5. Test your agents: `openfang agent list`\n");
+        out.push_str("4. Start the daemon: `octarq start`\n");
+        out.push_str("5. Test your agents: `octarq agent list`\n");
 
         out
     }
@@ -163,8 +163,8 @@ impl MigrationReport {
 
         if !self.dry_run {
             println!("\n  Next steps:");
-            println!("    openfang start");
-            println!("    openfang agent list");
+            println!("    octarq start");
+            println!("    octarq agent list");
         }
     }
 }

@@ -2,7 +2,7 @@
 
 The Octarq Desktop App is a native desktop wrapper built with [Tauri 2.0](https://v2.tauri.app/) that packages the entire Octarq Agent OS into a single, installable application. Instead of running a CLI daemon and opening a browser, users get a native window with system tray integration, OS notifications, and single-instance enforcement -- all powered by the same kernel and API server that the headless deployment uses.
 
-**Crate:** `openfang-desktop`
+**Crate:** `octarq-desktop`
 **Identifier:** `ai.openfang.desktop`
 **Product name:** Octarq
 
@@ -35,7 +35,7 @@ The desktop app follows a straightforward embedded-server pattern:
 
 ### Startup Sequence
 
-1. **Tracing init** -- `tracing_subscriber` is configured with `RUST_LOG` env, defaulting to `openfang=info,tauri=info`.
+1. **Tracing init** -- `tracing_subscriber` is configured with `RUST_LOG` env, defaulting to `octarq=info,tauri=info`.
 2. **Kernel boot** -- `OctarqKernel::boot(None)` loads the default configuration (from `config.toml` or defaults), wrapped in `Arc`. `set_self_handle()` is called to enable self-referencing kernel operations.
 3. **Port binding** -- A `std::net::TcpListener` binds to `127.0.0.1:0` on the main thread, which lets the OS assign a random free port. This ensures the port number is known before any window is created.
 4. **Server thread** -- A dedicated OS thread named `"openfang-server"` is spawned. It creates its own `tokio::runtime::Builder::new_multi_thread()` runtime and runs:
@@ -281,7 +281,7 @@ This permits the WebView to load content from the localhost API server while blo
 ### Development
 
 ```bash
-cd crates/openfang-desktop
+cd crates/octarq-desktop
 cargo tauri dev
 ```
 
@@ -290,7 +290,7 @@ This launches the app with hot-reload support. The console window is visible in 
 ### Production Build
 
 ```bash
-cd crates/openfang-desktop
+cd crates/octarq-desktop
 cargo tauri build
 ```
 
@@ -379,7 +379,7 @@ The codebase includes conditional compilation guards for mobile platform support
 ## File Structure
 
 ```
-crates/openfang-desktop/
+crates/octarq-desktop/
   build.rs                 # tauri_build::build()
   Cargo.toml               # Crate dependencies and metadata
   tauri.conf.json           # Tauri app configuration
@@ -407,6 +407,6 @@ crates/openfang-desktop/
 
 | Variable | Effect |
 |----------|--------|
-| `RUST_LOG` | Controls tracing verbosity. Defaults to `openfang=info,tauri=info` if unset. |
+| `RUST_LOG` | Controls tracing verbosity. Defaults to `octarq=info,tauri=info` if unset. |
 
 All other Octarq environment variables (API keys, configuration) apply as normal since the desktop app boots the same kernel as the headless daemon.

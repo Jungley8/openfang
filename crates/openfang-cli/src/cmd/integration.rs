@@ -200,7 +200,7 @@ capabilities = []
     let entry_content = match runtime.as_str() {
         "python" => format!(
             r#"#!/usr/bin/env python3
-"""OpenFang skill: {name}"""
+"""Octarq skill: {name}"""
 import json
 import sys
 
@@ -234,11 +234,8 @@ if __name__ == "__main__":
     println!("  {entry_path}");
     println!("\nNext steps:");
     println!("  1. Edit the entry point to implement your skill logic");
-    println!("  2. Test locally: openfang skill test");
-    println!(
-        "  3. Install: openfang skill install {}",
-        skill_dir.display()
-    );
+    println!("  2. Test locally: octarq skill test");
+    println!("  3. Install: octarq skill install {}", skill_dir.display());
 }
 
 // ---------------------------------------------------------------------------
@@ -250,7 +247,7 @@ pub fn cmd_channel_list() {
     let config_path = home.join("config.toml");
 
     if !config_path.exists() {
-        println!("No configuration found. Run `openfang init` first.");
+        println!("No configuration found. Run `octarq init` first.");
         return;
     }
 
@@ -291,7 +288,7 @@ pub fn cmd_channel_list() {
         );
     }
 
-    println!("\nUse `openfang channel setup <channel>` to configure a channel.");
+    println!("\nUse `octarq channel setup <channel>` to configure a channel.");
 }
 
 fn maybe_write_channel_config(channel: &str, config_block: &str) {
@@ -299,7 +296,7 @@ fn maybe_write_channel_config(channel: &str, config_block: &str) {
     let config_path = home.join("config.toml");
 
     if !config_path.exists() {
-        ui::hint("No config.toml found. Run `openfang init` first.");
+        ui::hint("No config.toml found. Run `octarq init` first.");
         return;
     }
 
@@ -327,7 +324,7 @@ fn notify_daemon_restart() {
     if find_daemon().is_some() {
         ui::check_warn("Restart the daemon to activate this channel");
     } else {
-        ui::hint("Start the daemon: openfang start");
+        ui::hint("Start the daemon: octarq start");
     }
 }
 
@@ -519,7 +516,7 @@ pub fn cmd_channel_setup(channel: Option<&str>) {
                     Err(_) => println!("    export EMAIL_PASSWORD=your_app_password"),
                 }
             } else {
-                ui::hint("Set later: openfang config set-key email (or export EMAIL_PASSWORD=...)");
+                ui::hint("Set later: octarq config set-key email (or export EMAIL_PASSWORD=...)");
             }
 
             ui::blank();
@@ -620,7 +617,7 @@ pub fn cmd_channel_test(channel: &str) {
             );
         }
     } else {
-        eprintln!("Channel test requires a running daemon. Start with: openfang start");
+        eprintln!("Channel test requires a running daemon. Start with: octarq start");
         std::process::exit(1);
     }
 }
@@ -650,7 +647,7 @@ pub fn cmd_channel_toggle(channel: &str, enable: bool) {
 }
 
 // ---------------------------------------------------------------------------
-// Integration commands (openfang add/remove/integrations)
+// Integration commands (octarq add/remove/integrations)
 // ---------------------------------------------------------------------------
 
 pub fn cmd_integration_add(name: &str, key: Option<&str>) {
@@ -710,7 +707,7 @@ pub fn cmd_integration_add(name: &str, key: Option<&str>) {
                     println!("\nTo add credentials:");
                     for env in &template.required_env {
                         if env.is_secret {
-                            println!("  openfang vault set {}  # {}", env.name, env.help);
+                            println!("  octarq vault set {}  # {}", env.name, env.help);
                             if let Some(ref url) = env.get_url {
                                 println!("  Get it here: {url}");
                             }
@@ -828,11 +825,11 @@ pub fn cmd_integrations_list(query: Option<&str>) {
             ))
             .count()
     );
-    println!("  Use `openfang add <name>` to install an integration.");
+    println!("  Use `octarq add <name>` to install an integration.");
 }
 
 // ---------------------------------------------------------------------------
-// Scaffold commands (openfang new skill/integration)
+// Scaffold commands (octarq new skill/integration)
 // ---------------------------------------------------------------------------
 
 pub fn cmd_scaffold(kind: ScaffoldKind) {
@@ -1268,7 +1265,7 @@ pub fn cmd_devices_pair() {
     if let Some(qr) = body["qr_data"].as_str() {
         ui::section("Device Pairing");
         ui::blank();
-        println!("  Scan this QR code with the OpenFang mobile app:");
+        println!("  Scan this QR code with the Octarq mobile app:");
         ui::blank();
         println!("  {qr}");
         ui::blank();

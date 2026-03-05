@@ -25,7 +25,7 @@
 
 ### 2.1 日志级别（RUST_LOG）
 
-- 未设置时默认：`info`（CLI/Desktop 为 `openfang=info` 或 `openfang=info,tauri=info`）。
+- 未设置时默认：`info`（CLI/Desktop 为 `octarq=info` 或 `octarq=info,tauri=info`）。
 - 示例：`RUST_LOG=openfang_kernel=debug,openfang_runtime=debug` 可提高 kernel/runtime 的日志粒度。
 
 ### 2.2 OpenTelemetry 导出（OTLP）

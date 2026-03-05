@@ -1,6 +1,6 @@
-//! OpenFang CLI — command-line interface for the OpenFang Agent OS.
+//! Octarq CLI — command-line interface for the Octarq Agent OS.
 //!
-//! When a daemon is running (`openfang start`), the CLI talks to it over HTTP.
+//! When a daemon is running (`octarq start`), the CLI talks to it over HTTP.
 //! Otherwise, commands boot an in-process kernel (single-shot mode).
 
 mod bundled_agents;
@@ -430,7 +430,7 @@ pub(crate) fn open_in_browser(url: &str) -> bool {
 // Background daemon start
 // ---------------------------------------------------------------------------
 
-/// Spawn `openfang start` as a detached background process.
+/// Spawn `octarq start` as a detached background process.
 ///
 /// Polls for daemon health for up to 10 seconds. Returns the daemon URL on success.
 pub(crate) fn start_daemon_background() -> Result<String, String> {
@@ -523,7 +523,7 @@ mod tests {
     #[test]
     fn test_agent_set_model_cli_parse() {
         let cli = Cli::try_parse_from([
-            "openfang",
+            "octarq",
             "agent",
             "set",
             "123e4567-e89b-12d3-a456-426614174000",
@@ -748,7 +748,7 @@ api_key = "test-secret
             r#"export PATH="/usr/local/bin:$PATH""#,
             dir
         ));
-        assert!(!is_openfang_path_line("# openfang config", dir));
-        assert!(!is_openfang_path_line("alias of=openfang", dir));
+        assert!(!is_openfang_path_line("# octarq config", dir));
+        assert!(!is_openfang_path_line("alias of=octarq", dir));
     }
 }

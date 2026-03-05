@@ -508,7 +508,7 @@ allowed_users = []
 ```toml
 [channels.matrix]
 homeserver_url = "https://matrix.org"
-user_id = "@openfang:matrix.org"
+user_id = "@octarq:matrix.org"
 access_token_env = "MATRIX_ACCESS_TOKEN"
 allowed_rooms = []
 ```
@@ -516,7 +516,7 @@ allowed_rooms = []
 | Field | Type | Default | Description |
 |-------|------|---------|-------------|
 | `homeserver_url` | string | `"https://matrix.org"` | Matrix homeserver URL. |
-| `user_id` | string | `""` | Bot user ID (e.g., `"@openfang:matrix.org"`). |
+| `user_id` | string | `""` | Bot user ID (e.g., `"@octarq:matrix.org"`). |
 | `access_token_env` | string | `"MATRIX_ACCESS_TOKEN"` | Env var holding the Matrix access token. |
 | `allowed_rooms` | list of strings | `[]` | Room IDs to listen in. Empty = all joined rooms. |
 | `default_agent` | string or null | `null` | Agent name to route messages to. |
@@ -589,9 +589,9 @@ allowed_channels = []
 [channels.irc]
 server = "irc.libera.chat"
 port = 6667
-nick = "openfang"
+nick = "octarq"
 # password_env = "IRC_PASSWORD"
-channels = ["#openfang"]
+channels = ["#octarq"]
 use_tls = false
 ```
 
@@ -599,9 +599,9 @@ use_tls = false
 |-------|------|---------|-------------|
 | `server` | string | `"irc.libera.chat"` | IRC server hostname. |
 | `port` | u16 | `6667` | IRC server port. |
-| `nick` | string | `"openfang"` | Bot nickname. |
+| `nick` | string | `"octarq"` | Bot nickname. |
 | `password_env` | string or null | `null` | Env var holding the server password (optional). |
-| `channels` | list of strings | `[]` | IRC channels to join (e.g., `["#openfang", "#general"]`). |
+| `channels` | list of strings | `[]` | IRC channels to join (e.g., `["#octarq", "#general"]`). |
 | `use_tls` | bool | `false` | Use TLS for the connection. |
 | `default_agent` | string or null | `null` | Agent name to route messages to. |
 
@@ -627,14 +627,14 @@ webhook_port = 8444
 [channels.twitch]
 oauth_token_env = "TWITCH_OAUTH_TOKEN"
 channels = ["mychannel"]
-nick = "openfang"
+nick = "octarq"
 ```
 
 | Field | Type | Default | Description |
 |-------|------|---------|-------------|
 | `oauth_token_env` | string | `"TWITCH_OAUTH_TOKEN"` | Env var holding the Twitch OAuth token. |
 | `channels` | list of strings | `[]` | Twitch channels to join (without `#` prefix). |
-| `nick` | string | `"openfang"` | Bot nickname in Twitch chat. |
+| `nick` | string | `"octarq"` | Bot nickname in Twitch chat. |
 | `default_agent` | string or null | `null` | Agent name to route messages to. |
 
 #### `[channels.rocketchat]`
@@ -961,7 +961,7 @@ allowed_channels = []
 [channels.mumble]
 host = "mumble.example.com"
 port = 64738
-username = "openfang"
+username = "octarq"
 password_env = "MUMBLE_PASSWORD"
 channel = ""
 ```
@@ -970,7 +970,7 @@ channel = ""
 |-------|------|---------|-------------|
 | `host` | string | `""` | Mumble server hostname. |
 | `port` | u16 | `64738` | Mumble server port. |
-| `username` | string | `"openfang"` | Bot username in Mumble. |
+| `username` | string | `"octarq"` | Bot username in Mumble. |
 | `password_env` | string | `"MUMBLE_PASSWORD"` | Env var holding the Mumble server password. |
 | `channel` | string | `""` | Mumble channel to join. |
 | `default_agent` | string or null | `null` | Agent name to route messages to. |

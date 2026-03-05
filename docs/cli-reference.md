@@ -23,38 +23,38 @@ cargo install --path crates/openfang-cli
 
 ```bash
 cargo build --release -p openfang-cli
-# Binary: target/release/openfang (or openfang.exe on Windows)
+# Binary: target/release/octarq (or octarq.exe on Windows)
 ```
 
 ### Docker
 
 ```bash
-docker run -it openfang/openfang:latest
+docker run -it ghcr.io/jungley8/octarq:latest
 ```
 
 ### Shell installer
 
 ```bash
-curl -fsSL https://get.openfang.ai | sh
+curl -fsSL https://octarq.jungley.net | sh
 ```
 
 ## Global Options
 
 These options apply to all commands.
 
-| Option | Description |
-|---|---|
+| Option            | Description                                                                    |
+| ----------------- | ------------------------------------------------------------------------------ |
 | `--config <PATH>` | Path to a custom config file. Overrides the default `~/.openfang/config.toml`. |
-| `--help` | Print help information for any command or subcommand. |
-| `--version` | Print the version of the `octarq` binary. |
+| `--help`          | Print help information for any command or subcommand.                          |
+| `--version`       | Print the version of the `octarq` binary.                                      |
 
 **Environment variables:**
 
-| Variable | Description |
-|---|---|
-| `RUST_LOG` | Controls log verbosity (e.g. `info`, `debug`, `openfang_kernel=trace`). |
-| `OPENFANG_AGENTS_DIR` | Override the agent templates directory. |
-| `EDITOR` / `VISUAL` | Editor used by `octarq config edit`. Falls back to `notepad` (Windows) or `vi` (Unix). |
+| Variable              | Description                                                                            |
+| --------------------- | -------------------------------------------------------------------------------------- |
+| `RUST_LOG`            | Controls log verbosity (e.g. `info`, `debug`, `openfang_kernel=trace`).                |
+| `OPENFANG_AGENTS_DIR` | Override the agent templates directory.                                                |
+| `EDITOR` / `VISUAL`   | Editor used by `octarq config edit`. Falls back to `notepad` (Windows) or `vi` (Unix). |
 
 ---
 
@@ -84,8 +84,8 @@ octarq init [--quick]
 
 **Options:**
 
-| Option | Description |
-|---|---|
+| Option    | Description                                                                                                                    |
+| --------- | ------------------------------------------------------------------------------------------------------------------------------ |
 | `--quick` | Skip interactive prompts. Auto-detects the best available LLM provider and writes config immediately. Suitable for CI/scripts. |
 
 **Behavior:**
@@ -165,8 +165,8 @@ octarq status [--json]
 
 **Options:**
 
-| Option | Description |
-|---|---|
+| Option   | Description                                 |
+| -------- | ------------------------------------------- |
 | `--json` | Output machine-readable JSON for scripting. |
 
 **Behavior:**
@@ -194,9 +194,9 @@ octarq doctor [--json] [--repair]
 
 **Options:**
 
-| Option | Description |
-|---|---|
-| `--json` | Output results as JSON for scripting. |
+| Option     | Description                                                                                                                       |
+| ---------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| `--json`   | Output results as JSON for scripting.                                                                                             |
 | `--repair` | Attempt to auto-fix issues (create missing directories, config, remove stale files). Prompts for confirmation before each repair. |
 
 **Checks performed:**
@@ -259,24 +259,24 @@ octarq completion <SHELL>
 
 **Arguments:**
 
-| Argument | Description |
-|---|---|
+| Argument  | Description                                                          |
+| --------- | -------------------------------------------------------------------- |
 | `<SHELL>` | Target shell. One of: `bash`, `zsh`, `fish`, `elvish`, `powershell`. |
 
 **Example:**
 
 ```bash
 # Bash
-octarq completion bash > ~/.bash_completion.d/openfang
+octarq completion bash > ~/.bash_completion.d/octarq
 
 # Zsh
-octarq completion zsh > ~/.zfunc/_openfang
+octarq completion zsh > ~/.zfunc/_octarq
 
 # Fish
-octarq completion fish > ~/.config/fish/completions/openfang.fish
+octarq completion fish > ~/.config/fish/completions/octarq.fish
 
 # PowerShell
-octarq completion powershell > openfang.ps1
+octarq completion powershell > octarq.ps1
 ```
 
 ---
@@ -293,8 +293,8 @@ octarq agent new [<TEMPLATE>]
 
 **Arguments:**
 
-| Argument | Description |
-|---|---|
+| Argument     | Description                                                                                                                          |
+| ------------ | ------------------------------------------------------------------------------------------------------------------------------------ |
 | `<TEMPLATE>` | Template name (e.g. `coder`, `assistant`, `researcher`). If omitted, displays an interactive picker listing all available templates. |
 
 **Behavior:**
@@ -329,8 +329,8 @@ octarq agent spawn <MANIFEST>
 
 **Arguments:**
 
-| Argument | Description |
-|---|---|
+| Argument     | Description                          |
+| ------------ | ------------------------------------ |
 | `<MANIFEST>` | Path to an agent manifest TOML file. |
 
 **Behavior:**
@@ -357,8 +357,8 @@ octarq agent list [--json]
 
 **Options:**
 
-| Option | Description |
-|---|---|
+| Option   | Description                         |
+| -------- | ----------------------------------- |
 | `--json` | Output as JSON array for scripting. |
 
 **Output columns:** ID, NAME, STATE, PROVIDER, MODEL (daemon mode) or ID, NAME, STATE, CREATED (in-process mode).
@@ -383,8 +383,8 @@ octarq agent chat <AGENT_ID>
 
 **Arguments:**
 
-| Argument | Description |
-|---|---|
+| Argument     | Description                                  |
+| ------------ | -------------------------------------------- |
 | `<AGENT_ID>` | Agent UUID. Obtain from `octarq agent list`. |
 
 **Behavior:**
@@ -412,8 +412,8 @@ octarq agent kill <AGENT_ID>
 
 **Arguments:**
 
-| Argument | Description |
-|---|---|
+| Argument     | Description              |
+| ------------ | ------------------------ |
 | `<AGENT_ID>` | Agent UUID to terminate. |
 
 **Example:**
@@ -450,8 +450,8 @@ octarq workflow create <FILE>
 
 **Arguments:**
 
-| Argument | Description |
-|---|---|
+| Argument | Description                                        |
+| -------- | -------------------------------------------------- |
 | `<FILE>` | Path to a JSON file describing the workflow steps. |
 
 **Example:**
@@ -472,10 +472,10 @@ octarq workflow run <WORKFLOW_ID> <INPUT>
 
 **Arguments:**
 
-| Argument | Description |
-|---|---|
+| Argument        | Description                                        |
+| --------------- | -------------------------------------------------- |
 | `<WORKFLOW_ID>` | Workflow UUID. Obtain from `octarq workflow list`. |
-| `<INPUT>` | Input text to pass to the workflow. |
+| `<INPUT>`       | Input text to pass to the workflow.                |
 
 **Example:**
 
@@ -499,8 +499,8 @@ octarq trigger list [--agent-id <ID>]
 
 **Options:**
 
-| Option | Description |
-|---|---|
+| Option            | Description                                 |
+| ----------------- | ------------------------------------------- |
 | `--agent-id <ID>` | Filter triggers by the owning agent's UUID. |
 
 **Output columns:** TRIGGER ID, AGENT ID, ENABLED, FIRES, PATTERN.
@@ -517,17 +517,17 @@ octarq trigger create <AGENT_ID> <PATTERN_JSON> [--prompt <TEMPLATE>] [--max-fir
 
 **Arguments:**
 
-| Argument | Description |
-|---|---|
-| `<AGENT_ID>` | UUID of the agent that owns the trigger. |
-| `<PATTERN_JSON>` | Trigger pattern as a JSON string. |
+| Argument         | Description                              |
+| ---------------- | ---------------------------------------- |
+| `<AGENT_ID>`     | UUID of the agent that owns the trigger. |
+| `<PATTERN_JSON>` | Trigger pattern as a JSON string.        |
 
 **Options:**
 
-| Option | Default | Description |
-|---|---|---|
+| Option                | Default              | Description                                                           |
+| --------------------- | -------------------- | --------------------------------------------------------------------- |
 | `--prompt <TEMPLATE>` | `"Event: {{event}}"` | Prompt template. Use `{{event}}` as a placeholder for the event data. |
-| `--max-fires <N>` | `0` (unlimited) | Maximum number of times the trigger will fire. |
+| `--max-fires <N>`     | `0` (unlimited)      | Maximum number of times the trigger will fire.                        |
 
 **Pattern examples:**
 
@@ -557,8 +557,8 @@ octarq trigger delete <TRIGGER_ID>
 
 **Arguments:**
 
-| Argument | Description |
-|---|---|
+| Argument       | Description                    |
+| -------------- | ------------------------------ |
 | `<TRIGGER_ID>` | UUID of the trigger to delete. |
 
 ---
@@ -589,8 +589,8 @@ octarq skill install <SOURCE>
 
 **Arguments:**
 
-| Argument | Description |
-|---|---|
+| Argument   | Description                                             |
+| ---------- | ------------------------------------------------------- |
 | `<SOURCE>` | Skill name (FangHub), local directory path, or git URL. |
 
 **Behavior:**
@@ -623,8 +623,8 @@ octarq skill remove <NAME>
 
 **Arguments:**
 
-| Argument | Description |
-|---|---|
+| Argument | Description                  |
+| -------- | ---------------------------- |
 | `<NAME>` | Name of the skill to remove. |
 
 **Example:**
@@ -645,8 +645,8 @@ octarq skill search <QUERY>
 
 **Arguments:**
 
-| Argument | Description |
-|---|---|
+| Argument  | Description          |
+| --------- | -------------------- |
 | `<QUERY>` | Search query string. |
 
 **Example:**
@@ -715,8 +715,8 @@ octarq channel setup [<CHANNEL>]
 
 **Arguments:**
 
-| Argument | Description |
-|---|---|
+| Argument    | Description                                               |
+| ----------- | --------------------------------------------------------- |
 | `<CHANNEL>` | Channel name. If omitted, displays an interactive picker. |
 
 **Supported channels:** `telegram`, `discord`, `slack`, `whatsapp`, `email`, `signal`, `matrix`.
@@ -752,8 +752,8 @@ octarq channel test <CHANNEL>
 
 **Arguments:**
 
-| Argument | Description |
-|---|---|
+| Argument    | Description           |
+| ----------- | --------------------- |
 | `<CHANNEL>` | Channel name to test. |
 
 Requires a running daemon. Sends `POST /api/channels/<channel>/test`.
@@ -776,8 +776,8 @@ octarq channel enable <CHANNEL>
 
 **Arguments:**
 
-| Argument | Description |
-|---|---|
+| Argument    | Description             |
+| ----------- | ----------------------- |
 | `<CHANNEL>` | Channel name to enable. |
 
 In daemon mode: sends `POST /api/channels/<channel>/enable`. Without a daemon: prints a note that the change will take effect on next start.
@@ -794,8 +794,8 @@ octarq channel disable <CHANNEL>
 
 **Arguments:**
 
-| Argument | Description |
-|---|---|
+| Argument    | Description              |
+| ----------- | ------------------------ |
 | `<CHANNEL>` | Channel name to disable. |
 
 In daemon mode: sends `POST /api/channels/<channel>/disable`. Without a daemon: prints a note to edit `config.toml`.
@@ -838,9 +838,9 @@ octarq config get <KEY>
 
 **Arguments:**
 
-| Argument | Description |
-|---|---|
-| `<KEY>` | Dotted key path into the TOML structure. |
+| Argument | Description                              |
+| -------- | ---------------------------------------- |
+| `<KEY>`  | Dotted key path into the TOML structure. |
 
 **Example:**
 
@@ -867,9 +867,9 @@ octarq config set <KEY> <VALUE>
 
 **Arguments:**
 
-| Argument | Description |
-|---|---|
-| `<KEY>` | Dotted key path. |
+| Argument  | Description                                                                               |
+| --------- | ----------------------------------------------------------------------------------------- |
+| `<KEY>`   | Dotted key path.                                                                          |
 | `<VALUE>` | New value. Type is inferred from the existing value (integer, float, boolean, or string). |
 
 **Warning:** This command re-serializes the TOML file, which strips all comments.
@@ -894,8 +894,8 @@ octarq config set-key <PROVIDER>
 
 **Arguments:**
 
-| Argument | Description |
-|---|---|
+| Argument     | Description                                                                                                                                                                   |
+| ------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `<PROVIDER>` | Provider name (e.g. `groq`, `anthropic`, `openai`, `gemini`, `deepseek`, `openrouter`, `together`, `mistral`, `fireworks`, `perplexity`, `cohere`, `xai`, `brave`, `tavily`). |
 
 **Behavior:**
@@ -926,8 +926,8 @@ octarq config delete-key <PROVIDER>
 
 **Arguments:**
 
-| Argument | Description |
-|---|---|
+| Argument     | Description    |
+| ------------ | -------------- |
 | `<PROVIDER>` | Provider name. |
 
 **Example:**
@@ -948,8 +948,8 @@ octarq config test-key <PROVIDER>
 
 **Arguments:**
 
-| Argument | Description |
-|---|---|
+| Argument     | Description    |
+| ------------ | -------------- |
 | `<PROVIDER>` | Provider name. |
 
 **Behavior:**
@@ -980,8 +980,8 @@ octarq chat [<AGENT>]
 
 **Arguments:**
 
-| Argument | Description |
-|---|---|
+| Argument  | Description                  |
+| --------- | ---------------------------- |
 | `<AGENT>` | Optional agent name or UUID. |
 
 **Behavior:**
@@ -1018,11 +1018,11 @@ octarq migrate --from <FRAMEWORK> [--source-dir <PATH>] [--dry-run]
 
 **Options:**
 
-| Option | Description |
-|---|---|
-| `--from <FRAMEWORK>` | Source framework. One of: `openclaw`, `langchain`, `autogpt`. |
+| Option                | Description                                                                                                |
+| --------------------- | ---------------------------------------------------------------------------------------------------------- |
+| `--from <FRAMEWORK>`  | Source framework. One of: `openclaw`, `langchain`, `autogpt`.                                              |
 | `--source-dir <PATH>` | Path to the source workspace. Auto-detected if not set (e.g. `~/.openclaw`, `~/.langchain`, `~/Auto-GPT`). |
-| `--dry-run` | Show what would be imported without making changes. |
+| `--dry-run`           | Show what would be imported without making changes.                                                        |
 
 **Behavior:**
 
@@ -1068,10 +1068,10 @@ octarq mcp
 
 **Supported MCP methods:**
 
-| Method | Description |
-|---|---|
-| `initialize` | Returns server capabilities and info. |
-| `tools/list` | Lists all available agent tools. |
+| Method       | Description                                           |
+| ------------ | ----------------------------------------------------- |
+| `initialize` | Returns server capabilities and info.                 |
+| `tools/list` | Lists all available agent tools.                      |
 | `tools/call` | Sends a message to an agent and returns the response. |
 
 **Tool input schema:**
@@ -1085,8 +1085,8 @@ Add to your MCP client configuration:
 ```json
 {
   "mcpServers": {
-    "openfang": {
-      "command": "openfang",
+    "octarq": {
+      "command": "octarq",
       "args": ["mcp"]
     }
   }
@@ -1137,11 +1137,11 @@ Manage keys with the `config set-key` / `config delete-key` commands rather than
 
 ## Exit Codes
 
-| Code | Meaning |
-|---|---|
-| `0` | Success. |
-| `1` | General error (invalid arguments, failed operations, missing daemon, parse errors, spawn failures). |
-| `130` | Interrupted by second `Ctrl+C` (force exit). |
+| Code  | Meaning                                                                                             |
+| ----- | --------------------------------------------------------------------------------------------------- |
+| `0`   | Success.                                                                                            |
+| `1`   | General error (invalid arguments, failed operations, missing daemon, parse errors, spawn failures). |
+| `130` | Interrupted by second `Ctrl+C` (force exit).                                                        |
 
 ---
 
@@ -1326,8 +1326,8 @@ octarq doctor --json
 ```bash
 # Generate and install completions for your shell
 octarq completion bash >> ~/.bashrc
-octarq completion zsh > "${fpath[1]}/_openfang"
-octarq completion fish > ~/.config/fish/completions/openfang.fish
+octarq completion zsh > "${fpath[1]}/_octarq"
+octarq completion fish > ~/.config/fish/completions/octarq.fish
 ```
 
 ---
@@ -1336,19 +1336,19 @@ octarq completion fish > ~/.config/fish/completions/openfang.fish
 
 The following providers are recognized by `octarq config set-key` and `octarq doctor`:
 
-| Provider | Environment Variable | Default Model |
-|---|---|---|
-| Groq | `GROQ_API_KEY` | `llama-3.3-70b-versatile` |
-| Gemini | `GEMINI_API_KEY` or `GOOGLE_API_KEY` | `gemini-2.5-flash` |
-| DeepSeek | `DEEPSEEK_API_KEY` | `deepseek-chat` |
-| Anthropic | `ANTHROPIC_API_KEY` | `claude-sonnet-4-20250514` |
-| OpenAI | `OPENAI_API_KEY` | `gpt-4o` |
-| OpenRouter | `OPENROUTER_API_KEY` | `openrouter/auto` |
-| Together | `TOGETHER_API_KEY` | -- |
-| Mistral | `MISTRAL_API_KEY` | -- |
-| Fireworks | `FIREWORKS_API_KEY` | -- |
-| Perplexity | `PERPLEXITY_API_KEY` | -- |
-| Cohere | `COHERE_API_KEY` | -- |
-| xAI | `XAI_API_KEY` | -- |
+| Provider   | Environment Variable                 | Default Model              |
+| ---------- | ------------------------------------ | -------------------------- |
+| Groq       | `GROQ_API_KEY`                       | `llama-3.3-70b-versatile`  |
+| Gemini     | `GEMINI_API_KEY` or `GOOGLE_API_KEY` | `gemini-2.5-flash`         |
+| DeepSeek   | `DEEPSEEK_API_KEY`                   | `deepseek-chat`            |
+| Anthropic  | `ANTHROPIC_API_KEY`                  | `claude-sonnet-4-20250514` |
+| OpenAI     | `OPENAI_API_KEY`                     | `gpt-4o`                   |
+| OpenRouter | `OPENROUTER_API_KEY`                 | `openrouter/auto`          |
+| Together   | `TOGETHER_API_KEY`                   | --                         |
+| Mistral    | `MISTRAL_API_KEY`                    | --                         |
+| Fireworks  | `FIREWORKS_API_KEY`                  | --                         |
+| Perplexity | `PERPLEXITY_API_KEY`                 | --                         |
+| Cohere     | `COHERE_API_KEY`                     | --                         |
+| xAI        | `XAI_API_KEY`                        | --                         |
 
 Additional search/fetch provider keys: `BRAVE_API_KEY`, `TAVILY_API_KEY`.

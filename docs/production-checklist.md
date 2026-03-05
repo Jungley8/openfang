@@ -35,7 +35,7 @@ Save both values. You need them for steps 2 and 3.
 
 **Status:** BLOCKING — the placeholder must be replaced before building.
 
-Open `crates/openfang-desktop/tauri.conf.json` and replace:
+Open `crates/octarq-desktop/tauri.conf.json` and replace:
 
 ```json
 "pubkey": "PLACEHOLDER_REPLACE_WITH_GENERATED_PUBKEY"
@@ -55,23 +55,23 @@ with the actual public key string from step 1:
 
 Go to **GitHub repo → Settings → Secrets and variables → Actions → New repository secret** and add:
 
-| Secret Name | Value | Required |
-|---|---|---|
-| `TAURI_SIGNING_PRIVATE_KEY` | Contents of `~/.tauri/openfang.key` | Yes |
-| `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` | Password you set during keygen (or empty string) | Yes |
+| Secret Name                          | Value                                            | Required |
+| ------------------------------------ | ------------------------------------------------ | -------- |
+| `TAURI_SIGNING_PRIVATE_KEY`          | Contents of `~/.tauri/openfang.key`              | Yes      |
+| `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` | Password you set during keygen (or empty string) | Yes      |
 
 ### Optional — macOS Code Signing
 
 Without these, macOS users will see "app from unidentified developer" warnings. Requires an Apple Developer account ($99/year).
 
-| Secret Name | Value |
-|---|---|
-| `APPLE_CERTIFICATE` | Base64-encoded `.p12` certificate file |
-| `APPLE_CERTIFICATE_PASSWORD` | Password for the .p12 file |
-| `APPLE_SIGNING_IDENTITY` | e.g. `Developer ID Application: Your Name (TEAMID)` |
-| `APPLE_ID` | Your Apple ID email |
-| `APPLE_PASSWORD` | App-specific password from appleid.apple.com |
-| `APPLE_TEAM_ID` | Your 10-character Team ID |
+| Secret Name                  | Value                                               |
+| ---------------------------- | --------------------------------------------------- |
+| `APPLE_CERTIFICATE`          | Base64-encoded `.p12` certificate file              |
+| `APPLE_CERTIFICATE_PASSWORD` | Password for the .p12 file                          |
+| `APPLE_SIGNING_IDENTITY`     | e.g. `Developer ID Application: Your Name (TEAMID)` |
+| `APPLE_ID`                   | Your Apple ID email                                 |
+| `APPLE_PASSWORD`             | App-specific password from appleid.apple.com        |
+| `APPLE_TEAM_ID`              | Your 10-character Team ID                           |
 
 To generate the base64 certificate:
 ```bash
@@ -90,15 +90,15 @@ Set `certificateThumbprint` in `tauri.conf.json` under `bundle.windows` and add 
 
 **Status:** VERIFY — icons may be placeholders.
 
-The following icon files must exist in `crates/openfang-desktop/icons/`:
+The following icon files must exist in `crates/octarq-desktop/icons/`:
 
-| File | Size | Usage |
-|---|---|---|
-| `icon.png` | 1024x1024 | Source icon, macOS .icns generation |
-| `icon.ico` | multi-size | Windows taskbar, installer |
-| `32x32.png` | 32x32 | System tray, small contexts |
-| `128x128.png` | 128x128 | Application lists |
-| `128x128@2x.png` | 256x256 | HiDPI/Retina displays |
+| File             | Size       | Usage                               |
+| ---------------- | ---------- | ----------------------------------- |
+| `icon.png`       | 1024x1024  | Source icon, macOS .icns generation |
+| `icon.ico`       | multi-size | Windows taskbar, installer          |
+| `32x32.png`      | 32x32      | System tray, small contexts         |
+| `128x128.png`    | 128x128    | Application lists                   |
+| `128x128@2x.png` | 256x256    | HiDPI/Retina displays               |
 
 Verify they are real branded icons (not Tauri defaults). Generate from a single source SVG:
 
@@ -113,18 +113,18 @@ convert icon.svg -resize 256x256 -define icon:auto-resize=256,128,64,48,32,16 ic
 
 ---
 
-## 5. Set Up the `octarq.sh` Domain
+## 5. Set Up the `octarq.jungley.net` Domain
 
-**Status:** BLOCKING for install scripts — users run `curl -sSf https://openfang.sh | sh`.
+**Status:** BLOCKING for install scripts — users run `curl -sSf https://octarq.jungley.net | sh`.
 
 Options:
-- **GitHub Pages**: Point `octarq.sh` to a GitHub Pages site that redirects `/` to `scripts/install.sh` and `/install.ps1` to `scripts/install.ps1` from the repo's latest release.
+- **GitHub Pages**: Point `octarq.jungley.net` to a GitHub Pages site that redirects `/` to `scripts/install.sh` and `/install.ps1` to `scripts/install.ps1` from the repo's latest release.
 - **Cloudflare Workers / Vercel**: Serve the install scripts with proper `Content-Type: text/plain` headers.
-- **Raw GitHub redirect**: Use `octarq.sh` as a CNAME to `raw.githubusercontent.com/RightNow-AI/Octarq/main/scripts/install.sh` (less reliable).
+- **Raw GitHub redirect**: Use `octarq.jungley.net` as a CNAME to `raw.githubusercontent.com/RightNow-AI/Octarq/main/scripts/install.sh` (less reliable).
 
 The install scripts reference:
-- `https://openfang.sh` → serves `scripts/install.sh`
-- `https://openfang.sh/install.ps1` → serves `scripts/install.ps1`
+- `https://octarq.jungley.net` → serves `scripts/install.sh`
+- `https://octarq.jungley.net/install.ps1` → serves `scripts/install.ps1`
 
 Until the domain is set up, users can install via:
 ```bash
@@ -138,9 +138,9 @@ curl -sSf https://raw.githubusercontent.com/RightNow-AI/openfang/main/scripts/in
 **Status:** VERIFY — the Dockerfile must produce a working image.
 
 ```bash
-docker build -t openfang:local .
-docker run --rm openfang:local --version
-docker run --rm -p 4200:4200 -v openfang-data:/data openfang:local start
+docker build -t octarq:local .
+docker run --rm octarq:local --version
+docker run --rm -p 4200:4200 -v openfang-data:/data octarq:local start
 ```
 
 Confirm:
@@ -202,7 +202,7 @@ Once steps 1-8 are complete:
 
 ```bash
 # Ensure version matches everywhere
-grep '"version"' crates/openfang-desktop/tauri.conf.json
+grep '"version"' crates/octarq-desktop/tauri.conf.json
 grep '^version' Cargo.toml
 
 # Commit any final changes
@@ -266,11 +266,11 @@ docker run --rm ghcr.io/RightNow-AI/openfang:latest --version
 ### Install Scripts
 ```bash
 # Linux/macOS
-curl -sSf https://openfang.sh | sh
+curl -sSf https://octarq.jungley.net | sh
 octarq --version  # Should print v0.1.0
 
 # Windows PowerShell
-irm https://openfang.sh/install.ps1 | iex
+irm https://octarq.jungley.net/install.ps1 | iex
 octarq --version
 ```
 

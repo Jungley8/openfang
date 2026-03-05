@@ -64,7 +64,7 @@ These are showstoppers. The app literally crashes or looks broken without them.
 **What to do:**
 
 1. Generate all required icon sizes from source PNG (`openfang-logo-transparent.png`, 2000x2000)
-2. Place into `crates/openfang-desktop/icons/`:
+2. Place into `crates/octarq-desktop/icons/`:
    - `icon.png` (1024x1024)
    - `icon.ico` (multi-size: 256, 128, 64, 48, 32, 16)
    - `32x32.png`
@@ -169,17 +169,17 @@ These close the gaps that would make users pick OpenClaw over Octarq.
 
 ### 2.4 Install Script Deployment
 
-**Problem:** `octarq.sh` domain isn't set up. Users can't do `curl -sSf https://octarq.sh | sh`.
+**Problem:** `octarq.jungley.net` domain isn't set up. Users can't do `curl -sSf https://octarq.jungley.net | sh`.
 
 **What to do:**
-1. Set up GitHub Pages or Cloudflare Worker for octarq.sh
+1. Set up GitHub Pages or Cloudflare Worker for octarq.jungley.net
 2. Serve `scripts/install.sh` at root
 3. Serve `scripts/install.ps1` at `/install.ps1`
 4. Test on fresh Linux, macOS, and Windows machines
 
 **Done when:**
-- `curl -sSf https://octarq.sh | sh` installs the latest release
-- `irm https://octarq.sh/install.ps1 | iex` works on Windows PowerShell
+- `curl -sSf https://octarq.jungley.net | sh` installs the latest release
+- `irm https://octarq.jungley.net/install.ps1 | iex` works on Windows PowerShell
 
 ---
 
@@ -252,22 +252,22 @@ These are features where Octarq can leapfrog OpenClaw.
 
 ### 3.3 JavaScript/Python SDK -- DONE
 
-**Status: COMPLETE** — Created `sdk/javascript/` (@openfang/sdk) with full REST client: agent CRUD, streaming via SSE, sessions, workflows, skills, channels, memory KV, triggers, schedules + TypeScript declarations. Created `sdk/python/openfang_client.py` (zero-dependency stdlib urllib) with same coverage. Both include basic + streaming examples. Python `setup.py` for pip install.
+**Status: COMPLETE** — Created `sdk/javascript/` (@octarq/sdk) with full REST client: agent CRUD, streaming via SSE, sessions, workflows, skills, channels, memory KV, triggers, schedules + TypeScript declarations. Created `sdk/python/openfang_client.py` (zero-dependency stdlib urllib) with same coverage. Both include basic + streaming examples. Python `setup.py` for pip install.
 
 **Problem (was):** No official client libraries. Developers must raw-fetch the API.
 
 **What to do:**
 1. Create `sdks/javascript/` — thin wrapper around REST API
    - Agent CRUD, message send, streaming via EventSource, file upload
-   - Publish to npm as `@openfang/sdk`
+   - Publish to npm as `@octarq/sdk`
 2. Create `sdks/python/` — thin wrapper with httpx
    - Same operations
    - Publish to PyPI as `octarq`
 3. Include usage examples in README
 
 **Done when:**
-- `npm install @openfang/sdk` works
-- `pip install openfang` works
+- `npm install @octarq/sdk` works
+- `pip install octarq` works
 - Basic example: create agent, send message, get response
 
 ---
@@ -383,7 +383,7 @@ These are features where Octarq can leapfrog OpenClaw.
 
 ### 4.5 Final Release -- READY
 
-**Status: ALL CODE COMPLETE** — All 18 code items done. 1751 tests passing. Production audit completed: 2 critical bugs fixed (API delete alias, config/set route), CSP hardened (Tauri + middleware), Tauri signing key installed. Remaining for release: tag v0.1.0, build release artifacts, set up openfang.sh domain.
+**Status: ALL CODE COMPLETE** — All 18 code items done. 1751 tests passing. Production audit completed: 2 critical bugs fixed (API delete alias, config/set route), CSP hardened (Tauri + middleware), Tauri signing key installed. Remaining for release: tag v0.1.0, build release artifacts, set up octarq.jungley.net domain.
 
 1. Complete items from `production-checklist.md` (keygen DONE, secrets, icons DONE, domain pending)
 2. Tag `v0.1.0`
@@ -394,27 +394,27 @@ These are features where Octarq can leapfrog OpenClaw.
 
 ## Feature Comparison Scoreboard
 
-| Feature | OpenClaw | Octarq | Winner |
-|---------|----------|----------|--------|
-| Language/Performance | Node.js (~200MB) | Rust (~30MB single binary) | **Octarq** |
-| Channels | ~15 | **40** | **Octarq** |
-| Built-in Tools | ~19 | **41** | **Octarq** |
-| Security Systems | Token + sandbox | **16 defense systems** | **Octarq** |
-| Agent Templates | Manual config | **30 pre-configured** | **Octarq** |
-| Hands (autonomous) | None | **7 packages** | **Octarq** |
-| Workflow Engine | Cron + webhooks | **Full DAG with parallel/loops** | **Octarq** |
-| Knowledge Graph | Flat vector store | **Entity-relation graph** | **Octarq** |
-| P2P Networking | None | **OFP wire protocol** | **Octarq** |
-| WASM Sandbox | Docker only | **Dual-metered WASM** | **Octarq** |
-| Desktop App | Electron (~200MB) | **Tauri (~30MB)** | **Octarq** |
-| Migration | N/A | **`migrate --from openclaw`** | **Octarq** |
-| Skills | 54 bundled | **60 bundled** | **Octarq** |
-| LLM Providers | ~15 | **27 providers, 130+ models** | **Octarq** |
-| Plugin SDK | TypeScript published | JS + Python SDK | **Tie** |
-| Native Mobile | iOS + Android + macOS | Web responsive only | OpenClaw |
-| Voice/Talk Mode | Wake word + TTS + overlay | Mic + TTS playback | OpenClaw (slight) |
-| Browser Automation | Playwright with inline screenshots | Playwright + inline screenshots | **Tie** |
-| Visual Workflow Builder | None | **Drag-and-drop builder** | **Octarq** |
+| Feature                 | OpenClaw                           | Octarq                           | Winner            |
+| ----------------------- | ---------------------------------- | -------------------------------- | ----------------- |
+| Language/Performance    | Node.js (~200MB)                   | Rust (~30MB single binary)       | **Octarq**        |
+| Channels                | ~15                                | **40**                           | **Octarq**        |
+| Built-in Tools          | ~19                                | **41**                           | **Octarq**        |
+| Security Systems        | Token + sandbox                    | **16 defense systems**           | **Octarq**        |
+| Agent Templates         | Manual config                      | **30 pre-configured**            | **Octarq**        |
+| Hands (autonomous)      | None                               | **7 packages**                   | **Octarq**        |
+| Workflow Engine         | Cron + webhooks                    | **Full DAG with parallel/loops** | **Octarq**        |
+| Knowledge Graph         | Flat vector store                  | **Entity-relation graph**        | **Octarq**        |
+| P2P Networking          | None                               | **OFP wire protocol**            | **Octarq**        |
+| WASM Sandbox            | Docker only                        | **Dual-metered WASM**            | **Octarq**        |
+| Desktop App             | Electron (~200MB)                  | **Tauri (~30MB)**                | **Octarq**        |
+| Migration               | N/A                                | **`migrate --from openclaw`**    | **Octarq**        |
+| Skills                  | 54 bundled                         | **60 bundled**                   | **Octarq**        |
+| LLM Providers           | ~15                                | **27 providers, 130+ models**    | **Octarq**        |
+| Plugin SDK              | TypeScript published               | JS + Python SDK                  | **Tie**           |
+| Native Mobile           | iOS + Android + macOS              | Web responsive only              | OpenClaw          |
+| Voice/Talk Mode         | Wake word + TTS + overlay          | Mic + TTS playback               | OpenClaw (slight) |
+| Browser Automation      | Playwright with inline screenshots | Playwright + inline screenshots  | **Tie**           |
+| Visual Workflow Builder | None                               | **Drag-and-drop builder**        | **Octarq**        |
 
 **Octarq wins 15/18 categories.** The remaining gaps are: mobile apps (OpenClaw), voice wake word (OpenClaw slight edge).
 
@@ -433,7 +433,7 @@ Sprint 2: 4/5 COMPLETE
   2.1 Browser screenshots .......... DONE
   2.2 Chat search .................. DONE
   2.3 Skill marketplace ............ DONE
-  2.4 Install script domain ........ PENDING (infra: set up openfang.sh domain)
+  2.4 Install script domain ........ PENDING (infra: set up octarq.jungley.net domain)
   2.5 Wizard end-to-end ............ DONE
 
 Sprint 3: COMPLETE

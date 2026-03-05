@@ -53,7 +53,7 @@ Octarq uses `tracing` for structured logging. Set the log level via environment:
 ```bash
 RUST_LOG=info octarq start          # Default
 RUST_LOG=debug octarq start         # Verbose
-RUST_LOG=openfang=debug octarq start  # Only Octarq debug, deps at info
+RUST_LOG=octarq=debug octarq start  # Only Octarq debug, deps at info
 ```
 
 ---
@@ -383,7 +383,7 @@ cors_origins = ["http://localhost:5173", "https://your-app.com"]
 
 **Checklist**:
 1. Use `POST /v1/chat/completions` (not `/api/agents/{id}/message`)
-2. Set the model to `openfang:agent-name` (e.g., `openfang:coder`)
+2. Set the model to `octarq:agent-name` (e.g., `octarq:coder`)
 3. Streaming: set `"stream": true` for SSE responses
 4. Images: use `image_url` with `data:image/png;base64,...` format
 

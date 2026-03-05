@@ -1,15 +1,15 @@
 #!/usr/bin/env bash
 # Octarq installer — works on Linux, macOS, WSL
-# Usage: curl -sSf https://octarq.sh | sh
+# Usage: curl -sSf https://octarq.jungley.net | sh
 #
 # Environment variables:
-#   OCTARQ_INSTALL_DIR  — custom install directory (default: ~/.octarq/bin)
-#   OCTARQ_VERSION      — install a specific version tag (default: latest)
+#   OPENFANG_INSTALL_DIR  — custom install directory (default: ~/.openfang/bin)
+#   OPENFANG_VERSION      — install a specific version tag (default: latest)
 
 set -euo pipefail
 
-REPO="RightNow-AI/Octarq"
-INSTALL_DIR="${OCTARQ_INSTALL_DIR:-$HOME/.octarq/bin}"
+REPO="Jungley8/Octarq"
+INSTALL_DIR="${OPENFANG_INSTALL_DIR:-$HOME/.openfang/bin}"
 
 detect_platform() {
     OS=$(uname -s | tr '[:upper:]' '[:lower:]')
@@ -25,7 +25,7 @@ detect_platform() {
         mingw*|msys*|cygwin*)
             echo ""
             echo "  For Windows, use PowerShell instead:"
-            echo "    irm https://octarq.sh/install.ps1 | iex"
+            echo "    irm https://octarq.jungley.net/install.ps1 | iex"
             echo ""
             echo "  Or download the .msi installer from:"
             echo "    https://github.com/$REPO/releases/latest"
@@ -47,8 +47,8 @@ install() {
     echo ""
 
     # Get latest version
-    if [ -n "${OCTARQ_VERSION:-}" ]; then
-        VERSION="$OCTARQ_VERSION"
+    if [ -n "${OPENFANG_VERSION:-}" ]; then
+        VERSION="$OPENFANG_VERSION"
         echo "  Using specified version: $VERSION"
     else
         echo "  Fetching latest release..."

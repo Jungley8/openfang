@@ -26,7 +26,7 @@ pub fn cmd_status(config: Option<PathBuf>, json: bool) {
             return;
         }
 
-        ui::section("OpenFang Daemon Status");
+        ui::section("Octarq Daemon Status");
         ui::blank();
         ui::kv_ok("Status", body["status"].as_str().unwrap_or("?"));
         ui::kv(
@@ -79,7 +79,7 @@ pub fn cmd_status(config: Option<PathBuf>, json: bool) {
             return;
         }
 
-        ui::section("OpenFang Status (in-process)");
+        ui::section("Octarq Status (in-process)");
         ui::blank();
         ui::kv("Agents", &agent_count.to_string());
         ui::kv("Provider", &kernel.config.default_model.provider);
@@ -87,7 +87,7 @@ pub fn cmd_status(config: Option<PathBuf>, json: bool) {
         ui::kv("Data dir", &kernel.config.data_dir.display().to_string());
         ui::kv_warn("Daemon", "NOT RUNNING");
         ui::blank();
-        ui::hint("Run `openfang start` to launch the daemon");
+        ui::hint("Run `octarq start` to launch the daemon");
 
         if agent_count > 0 {
             ui::blank();
@@ -105,7 +105,7 @@ pub fn cmd_doctor(json: bool, repair: bool) {
     let mut repaired = false;
 
     if !json {
-        ui::step("OpenFang Doctor");
+        ui::step("Octarq Doctor");
         println!();
     }
 
@@ -113,15 +113,15 @@ pub fn cmd_doctor(json: bool, repair: bool) {
     if let Some(h) = &home {
         let openfang_dir = h.join(".openfang");
 
-        // --- Check 1: OpenFang directory ---
+        // --- Check 1: Octarq directory ---
         if openfang_dir.exists() {
             if !json {
-                ui::check_ok(&format!("OpenFang directory: {}", openfang_dir.display()));
+                ui::check_ok(&format!("Octarq directory: {}", openfang_dir.display()));
             }
             checks.push(serde_json::json!({"check": "openfang_dir", "status": "ok", "path": openfang_dir.display().to_string()}));
         } else if repair {
             if !json {
-                ui::check_fail("OpenFang directory not found.");
+                ui::check_fail("Octarq directory not found.");
             }
             let answer = prompt_input("    Create it now? [Y/n] ");
             if answer.is_empty() || answer.starts_with('y') || answer.starts_with('Y') {
@@ -131,7 +131,7 @@ pub fn cmd_doctor(json: bool, repair: bool) {
                         let _ = std::fs::create_dir_all(openfang_dir.join(sub));
                     }
                     if !json {
-                        ui::check_ok("Created OpenFang directory");
+                        ui::check_ok("Created Octarq directory");
                     }
                     repaired = true;
                 } else {
@@ -146,7 +146,7 @@ pub fn cmd_doctor(json: bool, repair: bool) {
             checks.push(serde_json::json!({"check": "openfang_dir", "status": if repaired { "repaired" } else { "fail" }}));
         } else {
             if !json {
-                ui::check_fail("OpenFang directory not found. Run `openfang init` first.");
+                ui::check_fail("Octarq directory not found. Run `octarq init` first.");
             }
             checks.push(serde_json::json!({"check": "openfang_dir", "status": "fail"}));
             all_ok = false;
@@ -193,7 +193,7 @@ pub fn cmd_doctor(json: bool, repair: bool) {
         } else {
             if !json {
                 ui::check_warn(
-                    ".env file not found (create with: openfang config set-key <provider>)",
+                    ".env file not found (create with: octarq config set-key <provider>)",
                 );
             }
             checks.push(serde_json::json!({"check": "env_file", "status": "warn"}));
@@ -213,7 +213,7 @@ pub fn cmd_doctor(json: bool, repair: bool) {
                 Err(e) => {
                     if !json {
                         ui::check_fail(&format!("Config file has syntax errors: {e}"));
-                        ui::hint("Fix with: openfang config edit");
+                        ui::hint("Fix with: octarq config edit");
                     }
                     checks.push(serde_json::json!({"check": "config_syntax", "status": "fail", "error": e.to_string()}));
                     all_ok = false;
@@ -225,7 +225,7 @@ pub fn cmd_doctor(json: bool, repair: bool) {
             }
             let answer = prompt_input("    Create default config? [Y/n] ");
             if answer.is_empty() || answer.starts_with('y') || answer.starts_with('Y') {
-                let default_config = r#"# OpenFang Agent OS configuration
+                let default_config = r#"# Octarq Agent OS configuration
 # See https://github.com/RightNow-AI/openfang for documentation
 
 # For Docker, change to "0.0.0.0:4200" or set OPENFANG_LISTEN env var.
@@ -276,7 +276,7 @@ decay_rate = 0.05
             checks.push(serde_json::json!({"check": "daemon", "status": "ok", "url": base}));
         } else {
             if !json {
-                ui::check_warn("Daemon not running (start with `openfang start`)");
+                ui::check_warn("Daemon not running (start with `octarq start`)");
             }
             checks.push(serde_json::json!({"check": "daemon", "status": "warn"}));
 
@@ -314,7 +314,7 @@ decay_rate = 0.05
         }
 
         // --- Check 6: Database file ---
-        let db_path = openfang_dir.join("data").join("openfang.db");
+        let db_path = openfang_dir.join("data").join("octarq.db");
         if db_path.exists() {
             if let Ok(bytes) = std::fs::read(&db_path) {
                 if bytes.len() >= 16 && bytes.starts_with(b"SQLite format 3") {
@@ -464,7 +464,7 @@ decay_rate = 0.05
             ui::suggest_cmd("Gemini:", "https://aistudio.google.com    (free tier)");
             ui::suggest_cmd("DeepSeek:", "https://platform.deepseek.com  (low cost)");
             ui::blank();
-            ui::hint("Or run: openfang config set-key groq");
+            ui::hint("Or run: octarq config set-key groq");
         }
         all_ok = false;
     }
@@ -930,14 +930,14 @@ decay_rate = 0.05
     } else {
         println!();
         if all_ok {
-            ui::success("All checks passed! OpenFang is ready.");
-            ui::hint("Start the daemon: openfang start");
+            ui::success("All checks passed! Octarq is ready.");
+            ui::hint("Start the daemon: octarq start");
         } else if repaired {
-            ui::success("Repairs applied. Re-run `openfang doctor` to verify.");
+            ui::success("Repairs applied. Re-run `octarq doctor` to verify.");
         } else {
             ui::error("Some checks failed.");
             if !repair {
-                ui::hint("Run `openfang doctor --repair` to attempt auto-fix");
+                ui::hint("Run `octarq doctor --repair` to attempt auto-fix");
             }
         }
     }
@@ -956,7 +956,7 @@ pub fn cmd_dashboard() {
             Err(e) => {
                 ui::error_with_fix(
                     &format!("Could not start daemon: {e}"),
-                    "Start it manually: openfang start",
+                    "Start it manually: octarq start",
                 );
                 std::process::exit(1);
             }
@@ -975,7 +975,7 @@ pub fn cmd_dashboard() {
 
 pub fn cmd_completion(shell: clap_complete::Shell) {
     let mut cmd = Cli::command();
-    clap_complete::generate(shell, &mut cmd, "openfang", &mut std::io::stdout());
+    clap_complete::generate(shell, &mut cmd, "octarq", &mut std::io::stdout());
 }
 
 pub fn cmd_sessions(agent: Option<&str>, json: bool) {
@@ -1096,7 +1096,7 @@ pub fn cmd_health(json: bool) {
                 std::process::exit(1);
             }
             ui::error("Daemon is not running.");
-            ui::hint("Start it with: openfang start");
+            ui::hint("Start it with: octarq start");
             std::process::exit(1);
         }
     }
@@ -1121,7 +1121,7 @@ pub fn cmd_system_info(json: bool) {
             );
             return;
         }
-        ui::section("OpenFang System Info");
+        ui::section("Octarq System Info");
         ui::blank();
         ui::kv("Version", env!("CARGO_PKG_VERSION"));
         ui::kv("Status", body["status"].as_str().unwrap_or("?"));
@@ -1148,11 +1148,11 @@ pub fn cmd_system_info(json: bool) {
             );
             return;
         }
-        ui::section("OpenFang System Info");
+        ui::section("Octarq System Info");
         ui::blank();
         ui::kv("Version", env!("CARGO_PKG_VERSION"));
         ui::kv_warn("Daemon", "NOT RUNNING");
-        ui::hint("Start with: openfang start");
+        ui::hint("Start with: octarq start");
     }
 }
 
@@ -1164,5 +1164,5 @@ pub fn cmd_system_version(json: bool) {
         );
         return;
     }
-    println!("openfang {}", env!("CARGO_PKG_VERSION"));
+    println!("octarq {}", env!("CARGO_PKG_VERSION"));
 }

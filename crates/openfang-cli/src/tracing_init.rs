@@ -26,7 +26,7 @@ fn try_otel_tracer() -> Option<opentelemetry_sdk::trace::Tracer> {
             .with_batch_exporter(exporter)
             .build();
         opentelemetry::global::set_tracer_provider(provider.clone());
-        Some(provider.tracer("openfang"))
+        Some(provider.tracer("octarq"))
     })
 }
 

@@ -1,4 +1,4 @@
-//! Ratatui TUI for OpenFang interactive mode.
+//! Ratatui TUI for Octarq interactive mode.
 //!
 //! Two-level navigation: Phase::Boot (Welcome/Wizard) → Phase::Main with 16 tabs.
 

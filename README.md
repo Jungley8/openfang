@@ -45,10 +45,10 @@ Thanks to the OpenFang team and community for the original groundwork.
 ---
 
 <p align="center">
-  <img src="public/assets/openfang-logo.png" width="160" alt="OpenFang Logo" />
+  <img src="public/assets/octarq-logo.svg" width="160" alt="Octarq Logo" />
 </p>
 
-<h1 align="center">OpenFang</h1>
+<h1 align="center">Octarq</h1>
 <h3 align="center">The Agent Operating System</h3>
 
 <p align="center">
@@ -57,9 +57,9 @@ Thanks to the OpenFang team and community for the original groundwork.
 </p>
 
 <p align="center">
-  <a href="https://openfang.sh/docs">Documentation</a> &bull;
-  <a href="https://openfang.sh/docs/getting-started">Quick Start</a> &bull;
-  <a href="https://x.com/openfangg">Twitter / X</a>
+  <a href="https://octarq.jungley.net/docs">Documentation</a> &bull;
+  <a href="https://octarq.jungley.net/docs/getting-started">Quick Start</a> &bull;
+  <a href="https://x.com/octarq">Twitter / X</a>
 </p>
 
 <p align="center">
@@ -68,29 +68,29 @@ Thanks to the OpenFang team and community for the original groundwork.
   <img src="https://img.shields.io/badge/version-0.1.0-green?style=flat-square" alt="v0.1.0" />
   <img src="https://img.shields.io/badge/tests-1,767%2B%20passing-brightgreen?style=flat-square" alt="Tests" />
   <img src="https://img.shields.io/badge/clippy-0%20warnings-brightgreen?style=flat-square" alt="Clippy" />
-  <a href="https://www.buymeacoffee.com/openfang" target="_blank"><img src="https://img.shields.io/badge/Buy%20Me%20a%20Coffee-FFDD00?style=flat-square&logo=buy-me-a-coffee&logoColor=black" alt="Buy Me A Coffee" /></a>
+  <a href="https://www.buymeacoffee.com/octarq" target="_blank"><img src="https://img.shields.io/badge/Buy%20Me%20a%20Coffee-FFDD00?style=flat-square&logo=buy-me-a-coffee&logoColor=black" alt="Buy Me A Coffee" /></a>
 </p>
 
 ---
 
-> **v0.1.0 — First Release (February 2026)**
+> **v0.1.0 — First Release (March 2026)**
 >
-> OpenFang is feature-complete but this is the first public release. You may encounter instability, rough edges, or breaking changes between minor versions. We ship fast and fix fast. Pin to a specific commit for production use until v1.0. [Report issues here.](https://github.com/RightNow-AI/openfang/issues)
+> Octarq is feature-complete but this is the first public release. You may encounter instability, rough edges, or breaking changes between minor versions. We ship fast and fix fast. Pin to a specific commit for production use until v1.0. [Report issues here.](https://github.com/RightNow-AI/openfang/issues)
 
 ---
 
-## What is OpenFang?
+## What is Octarq?
 
-OpenFang is an **open-source Agent Operating System** — not a chatbot framework, not a Python wrapper around an LLM, not a "multi-agent orchestrator." It is a full operating system for autonomous agents, built from scratch in Rust.
+Octarq is an **open-source Agent Operating System** — not a chatbot framework, not a Python wrapper around an LLM, not a "multi-agent orchestrator." It is a full operating system for autonomous agents, built from scratch in Rust.
 
-Traditional agent frameworks wait for you to type something. OpenFang runs **autonomous agents that work for you** — on schedules, 24/7, building knowledge graphs, monitoring targets, generating leads, managing your social media, and reporting results to your dashboard.
+Traditional agent frameworks wait for you to type something. Octarq runs **autonomous agents that work for you** — on schedules, 24/7, building knowledge graphs, monitoring targets, generating leads, managing your social media, and reporting results to your dashboard.
 
 The entire system compiles to a **single ~32MB binary**. One install, one command, your agents are live.
 
 ```bash
-curl -fsSL https://openfang.sh/install | sh
-openfang init
-openfang start
+curl -fsSL https://octarq.jungley.net | sh
+octarq init
+octarq start
 # Dashboard live at http://localhost:4200
 ```
 
@@ -98,9 +98,9 @@ openfang start
 <summary><strong>Windows</strong></summary>
 
 ```powershell
-irm https://openfang.sh/install.ps1 | iex
-openfang init
-openfang start
+irm https://octarq.jungley.net/install.ps1 | iex
+octarq init
+octarq start
 ```
 
 </details>
@@ -111,7 +111,7 @@ openfang start
 
 <p align="center"><em>"Traditional agents wait for you to type. Hands work <strong>for</strong> you."</em></p>
 
-**Hands** are OpenFang's core innovation — pre-built autonomous capability packages that run independently, on schedules, without you having to prompt them. This is not a chatbot. This is an agent that wakes up at 6 AM, researches your competitors, builds a knowledge graph, scores the findings, and delivers a report to your Telegram before you've had coffee.
+**Hands** are Octarq's core innovation — pre-built autonomous capability packages that run independently, on schedules, without you having to prompt them. This is not a chatbot. This is an agent that wakes up at 6 AM, researches your competitors, builds a knowledge graph, scores the findings, and delivers a report to your Telegram before you've had coffee.
 
 Each Hand bundles:
 - **HAND.toml** — Manifest declaring tools, settings, requirements, and dashboard metrics
@@ -135,40 +135,40 @@ All compiled into the binary. No downloading, no pip install, no Docker pull.
 
 ```bash
 # Activate the Researcher Hand — it starts working immediately
-openfang hand activate researcher
+octarq hand activate researcher
 
 # Check its progress anytime
-openfang hand status researcher
+octarq hand status researcher
 
 # Activate lead generation on a daily schedule
-openfang hand activate lead
+octarq hand activate lead
 
 # Pause without losing state
-openfang hand pause lead
+octarq hand pause lead
 
 # See all available Hands
-openfang hand list
+octarq hand list
 ```
 
 **Build your own.** Define a `HAND.toml` with tools, settings, and a system prompt. Publish to FangHub.
 
 ---
 
-## OpenFang vs The Landscape
+## Octarq vs The Landscape
 
 <p align="center">
-  <img src="public/assets/openfang-vs-claws.png" width="600" alt="OpenFang vs OpenClaw vs ZeroClaw" />
+  <img src="public/assets/octarq-vs-claws.png" width="600" alt="Octarq vs OpenClaw vs ZeroClaw" />
 </p>
 
 ### Benchmarks: Measured, Not Marketed
 
-All data from official documentation and public repositories — February 2026.
+All data from official documentation and public repositories — March 2026.
 
 #### Cold Start Time (lower is better)
 
 ```
 ZeroClaw   ██░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░   10 ms
-OpenFang   ██████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░  180 ms    ★
+Octarq     ██████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░  180 ms    ★
 LangGraph  █████████████████░░░░░░░░░░░░░░░░░░░░░░░░░  2.5 sec
 CrewAI     ████████████████████░░░░░░░░░░░░░░░░░░░░░░  3.0 sec
 AutoGen    ██████████████████████████░░░░░░░░░░░░░░░░░  4.0 sec
@@ -179,7 +179,7 @@ OpenClaw   ███████████████████████
 
 ```
 ZeroClaw   █░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░    5 MB
-OpenFang   ████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░   40 MB    ★
+Octarq     ████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░   40 MB    ★
 LangGraph  ██████████████████░░░░░░░░░░░░░░░░░░░░░░░░░  180 MB
 CrewAI     ████████████████████░░░░░░░░░░░░░░░░░░░░░░░  200 MB
 AutoGen    █████████████████████████░░░░░░░░░░░░░░░░░░  250 MB
@@ -190,7 +190,7 @@ OpenClaw   ███████████████████████
 
 ```
 ZeroClaw   █░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░  8.8 MB
-OpenFang   ███░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░   32 MB    ★
+Octarq     ███░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░   32 MB    ★
 CrewAI     ████████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░  100 MB
 LangGraph  ████████████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░  150 MB
 AutoGen    ████████████████░░░░░░░░░░░░░░░░░░░░░░░░░░░  200 MB
@@ -200,7 +200,7 @@ OpenClaw   ███████████████████████
 #### Security Systems (higher is better)
 
 ```
-OpenFang   ████████████████████████████████████████████   16      ★
+Octarq     ████████████████████████████████████████████   16      ★
 ZeroClaw   ███████████████░░░░░░░░░░░░░░░░░░░░░░░░░░░░    6
 OpenClaw   ████████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░    3
 AutoGen    █████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░    2
@@ -211,7 +211,7 @@ CrewAI     ███░░░░░░░░░░░░░░░░░░░░
 #### Channel Adapters (higher is better)
 
 ```
-OpenFang   ████████████████████████████████████████████   40      ★
+Octarq     ████████████████████████████████████████████   40      ★
 ZeroClaw   ███████████████░░░░░░░░░░░░░░░░░░░░░░░░░░░░   15
 OpenClaw   █████████████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░   13
 CrewAI     ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░    0
@@ -223,7 +223,7 @@ LangGraph  ░░░░░░░░░░░░░░░░░░░░░░░
 
 ```
 ZeroClaw   ████████████████████████████████████████████   28
-OpenFang   ██████████████████████████████████████████░░   27      ★
+Octarq     ██████████████████████████████████████████░░   27      ★
 LangGraph  ██████████████████████░░░░░░░░░░░░░░░░░░░░░   15
 CrewAI     ██████████████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░   10
 OpenClaw   ██████████████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░   10
@@ -232,7 +232,7 @@ AutoGen    ███████████░░░░░░░░░░░░
 
 ### Feature-by-Feature Comparison
 
-| Feature              | OpenFang              | OpenClaw   | ZeroClaw    | CrewAI  | AutoGen    | LangGraph   |
+| Feature              | Octarq                | OpenClaw   | ZeroClaw    | CrewAI  | AutoGen    | LangGraph   |
 | -------------------- | --------------------- | ---------- | ----------- | ------- | ---------- | ----------- |
 | **Language**         | **Rust**              | TypeScript | **Rust**    | Python  | Python     | Python      |
 | **Autonomous Hands** | **7 built-in**        | None       | None        | None    | None       | None        |
@@ -251,7 +251,7 @@ AutoGen    ███████████░░░░░░░░░░░░
 
 ## 16 Security Systems — Defense in Depth
 
-OpenFang doesn't bolt security on after the fact. Every layer is independently testable and operates without a single point of failure.
+Octarq doesn't bolt security on after the fact. Every layer is independently testable and operates without a single point of failure.
 
 | #   | System                              | What It Does                                                                                                     |
 | --- | ----------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
@@ -304,7 +304,7 @@ Connect your agents to every platform your users are on.
 
 **Core:** Telegram, Discord, Slack, WhatsApp, Signal, Matrix, Email (IMAP/SMTP)
 **Enterprise:** Microsoft Teams, Mattermost, Google Chat, Webex, Feishu/Lark, Zulip
-**Social:** LINE, Viber, Facebook Messenger, Mastodon, Bluesky, Reddit, LinkedIn, Twitch
+**Social:** LINE, Viber, Facebook Messenger, Mastodon, Bluesky, Reddit, LinkedIn, Twitter
 **Community:** IRC, XMPP, Guilded, Revolt, Keybase, Discourse, Gitter
 **Privacy:** Threema, Nostr, Mumble, Nextcloud Talk, Rocket.Chat, Ntfy, Gotify
 **Workplace:** Pumble, Flock, Twist, DingTalk, Zalo, Webhooks
@@ -329,22 +329,22 @@ Already running OpenClaw? One command:
 
 ```bash
 # Migrate everything — agents, memory, skills, configs
-openfang migrate --from openclaw
+octarq migrate --from openclaw
 
 # Migrate from a specific path
-openfang migrate --from openclaw --path ~/.openclaw
+octarq migrate --from openclaw --path ~/.openclaw
 
 # Dry run first to see what would change
-openfang migrate --from openclaw --dry-run
+octarq migrate --from openclaw --dry-run
 ```
 
-The migration engine imports your agents, conversation history, skills, and configuration. OpenFang reads SKILL.md natively and is compatible with the ClawHub marketplace.
+The migration engine imports your agents, conversation history, skills, and configuration. Octarq reads SKILL.md natively and is compatible with the ClawHub marketplace.
 
 ---
 
 ## OpenAI-Compatible API
 
-Drop-in replacement. Point your existing tools at OpenFang:
+Drop-in replacement. Point your existing tools at Octarq:
 
 ```bash
 curl -X POST localhost:4200/v1/chat/completions \
@@ -364,34 +364,34 @@ curl -X POST localhost:4200/v1/chat/completions \
 
 ```bash
 # 1. Install (macOS/Linux)
-curl -fsSL https://openfang.sh/install | sh
+curl -fsSL https://octarq.jungley.net | sh
 
 # 2. Initialize — walks you through provider setup
-openfang init
+octarq init
 
 # 3. Start the daemon
-openfang start
+octarq start
 
 # 4. Dashboard is live at http://localhost:4200
 
 # 5. Activate a Hand — it starts working for you
-openfang hand activate researcher
+octarq hand activate researcher
 
 # 6. Chat with an agent
-openfang chat researcher
+octarq chat researcher
 > "What are the emerging trends in AI agent frameworks?"
 
 # 7. Spawn a pre-built agent
-openfang agent spawn coder
+octarq agent spawn coder
 ```
 
 <details>
 <summary><strong>Windows (PowerShell)</strong></summary>
 
 ```powershell
-irm https://openfang.sh/install.ps1 | iex
-openfang init
-openfang start
+irm https://octarq.jungley.net/install.ps1 | iex
+octarq init
+octarq start
 ```
 
 </details>
@@ -420,7 +420,7 @@ cargo fmt --all -- --check
 
 ## Stability Notice
 
-OpenFang v0.1.0 is the first public release. The architecture is solid, the test suite is comprehensive, and the security model is comprehensive. That said:
+Octarq v0.1.0 is the first public release. The architecture is solid, the test suite is comprehensive, and the security model is comprehensive. That said:
 
 - **Breaking changes** may occur between minor versions until v1.0
 - **Some Hands** are more mature than others (Browser and Researcher are the most battle-tested)
@@ -439,11 +439,11 @@ MIT — use it however you want.
 
 ## Links
 
-- [Website & Documentation](https://openfang.sh)
-- [Quick Start Guide](https://openfang.sh/docs/getting-started)
+- [Website & Documentation](https://octarq.jungley.net)
+- [Quick Start Guide](https://octarq.jungley.net/docs/getting-started)
 - [GitHub](https://github.com/RightNow-AI/openfang)
-- [Discord](https://discord.gg/sSJqgNnq6X)
-- [Twitter / X](https://x.com/openfangg)
+- [Discord](https://discord.gg/octarq)
+- [Twitter / X](https://x.com/octarq)
 
 ---
 
@@ -456,13 +456,13 @@ MIT — use it however you want.
 </p>
 
 <p align="center">
-  OpenFang is built and maintained by <a href="https://x.com/Akashi203"><strong>Jaber</strong></a>, Founder of <a href="https://www.rightnowai.co/"><strong>RightNow</strong></a>.
+  Octarq is built and maintained by <a href="https://x.com/Akashi203"><strong>Jaber</strong></a>, Founder of <a href="https://www.rightnowai.co/"><strong>RightNow</strong></a>.
 </p>
 
 <p align="center">
   <a href="https://www.rightnowai.co/">Website</a> &bull;
   <a href="https://x.com/Akashi203">Twitter / X</a> &bull;
-  <a href="https://www.buymeacoffee.com/openfang" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" style="height: 60px !important;width: 217px !important;" ></a>
+  <a href="https://www.buymeacoffee.com/octarq" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" style="height: 60px !important;width: 217px !important;" ></a>
 </p>
 
 ---

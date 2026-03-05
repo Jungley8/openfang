@@ -52,13 +52,13 @@ fn cmd_init_quick(openfang_dir: &std::path::Path) {
     write_config_if_missing(openfang_dir, provider, model, api_key_env);
 
     ui::blank();
-    ui::success("OpenFang initialized (quick mode)");
+    ui::success("Octarq initialized (quick mode)");
     ui::kv("Provider", provider);
     ui::kv("Model", model);
     ui::blank();
     ui::next_steps(&[
-        "Start the daemon:  openfang start",
-        "Chat:              openfang chat",
+        "Start the daemon:  octarq start",
+        "Chat:              octarq chat",
     ]);
 }
 
@@ -73,7 +73,7 @@ fn cmd_init_interactive(openfang_dir: &std::path::Path) {
             launch,
         } => {
             ui::blank();
-            ui::success("OpenFang initialized!");
+            ui::success("Octarq initialized!");
             ui::kv("Provider", &provider);
             ui::kv("Model", &model);
 
@@ -94,7 +94,7 @@ fn cmd_init_interactive(openfang_dir: &std::path::Path) {
                             ui::hint(&format!("Could not open browser. Visit: {url}"));
                         }
                     } else {
-                        ui::error("Daemon is not running. Start it with: openfang start");
+                        ui::error("Daemon is not running. Start it with: octarq start");
                     }
                 }
                 LaunchChoice::Chat => {
@@ -116,16 +116,16 @@ pub fn launch_desktop_app(_openfang_dir: &std::path::Path) {
         let dir = exe.as_ref().and_then(|e| e.parent());
 
         #[cfg(windows)]
-        let name = "openfang-desktop.exe";
+        let name = "octarq-desktop.exe";
         #[cfg(not(windows))]
-        let name = "openfang-desktop";
+        let name = "octarq-desktop";
 
         dir.map(|d| d.join(name))
     };
 
     match desktop_bin {
         Some(ref path) if path.exists() => {
-            ui::success("Launching OpenFang Desktop...");
+            ui::success("Launching Octarq Desktop...");
             match std::process::Command::new(path)
                 .stdin(std::process::Stdio::null())
                 .stdout(std::process::Stdio::null())
@@ -137,13 +137,13 @@ pub fn launch_desktop_app(_openfang_dir: &std::path::Path) {
                 }
                 Err(e) => {
                     ui::error(&format!("Failed to launch desktop app: {e}"));
-                    ui::hint("Try: openfang dashboard");
+                    ui::hint("Try: octarq dashboard");
                 }
             }
         }
         _ => {
             ui::error("Desktop app not found.");
-            ui::hint("Install it with: cargo install openfang-desktop");
+            ui::hint("Install it with: cargo install octarq-desktop");
             ui::hint("Falling back to web dashboard...");
             ui::blank();
             if let Some(base) = find_daemon() {
@@ -219,7 +219,7 @@ fn write_config_if_missing(
         ui::check_ok(&format!("Config already exists: {}", config_path.display()));
     } else {
         let default_config = format!(
-            r#"# OpenFang Agent OS configuration
+            r#"# Octarq Agent OS configuration
 # See https://github.com/RightNow-AI/openfang for documentation
 
 api_listen = "127.0.0.1:4200"
@@ -246,7 +246,7 @@ pub fn cmd_start(config: Option<PathBuf>, daemon: bool) {
     if let Some(base) = find_daemon() {
         ui::error_with_fix(
             &format!("Daemon already running at {base}"),
-            "Use `openfang status` to check it, or stop it first",
+            "Use `octarq status` to check it, or stop it first",
         );
         std::process::exit(1);
     }
@@ -295,7 +295,7 @@ pub fn cmd_start(config: Option<PathBuf>, daemon: bool) {
         ui::kv("Provider", &provider);
         ui::kv("Model", &model);
         ui::blank();
-        ui::hint("Open the dashboard in your browser, or run `openfang chat`");
+        ui::hint("Open the dashboard in your browser, or run `octarq chat`");
         ui::hint("Press Ctrl+C to stop the daemon");
         ui::blank();
 
@@ -307,7 +307,7 @@ pub fn cmd_start(config: Option<PathBuf>, daemon: bool) {
         }
 
         ui::blank();
-        println!("  OpenFang daemon stopped.");
+        println!("  Octarq daemon stopped.");
     });
 }
 
@@ -361,7 +361,7 @@ fn spawn_daemon(config: Option<PathBuf>) {
         cmd.arg("--config").arg(cfg_path);
     }
 
-    println!("  Spawning OpenFang daemon in the background...");
+    println!("  Spawning Octarq daemon in the background...");
 
     match cmd
         .stdout(Stdio::null())
@@ -372,7 +372,7 @@ fn spawn_daemon(config: Option<PathBuf>) {
         Ok(child) => {
             let pid = child.id();
             ui::success(&format!("Daemon spawned with PID {pid}"));
-            ui::hint("Use `openfang status` or check the Dashboard to monitor it.");
+            ui::hint("Use `octarq status` or check the Dashboard to monitor it.");
         }
         Err(e) => {
             ui::error(&format!("Failed to spawn daemon: {e}"));
@@ -414,7 +414,7 @@ pub fn cmd_stop() {
         None => {
             ui::warn_with_fix(
                 "No running daemon found",
-                "Is it running? Check with: openfang status",
+                "Is it running? Check with: octarq status",
             );
         }
     }

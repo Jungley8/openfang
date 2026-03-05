@@ -1,4 +1,4 @@
-//! MCP (Model Context Protocol) server for OpenFang.
+//! MCP (Model Context Protocol) server for Octarq.
 //!
 //! Exposes running agents as MCP tools over JSON-RPC 2.0 stdio.
 //! Each agent becomes a callable tool named `openfang_agent_{name}`.
@@ -233,7 +233,7 @@ fn handle_message(backend: &McpBackend, msg: &Value) -> Option<Value> {
                     "tools": {}
                 },
                 "serverInfo": {
-                    "name": "openfang",
+                    "name": "octarq",
                     "version": "0.1.0"
                 }
             });
@@ -249,7 +249,7 @@ fn handle_message(backend: &McpBackend, msg: &Value) -> Option<Value> {
                 .map(|(_, name, description)| {
                     let tool_name = format!("openfang_agent_{}", name.replace('-', "_"));
                     let desc = if description.is_empty() {
-                        format!("Send a message to OpenFang agent '{name}'")
+                        format!("Send a message to Octarq agent '{name}'")
                     } else {
                         description.clone()
                     };
@@ -365,7 +365,7 @@ mod tests {
         let resp = handle_message(&backend, &msg).unwrap();
         assert_eq!(resp["id"], 1);
         assert_eq!(resp["result"]["protocolVersion"], "2024-11-05");
-        assert_eq!(resp["result"]["serverInfo"]["name"], "openfang");
+        assert_eq!(resp["result"]["serverInfo"]["name"], "octarq");
     }
 
     #[test]

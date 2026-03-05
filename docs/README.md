@@ -1,6 +1,6 @@
-# OpenFang Documentation
+# Octarq Documentation
 
-Welcome to the OpenFang documentation. OpenFang is the open-source Agent Operating System -- 14 Rust crates, 40 channels, 60 skills, 20 LLM providers, 76 API endpoints, and 16 security systems in a single binary.
+Welcome to the Octarq documentation. Octarq is the open-source Agent Operating System -- 14 Rust crates, 40 channels, 60 skills, 20 LLM providers, 76 API endpoints, and 16 security systems in a single binary.
 
 ---
 
@@ -61,7 +61,7 @@ Welcome to the OpenFang documentation. OpenFang is the open-source Agent Operati
 
 ```bash
 export GROQ_API_KEY="your-key"
-openfang init && openfang start
+octarq init && octarq start
 # Open http://127.0.0.1:4200
 ```
 

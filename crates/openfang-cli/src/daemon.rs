@@ -103,17 +103,17 @@ pub(crate) fn daemon_json(
             if msg.contains("timed out") || msg.contains("Timeout") {
                 crate::ui::error_with_fix(
                     "Request timed out",
-                    "The agent may be processing a complex request. Try again, or check `openfang status`",
+                    "The agent may be processing a complex request. Try again, or check `octarq status`",
                 );
             } else if msg.contains("Connection refused") || msg.contains("connect") {
                 crate::ui::error_with_fix(
                     "Cannot connect to daemon",
-                    "Is the daemon running? Start it with: openfang start",
+                    "Is the daemon running? Start it with: octarq start",
                 );
             } else {
                 crate::ui::error_with_fix(
                     &format!("Daemon communication error: {msg}"),
-                    "Check `openfang status` or restart: openfang start",
+                    "Check `octarq status` or restart: octarq start",
                 );
             }
             std::process::exit(1);
@@ -125,10 +125,10 @@ pub(crate) fn daemon_json(
 pub(crate) fn require_daemon(command: &str) -> String {
     find_daemon().unwrap_or_else(|| {
         crate::ui::error_with_fix(
-            &format!("`openfang {command}` requires a running daemon"),
-            "Start the daemon: openfang start",
+            &format!("`octarq {command}` requires a running daemon"),
+            "Start the daemon: octarq start",
         );
-        crate::ui::hint("Or try `openfang chat` which works without a daemon");
+        crate::ui::hint("Or try `octarq chat` which works without a daemon");
         std::process::exit(1);
     })
 }
@@ -139,22 +139,22 @@ pub(crate) fn boot_kernel_error(e: &openfang_kernel::error::KernelError) {
     if msg.contains("parse") || msg.contains("toml") || msg.contains("config") {
         crate::ui::error_with_fix(
             "Failed to parse configuration",
-            "Check your config.toml syntax: openfang config show",
+            "Check your config.toml syntax: octarq config show",
         );
     } else if msg.contains("database") || msg.contains("locked") || msg.contains("sqlite") {
         crate::ui::error_with_fix(
             "Database error (file may be locked)",
-            "Check if another OpenFang process is running: openfang status",
+            "Check if another Octarq process is running: octarq status",
         );
     } else if msg.contains("key") || msg.contains("API") || msg.contains("auth") {
         crate::ui::error_with_fix(
             "LLM provider authentication failed",
-            "Run `openfang doctor` to check your API key configuration",
+            "Run `octarq doctor` to check your API key configuration",
         );
     } else {
         crate::ui::error_with_fix(
             &format!("Failed to boot kernel: {msg}"),
-            "Run `openfang doctor` to diagnose the issue",
+            "Run `octarq doctor` to diagnose the issue",
         );
     }
 }

@@ -1,6 +1,6 @@
 //! Standalone ratatui init wizard: 6-step onboarding flow.
 //!
-//! Launched by `openfang init` (without `--quick`). Takes over the terminal,
+//! Launched by `octarq init` (without `--quick`). Takes over the terminal,
 //! runs its own event loop, and returns an `InitResult`.
 
 use ratatui::crossterm::event::{self, Event as CtEvent, KeyCode, KeyEventKind};
@@ -995,7 +995,7 @@ complex_threshold = 500
         return;
     }
     let config = format!(
-        r#"# OpenFang Agent OS configuration
+        r#"# Octarq Agent OS configuration
 # See https://github.com/RightNow-AI/openfang for documentation
 
 api_listen = "127.0.0.1:4200"
@@ -1036,15 +1036,15 @@ decay_rate = 0.05
     }
 }
 
-/// Check if the `openfang-desktop` binary exists next to the current exe.
+/// Check if the `octarq-desktop` binary exists next to the current exe.
 fn find_desktop_binary() -> Option<std::path::PathBuf> {
     let exe = std::env::current_exe().ok()?;
     let dir = exe.parent()?;
 
     #[cfg(windows)]
-    let name = "openfang-desktop.exe";
+    let name = "octarq-desktop.exe";
     #[cfg(not(windows))]
-    let name = "openfang-desktop";
+    let name = "octarq-desktop";
 
     let path = dir.join(name);
     if path.exists() {
@@ -1085,10 +1085,10 @@ fn draw(f: &mut Frame, area: Rect, state: &mut State) {
     ])
     .split(content);
 
-    // Header: "OpenFang Init  Step X of 7"
+    // Header: "Octarq Init  Step X of 7"
     let header = Line::from(vec![
         Span::styled(
-            "OpenFang",
+            "Octarq",
             Style::default()
                 .fg(theme::ACCENT)
                 .add_modifier(Modifier::BOLD),
@@ -2135,7 +2135,7 @@ fn draw_complete(f: &mut Frame, area: Rect, state: &mut State) {
     // ── Question ──
     f.render_widget(
         Paragraph::new(Line::from(vec![Span::styled(
-            "  How do you want to use OpenFang?",
+            "  How do you want to use Octarq?",
             Style::default()
                 .fg(theme::ACCENT)
                 .add_modifier(Modifier::BOLD),

@@ -19,7 +19,7 @@ This guide covers migrating from OpenClaw (and other frameworks) to Octarq. The 
 Run a single command to migrate your entire OpenClaw workspace:
 
 ```bash
-openfang migrate --from openclaw
+octarq migrate --from openclaw
 ```
 
 This auto-detects your OpenClaw workspace at `~/.openclaw/` and imports everything into `~/.openfang/`.
@@ -28,10 +28,10 @@ This auto-detects your OpenClaw workspace at `~/.openclaw/` and imports everythi
 
 ```bash
 # Specify a custom source directory
-openfang migrate --from openclaw --source-dir /path/to/openclaw/workspace
+octarq migrate --from openclaw --source-dir /path/to/openclaw/workspace
 
 # Dry run -- see what would be imported without making changes
-openfang migrate --from openclaw --dry-run
+octarq migrate --from openclaw --dry-run
 ```
 
 ### Migration Report
@@ -43,8 +43,8 @@ After a successful migration, a `migration_report.md` file is saved to `~/.openf
 LangChain and AutoGPT migration support is planned:
 
 ```bash
-openfang migrate --from langchain   # Coming soon
-openfang migrate --from autogpt     # Coming soon
+octarq migrate --from langchain   # Coming soon
+octarq migrate --from autogpt     # Coming soon
 ```
 
 ---
@@ -70,7 +70,7 @@ Channel configurations (Telegram, Discord, Slack) are exported to a `channels_im
 OpenClaw skills (Node.js) are detected and listed in the migration report but not automatically converted. After migration, reinstall skills using:
 
 ```bash
-openfang skill install <skill-name-or-path>
+octarq skill install <skill-name-or-path>
 ```
 
 Octarq automatically detects OpenClaw-format skills and converts them during installation.
@@ -84,7 +84,7 @@ If you prefer migrating by hand (or need to handle edge cases), follow these ste
 ### 1. Initialize Octarq
 
 ```bash
-openfang init
+octarq init
 ```
 
 This creates `~/.openfang/` with a default `config.toml`.
@@ -324,7 +324,7 @@ OpenClaw's tool profiles map to explicit tool lists:
 The migration engine looks for `~/.openclaw/` by default. If your OpenClaw workspace is elsewhere:
 
 ```bash
-openfang migrate --from openclaw --source-dir /path/to/your/workspace
+octarq migrate --from openclaw --source-dir /path/to/your/workspace
 ```
 
 ### Agent fails to spawn after migration
@@ -339,7 +339,7 @@ Check the converted `agent.toml` for:
 OpenClaw Node.js skills must be reinstalled:
 
 ```bash
-openfang skill install /path/to/openclaw/skills/my-skill
+octarq skill install /path/to/openclaw/skills/my-skill
 ```
 
 The installer auto-detects OpenClaw format and converts the skill manifest.
@@ -356,5 +356,5 @@ cat ~/.openfang/channels_import.toml
 Then restart the daemon:
 
 ```bash
-openfang start
+octarq start
 ```

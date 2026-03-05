@@ -117,7 +117,7 @@ var OpenFangToast = (function() {
 
 // ── Friendly Error Messages ──
 function friendlyError(status, serverMsg) {
-  if (status === 0 || !status) return 'Cannot reach daemon — is openfang running?';
+  if (status === 0 || !status) return 'Cannot reach daemon — is octarq running?';
   if (status === 401) return 'Not authorized — include Bearer API key (or open dashboard with ?token=...)';
   if (status === 403) return 'Permission denied';
   if (status === 404) return serverMsg || 'Resource not found';
@@ -204,7 +204,7 @@ var OpenFangAPI = (function() {
     }).catch(function(e) {
       if (e.name === 'TypeError' && e.message.includes('Failed to fetch')) {
         setConnectionState('disconnected');
-        throw new Error('Cannot connect to daemon — is openfang running?');
+        throw new Error('Cannot connect to daemon — is octarq running?');
       }
       throw e;
     });

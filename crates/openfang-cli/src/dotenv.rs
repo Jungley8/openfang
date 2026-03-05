@@ -6,7 +6,7 @@
 use std::collections::BTreeMap;
 use std::path::PathBuf;
 
-/// Get the OpenFang home directory, respecting OPENFANG_HOME env var.
+/// Get the Octarq home directory, respecting OPENFANG_HOME env var.
 fn dotenv_openfang_home() -> Option<PathBuf> {
     if let Ok(home) = std::env::var("OPENFANG_HOME") {
         return Some(PathBuf::from(home));
@@ -164,8 +164,7 @@ fn read_env_file(path: &PathBuf) -> BTreeMap<String, String> {
 
 /// Write key-value pairs back to the .env file with a header comment.
 fn write_env_file(path: &PathBuf, entries: &BTreeMap<String, String>) -> Result<(), String> {
-    let mut content =
-        String::from("# OpenFang environment — managed by `openfang config set-key`\n");
+    let mut content = String::from("# Octarq environment — managed by `octarq config set-key`\n");
     content.push_str("# Do not edit while the daemon is running.\n\n");
 
     for (key, value) in entries {

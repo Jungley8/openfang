@@ -10,7 +10,7 @@ pub fn cmd_agent_spawn(config: Option<PathBuf>, manifest_path: PathBuf) {
     if !manifest_path.exists() {
         ui::error_with_fix(
             &format!("Manifest file not found: {}", manifest_path.display()),
-            "Use `openfang agent new` to spawn from a template instead",
+            "Use `octarq agent new` to spawn from a template instead",
         );
         std::process::exit(1);
     }
@@ -50,7 +50,7 @@ pub fn cmd_agent_spawn(config: Option<PathBuf>, manifest_path: PathBuf) {
                 println!("Agent spawned (in-process mode).");
                 println!("  ID: {id}");
                 println!("\n  Note: Agent will be lost when this process exits.");
-                println!("  For persistent agents, use `openfang start` first.");
+                println!("  For persistent agents, use `octarq start` first.");
             }
             Err(e) => {
                 eprintln!("Failed to spawn agent: {e}");
@@ -229,7 +229,7 @@ pub fn cmd_agent_new(config: Option<PathBuf>, template_name: Option<String>) {
     if all_templates.is_empty() {
         ui::error_with_fix(
             "No agent templates found",
-            "Run `openfang init` to set up the agents directory",
+            "Run `octarq init` to set up the agents directory",
         );
         std::process::exit(1);
     }
@@ -240,7 +240,7 @@ pub fn cmd_agent_new(config: Option<PathBuf>, template_name: Option<String>) {
             None => {
                 ui::error_with_fix(
                     &format!("Template '{name}' not found"),
-                    "Run `openfang agent new` to see available templates",
+                    "Run `octarq agent new` to see available templates",
                 );
                 std::process::exit(1);
             }
@@ -297,7 +297,7 @@ fn spawn_template_agent(config: Option<PathBuf>, template: &templates::AgentTemp
                 ui::kv("Model", &format!("{provider}/{model}"));
             }
             ui::blank();
-            ui::hint(&format!("Chat: openfang chat {}", template.name));
+            ui::hint(&format!("Chat: octarq chat {}", template.name));
         } else {
             ui::error(&format!(
                 "Failed to spawn: {}",
@@ -320,9 +320,9 @@ fn spawn_template_agent(config: Option<PathBuf>, template: &templates::AgentTemp
                 ui::success(&format!("Agent '{}' spawned (in-process)", template.name));
                 ui::kv("ID", &id.to_string());
                 ui::blank();
-                ui::hint(&format!("Chat: openfang chat {}", template.name));
+                ui::hint(&format!("Chat: octarq chat {}", template.name));
                 ui::hint("Note: Agent will be lost when this process exits");
-                ui::hint("For persistent agents, use `openfang start` first");
+                ui::hint("For persistent agents, use `octarq start` first");
             }
             Err(e) => {
                 ui::error(&format!("Failed to spawn agent: {e}"));

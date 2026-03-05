@@ -1,4 +1,4 @@
-//! Standalone chat TUI for `openfang chat`.
+//! Standalone chat TUI for `octarq chat`.
 //!
 //! Launches a focused ratatui chat screen — same beautiful rendering as the
 //! full TUI's Chat tab, but without the 17-tab chrome. Reuses 100% of
@@ -611,8 +611,7 @@ impl StandaloneChat {
                 self.chat.status_msg = Some(format!("Spawning '{}' agent\u{2026}", t.name));
             }
             None => {
-                self.boot_error =
-                    Some("No agent templates found. Run `openfang init`.".to_string());
+                self.boot_error = Some("No agent templates found. Run `octarq init`.".to_string());
             }
         }
     }
@@ -670,7 +669,7 @@ impl StandaloneChat {
             }
             None => {
                 self.chat.status_msg =
-                    Some("No agent templates found. Run `openfang init`.".to_string());
+                    Some("No agent templates found. Run `octarq init`.".to_string());
             }
         }
     }

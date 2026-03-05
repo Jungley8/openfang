@@ -41,7 +41,7 @@ pub fn cmd_hand_list() {
                     .collect::<String>(),
             );
         }
-        println!("\nUse `openfang hand activate <id>` to activate a hand.");
+        println!("\nUse `octarq hand activate <id>` to activate a hand.");
     }
 }
 
@@ -89,7 +89,7 @@ pub fn cmd_hand_install(path: &str) {
         body["id"].as_str().unwrap_or("?"),
     );
     println!(
-        "Use `openfang hand activate {}` to start it.",
+        "Use `octarq hand activate {}` to start it.",
         body["id"].as_str().unwrap_or("?")
     );
 }

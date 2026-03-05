@@ -47,9 +47,9 @@ RUN if [ "$OPENFANG_SMOKE_FULL" = "1" ]; then \
     fi
 
 # If full install succeeded, verify the binary works
-RUN if [ "$OPENFANG_SMOKE_FULL" = "1" ] && [ -f "$HOME/.openfang/bin/openfang" ]; then \
-        $HOME/.openfang/bin/openfang --version && \
-        echo "PASS: openfang binary works"; \
+RUN if [ "$OPENFANG_SMOKE_FULL" = "1" ] && [ -f "$HOME/.openfang/bin/octarq" ]; then \
+        $HOME/.openfang/bin/octarq --version && \
+        echo "PASS: octarq binary works"; \
     else \
         echo "SKIP: binary verification (no full install)"; \
     fi

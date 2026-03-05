@@ -691,7 +691,7 @@ Build and version information.
 
 ```json
 {
-  "name": "openfang",
+  "name": "octarq",
   "version": "0.1.0",
   "build_date": "2025-01-15",
   "git_sha": "abc1234",
@@ -1972,7 +1972,7 @@ Send a chat completion request using the OpenAI message format.
 
 ```json
 {
-  "model": "openfang:coder",
+  "model": "octarq:coder",
   "messages": [
     {"role": "system", "content": "You are a helpful assistant."},
     {"role": "user", "content": "Hello!"}
@@ -1987,7 +1987,7 @@ Send a chat completion request using the OpenAI message format.
 
 | Format | Example | Behavior |
 |--------|---------|----------|
-| `openfang:<name>` | `openfang:coder` | Find agent by name |
+| `octarq:<name>` | `octarq:coder` | Find agent by name |
 | UUID | `a1b2c3d4-...` | Find agent by ID |
 | Plain string | `coder` | Try as agent name |
 | Any other | `gpt-4o` | Falls back to first registered agent |
@@ -1996,7 +1996,7 @@ Send a chat completion request using the OpenAI message format.
 
 ```json
 {
-  "model": "openfang:analyst",
+  "model": "octarq:analyst",
   "messages": [
     {
       "role": "user",
@@ -2058,16 +2058,16 @@ List available models (agents) in OpenAI format.
   "object": "list",
   "data": [
     {
-      "id": "openfang:coder",
+      "id": "octarq:coder",
       "object": "model",
       "created": 1708617600,
-      "owned_by": "openfang"
+      "owned_by": "octarq"
     },
     {
-      "id": "openfang:researcher",
+      "id": "octarq:researcher",
       "object": "model",
       "created": 1708617600,
-      "owned_by": "openfang"
+      "owned_by": "octarq"
     }
   ]
 }

@@ -1,4 +1,4 @@
-//! Clap CLI definitions for OpenFang.
+//! Clap CLI definitions for Octarq.
 
 use clap::{Parser, Subcommand};
 use std::path::PathBuf;
@@ -7,35 +7,35 @@ pub const AFTER_HELP: &str = "\
 \x1b[1mHint:\x1b[0m Commands suffixed with [*] have subcommands. Run `<command> --help` for details.
 
 \x1b[1;36mExamples:\x1b[0m
-  openfang init                 Initialize config and data directories
-  openfang start                Start the kernel daemon
-  openfang tui                  Launch the interactive terminal dashboard
-  openfang chat                 Quick chat with the default agent
-  openfang agent new coder      Spawn a new agent from a template
-  openfang models list          Browse available LLM models
-  openfang add github           Install the GitHub integration
-  openfang doctor               Run diagnostic health checks
-  openfang channel setup        Interactive channel setup wizard
-  openfang cron list            List scheduled jobs
-  openfang workspace clean      List orphan workspace dirs (use --force to remove)
-  openfang uninstall            Completely remove OpenFang from your system
+  octarq init                 Initialize config and data directories
+  octarq start                Start the kernel daemon
+  octarq tui                  Launch the interactive terminal dashboard
+  octarq chat                 Quick chat with the default agent
+  octarq agent new coder      Spawn a new agent from a template
+  octarq models list          Browse available LLM models
+  octarq add github           Install the GitHub integration
+  octarq doctor               Run diagnostic health checks
+  octarq channel setup        Interactive channel setup wizard
+  octarq cron list            List scheduled jobs
+  octarq workspace clean      List orphan workspace dirs (use --force to remove)
+  octarq uninstall            Completely remove Octarq from your system
 
 \x1b[1;36mQuick Start:\x1b[0m
-  1. openfang init              Set up config + API key
-  2. openfang start             Launch the daemon
-  3. openfang chat              Start chatting!
+  1. octarq init              Set up config + API key
+  2. octarq start             Launch the daemon
+  3. octarq chat              Start chatting!
 
 \x1b[1;36mMore:\x1b[0m
-  Docs:       https://github.com/RightNow-AI/openfang
+  Docs:       https://octarq.jungley.net/docs
   Dashboard:  http://127.0.0.1:4200/ (when daemon is running)";
 
-/// OpenFang — the open-source Agent Operating System.
+/// Octarq — the open-source Agent Operating System.
 #[derive(Parser)]
 #[command(
-    name = "openfang",
+    name = "octarq",
     version,
-    about = "\u{1F40D} OpenFang \u{2014} Open-source Agent Operating System",
-    long_about = "\u{1F40D} OpenFang \u{2014} Open-source Agent Operating System\n\n\
+    about = "\u{1F40D} Octarq \u{2014} Open-source Agent Operating System",
+    long_about = "\u{1F40D} Octarq \u{2014} Open-source Agent Operating System\n\n\
                   Deploy, manage, and orchestrate AI agents from your terminal.\n\
                   40 channels \u{00b7} 68 skills \u{00b7} 50+ models \u{00b7} infinite possibilities.",
     after_help = AFTER_HELP,
@@ -51,13 +51,13 @@ pub struct Cli {
 
 #[derive(Subcommand)]
 pub enum Commands {
-    /// Initialize OpenFang (create ~/.openfang/ and default config).
+    /// Initialize Octarq (create ~/.openfang/ and default config).
     Init {
         /// Quick mode: no prompts, just write config + .env (for CI/scripts).
         #[arg(long)]
         quick: bool,
     },
-    /// Start the OpenFang kernel daemon (API server + kernel).
+    /// Start the Octarq kernel daemon (API server + kernel).
     Start {
         /// Run in the background (daemon mode).
         #[arg(long, short = 'd')]
@@ -83,7 +83,7 @@ pub enum Commands {
     /// Manage event triggers (list, create, delete) [*].
     #[command(subcommand)]
     Trigger(TriggerCommands),
-    /// Migrate from another agent framework to OpenFang.
+    /// Migrate from another agent framework to Octarq.
     Migrate(MigrateArgs),
     /// Manage skills (install, list, search, create, remove) [*].
     #[command(subcommand)]
@@ -176,7 +176,7 @@ pub enum Commands {
         #[arg(long)]
         json: bool,
     },
-    /// Tail the OpenFang log file.
+    /// Tail the Octarq log file.
     Logs {
         /// Number of lines to show.
         #[arg(long, default_value = "50")]
@@ -238,7 +238,7 @@ pub enum Commands {
         #[arg(long)]
         confirm: bool,
     },
-    /// Completely uninstall OpenFang from your system.
+    /// Completely uninstall Octarq from your system.
     Uninstall {
         /// Skip confirmation prompt (also --yes).
         #[arg(long, alias = "yes")]

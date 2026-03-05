@@ -115,7 +115,7 @@ pub fn cmd_config_show() {
 
     if !config_path.exists() {
         println!("No configuration found at: {}", config_path.display());
-        println!("Run `openfang init` to create one.");
+        println!("Run `octarq init` to create one.");
         return;
     }
 
@@ -163,7 +163,7 @@ pub fn cmd_config_get(key: &str) {
     let config_path = home.join("config.toml");
 
     if !config_path.exists() {
-        ui::error_with_fix("No config file found", "Run `openfang init` first");
+        ui::error_with_fix("No config file found", "Run `octarq init` first");
         std::process::exit(1);
     }
 
@@ -175,7 +175,7 @@ pub fn cmd_config_get(key: &str) {
     let table: toml::Value = toml::from_str(&content).unwrap_or_else(|e| {
         ui::error_with_fix(
             &format!("Config parse error: {e}"),
-            "Fix your config.toml syntax, or run `openfang config edit`",
+            "Fix your config.toml syntax, or run `octarq config edit`",
         );
         std::process::exit(1);
     });
@@ -207,7 +207,7 @@ pub fn cmd_config_set(key: &str, value: &str) {
     let config_path = home.join("config.toml");
 
     if !config_path.exists() {
-        ui::error_with_fix("No config file found", "Run `openfang init` first");
+        ui::error_with_fix("No config file found", "Run `octarq init` first");
         std::process::exit(1);
     }
 
@@ -291,7 +291,7 @@ pub fn cmd_config_unset(key: &str) {
     let config_path = home.join("config.toml");
 
     if !config_path.exists() {
-        ui::error_with_fix("No config file found", "Run `openfang init` first");
+        ui::error_with_fix("No config file found", "Run `octarq init` first");
         std::process::exit(1);
     }
 
@@ -397,7 +397,7 @@ pub fn cmd_config_test_key(provider: &str) {
 
     if std::env::var(&env_var).is_err() {
         ui::error(&format!("{env_var} not set"));
-        ui::hint(&format!("Set it: openfang config set-key {provider}"));
+        ui::hint(&format!("Set it: octarq config set-key {provider}"));
         std::process::exit(1);
     }
 
@@ -407,7 +407,7 @@ pub fn cmd_config_test_key(provider: &str) {
         println!("{}", "OK".bright_green());
     } else {
         println!("{}", "FAILED (401/403)".bright_red());
-        ui::hint(&format!("Update key: openfang config set-key {provider}"));
+        ui::hint(&format!("Update key: octarq config set-key {provider}"));
         std::process::exit(1);
     }
 }
@@ -438,7 +438,7 @@ pub fn cmd_vault_set(key: &str) {
     let mut vault = openfang_extensions::vault::CredentialVault::new(vault_path);
 
     if !vault.exists() {
-        ui::error("Vault not initialized. Run: openfang vault init");
+        ui::error("Vault not initialized. Run: octarq vault init");
         std::process::exit(1);
     }
 
@@ -468,7 +468,7 @@ pub fn cmd_vault_list() {
     let mut vault = openfang_extensions::vault::CredentialVault::new(vault_path);
 
     if !vault.exists() {
-        println!("Vault not initialized. Run: openfang vault init");
+        println!("Vault not initialized. Run: octarq vault init");
         return;
     }
 
@@ -571,7 +571,7 @@ pub fn cmd_uninstall(confirm: bool, keep_config: bool) {
     println!();
     println!(
         "  {}",
-        "This will completely uninstall OpenFang from your system."
+        "This will completely uninstall Octarq from your system."
             .bold()
             .red()
     );
@@ -590,9 +590,9 @@ pub fn cmd_uninstall(confirm: bool, keep_config: bool) {
         println!("  • Remove binary: {}", exe.display());
     }
     let cargo_bin = home.join(".cargo").join("bin").join(if cfg!(windows) {
-        "openfang.exe"
+        "octarq.exe"
     } else {
-        "openfang"
+        "octarq"
     });
     if cargo_bin.exists() && exe_path.as_ref().is_none_or(|e| *e != cargo_bin) {
         println!("  • Remove cargo binary: {}", cargo_bin.display());
@@ -654,7 +654,7 @@ pub fn cmd_uninstall(confirm: bool, keep_config: bool) {
     }
 
     println!();
-    ui::success("OpenFang has been uninstalled. Goodbye!");
+    ui::success("Octarq has been uninstalled. Goodbye!");
 }
 
 #[allow(unused_variables)]
@@ -666,7 +666,7 @@ fn remove_autostart_entries(home: &std::path::Path) {
                 "delete",
                 r"HKCU\Software\Microsoft\Windows\CurrentVersion\Run",
                 "/v",
-                "OpenFang",
+                "Octarq",
                 "/f",
             ])
             .output();
@@ -694,7 +694,7 @@ fn remove_autostart_entries(home: &std::path::Path) {
 
     #[cfg(target_os = "linux")]
     {
-        let desktop_file = home.join(".config/autostart/OpenFang.desktop");
+        let desktop_file = home.join(".config/autostart/Octarq.desktop");
         if desktop_file.exists() {
             match std::fs::remove_file(&desktop_file) {
                 Ok(()) => ui::success("Removed Linux autostart entry"),
@@ -704,7 +704,7 @@ fn remove_autostart_entries(home: &std::path::Path) {
         let service_file = home.join(".config/systemd/user/openfang.service");
         if service_file.exists() {
             let _ = std::process::Command::new("systemctl")
-                .args(["--user", "disable", "--now", "openfang.service"])
+                .args(["--user", "disable", "--now", "octarq.service"])
                 .output();
             match std::fs::remove_file(&service_file) {
                 Ok(()) => {
@@ -773,7 +773,7 @@ fn clean_path_entries(home: &std::path::Path, openfang_dir: &str) {
                         .split(';')
                         .filter(|entry| {
                             let e = entry.trim().to_lowercase();
-                            !e.is_empty() && !e.contains("openfang") && !e.contains(&dir_lower)
+                            !e.is_empty() && !e.contains("octarq") && !e.contains(&dir_lower)
                         })
                         .collect();
                     if filtered.len() < current.split(';').count() {
@@ -795,11 +795,11 @@ fn clean_path_entries(home: &std::path::Path, openfang_dir: &str) {
     }
 }
 
-/// Returns true if a shell config line is an openfang PATH export.
+/// Returns true if a shell config line is an octarq PATH export.
 #[cfg(any(not(windows), test))]
 pub(crate) fn is_openfang_path_line(line: &str, openfang_dir: &str) -> bool {
     let lower = line.to_lowercase();
-    let has_openfang = lower.contains("openfang") || lower.contains(&openfang_dir.to_lowercase());
+    let has_openfang = lower.contains("octarq") || lower.contains(&openfang_dir.to_lowercase());
     if !has_openfang {
         return false;
     }

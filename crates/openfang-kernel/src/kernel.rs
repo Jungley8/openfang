@@ -40,7 +40,7 @@ use std::path::{Path, PathBuf};
 use std::sync::{Arc, OnceLock, Weak};
 use tracing::{debug, info, warn, Instrument};
 
-/// The main OpenFang kernel — coordinates all subsystems.
+/// The main Octarq kernel — coordinates all subsystems.
 /// Stub LLM driver used when no providers are configured.
 /// Returns a helpful error so the dashboard still boots and users can configure providers.
 struct StubDriver;
@@ -521,13 +521,13 @@ impl OpenFangKernel {
 
         match config.mode {
             KernelMode::Stable => {
-                info!("Booting OpenFang kernel in STABLE mode — conservative defaults enforced");
+                info!("Booting Octarq kernel in STABLE mode — conservative defaults enforced");
             }
             KernelMode::Dev => {
-                warn!("Booting OpenFang kernel in DEV mode — experimental features enabled");
+                warn!("Booting Octarq kernel in DEV mode — experimental features enabled");
             }
             KernelMode::Default => {
-                info!("Booting OpenFang kernel...");
+                info!("Booting Octarq kernel...");
             }
         }
 
@@ -1119,7 +1119,7 @@ impl OpenFangKernel {
             }
         }
 
-        info!("OpenFang kernel booted successfully");
+        info!("Octarq kernel booted successfully");
         Ok(kernel)
     }
 
@@ -2897,7 +2897,7 @@ impl OpenFangKernel {
     }
 
     /// List short IDs (first 8 chars of UUID) for all agents in the registry.
-    /// Used by `openfang workspace clean` to identify which workspace dirs are in use.
+    /// Used by `octarq workspace clean` to identify which workspace dirs are in use.
     pub fn list_active_short_ids(&self) -> Vec<String> {
         self.registry.list_short_ids()
     }
@@ -3924,7 +3924,7 @@ impl OpenFangKernel {
     /// This cleanly shuts down in-memory state but preserves persistent agent
     /// data so agents are restored on the next boot.
     pub fn shutdown(&self) {
-        info!("Shutting down OpenFang kernel...");
+        info!("Shutting down Octarq kernel...");
 
         // Kill WhatsApp gateway child process if running
         if let Ok(guard) = self.whatsapp_gateway_pid.lock() {
@@ -3960,7 +3960,7 @@ impl OpenFangKernel {
         }
 
         info!(
-            "OpenFang kernel shut down ({} agents preserved)",
+            "Octarq kernel shut down ({} agents preserved)",
             self.registry.list().len()
         );
     }

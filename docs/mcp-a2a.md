@@ -244,7 +244,7 @@ Response:
   "result": {
     "protocolVersion": "2024-11-05",
     "capabilities": { "tools": {} },
-    "serverInfo": { "name": "openfang", "version": "0.1.0" }
+    "serverInfo": { "name": "octarq", "version": "0.1.0" }
   }
 }
 ```
@@ -289,8 +289,8 @@ Add to your MCP configuration file (e.g., `.cursor/mcp.json` or VS Code MCP sett
 ```json
 {
   "mcpServers": {
-    "openfang": {
-      "command": "openfang",
+    "octarq": {
+      "command": "octarq",
       "args": ["mcp"]
     }
   }
@@ -304,8 +304,8 @@ Add to `claude_desktop_config.json`:
 ```json
 {
   "mcpServers": {
-    "openfang": {
-      "command": "openfang",
+    "octarq": {
+      "command": "octarq",
       "args": ["mcp"],
       "env": {}
     }

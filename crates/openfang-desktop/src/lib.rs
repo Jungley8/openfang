@@ -1,4 +1,4 @@
-//! OpenFang Desktop — Native Tauri 2.0 wrapper for the OpenFang Agent OS.
+//! Octarq Desktop — Native Tauri 2.0 wrapper for the Octarq Agent OS.
 //!
 //! Boots the kernel + embedded API server, then opens a native window pointing
 //! at the WebUI. Includes system tray, single-instance enforcement, native OS
@@ -33,14 +33,14 @@ pub struct KernelState {
 pub fn run() {
     tracing_init::init_tracing();
 
-    info!("Starting OpenFang Desktop...");
+    info!("Starting Octarq Desktop...");
 
     // Boot kernel + embedded server (blocks until port is known)
-    let server_handle = server::start_server().expect("Failed to start OpenFang server");
+    let server_handle = server::start_server().expect("Failed to start Octarq server");
     let port = server_handle.port;
     let kernel_for_notifications = server_handle.kernel.clone();
 
-    info!("OpenFang server running on port {port}");
+    info!("Octarq server running on port {port}");
 
     let url = format!("http://127.0.0.1:{port}");
 
@@ -109,7 +109,7 @@ pub fn run() {
                 "main",
                 WebviewUrl::External(url.parse().expect("Invalid server URL")),
             )
-            .title("OpenFang")
+            .title("Octarq")
             .inner_size(1280.0, 800.0)
             .min_inner_size(800.0, 600.0)
             .center()
@@ -140,7 +140,7 @@ pub fn run() {
                                 ),
                                 EventPayload::System(SystemEvent::KernelStopping) => (
                                     "Kernel Stopping".to_string(),
-                                    "OpenFang kernel is shutting down".to_string(),
+                                    "Octarq kernel is shutting down".to_string(),
                                 ),
                                 EventPayload::System(SystemEvent::QuotaEnforced {
                                     agent_id,
@@ -181,7 +181,7 @@ pub fn run() {
             #[cfg(desktop)]
             updater::spawn_startup_check(app.handle().clone());
 
-            info!("OpenFang Desktop window created");
+            info!("Octarq Desktop window created");
             Ok(())
         })
         .on_window_event(|window, event| {
