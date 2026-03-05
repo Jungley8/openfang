@@ -431,6 +431,14 @@ pub async fn send_message(
         );
     }
 
+    // Check agent exists before processing
+    if state.kernel.registry.get(agent_id).is_none() {
+        return (
+            StatusCode::NOT_FOUND,
+            Json(serde_json::json!({"error": "Agent not found"})),
+        );
+    }
+
     // Resolve file attachments into image content blocks
     if !req.attachments.is_empty() {
         let image_blocks = resolve_attachments(&req.attachments);
@@ -446,8 +454,11 @@ pub async fn send_message(
         .await
     {
         Ok(result) => {
+            // Strip <think>...</think> blocks from model output
+            let cleaned = crate::ws::strip_think_tags(&result.response);
+
             // Guard: ensure we never return an empty response to the client
-            let response = if result.response.trim().is_empty() {
+            let response = if cleaned.trim().is_empty() {
                 format!(
                     "[The agent completed processing but returned no text response. ({} in / {} out | {} iter)]",
                     result.total_usage.input_tokens,
@@ -455,7 +466,7 @@ pub async fn send_message(
                     result.iterations,
                 )
             } else {
-                result.response
+                cleaned
             };
             (
                 StatusCode::OK,
@@ -470,8 +481,15 @@ pub async fn send_message(
         }
         Err(e) => {
             tracing::warn!("send_message failed for agent {id}: {e}");
+            let status = if format!("{e}").contains("Agent not found") {
+                StatusCode::NOT_FOUND
+            } else if format!("{e}").contains("quota") || format!("{e}").contains("Quota") {
+                StatusCode::TOO_MANY_REQUESTS
+            } else {
+                StatusCode::INTERNAL_SERVER_ERROR
+            };
             (
-                StatusCode::INTERNAL_SERVER_ERROR,
+                status,
                 Json(serde_json::json!({"error": format!("Message delivery failed: {e}")})),
             )
         }
@@ -6584,21 +6602,6 @@ pub async fn set_provider_key(
     Path(name): Path<String>,
     Json(body): Json<serde_json::Value>,
 ) -> impl IntoResponse {
-    // Validate provider name against known list
-    {
-        let catalog = state
-            .kernel
-            .model_catalog
-            .read()
-            .unwrap_or_else(|e| e.into_inner());
-        if catalog.get_provider(&name).is_none() {
-            return (
-                StatusCode::NOT_FOUND,
-                Json(serde_json::json!({"error": format!("Unknown provider '{}'", name)})),
-            );
-        }
-    }
-
     let key = match body["key"].as_str() {
         Some(k) if !k.trim().is_empty() => k.trim().to_string(),
         _ => {
@@ -6609,6 +6612,7 @@ pub async fn set_provider_key(
         }
     };
 
+    // Look up env var from catalog; for unknown/custom providers derive one.
     let env_var = {
         let catalog = state
             .kernel
@@ -6618,15 +6622,11 @@ pub async fn set_provider_key(
         catalog
             .get_provider(&name)
             .map(|p| p.api_key_env.clone())
-            .unwrap_or_default()
+            .unwrap_or_else(|| {
+                // Custom provider — derive env var: MY_PROVIDER → MY_PROVIDER_API_KEY
+                format!("{}_API_KEY", name.to_uppercase().replace('-', "_"))
+            })
     };
-
-    if env_var.is_empty() {
-        return (
-            StatusCode::BAD_REQUEST,
-            Json(serde_json::json!({"error": "Provider does not require an API key"})),
-        );
-    }
 
     // Write to secrets.env file
     let secrets_path = state.kernel.config.home_dir.join("secrets.env");
@@ -6814,22 +6814,7 @@ pub async fn set_provider_url(
     Path(name): Path<String>,
     Json(body): Json<serde_json::Value>,
 ) -> impl IntoResponse {
-    // Validate provider exists
-    let provider_exists = {
-        let catalog = state
-            .kernel
-            .model_catalog
-            .read()
-            .unwrap_or_else(|e| e.into_inner());
-        catalog.get_provider(&name).is_some()
-    };
-    if !provider_exists {
-        return (
-            StatusCode::NOT_FOUND,
-            Json(serde_json::json!({"error": format!("Unknown provider '{}'", name)})),
-        );
-    }
-
+    // Accept any provider name — custom providers are supported via OpenAI-compatible format.
     let base_url = match body["base_url"].as_str() {
         Some(u) if !u.trim().is_empty() => u.trim().to_string(),
         _ => {

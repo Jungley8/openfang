@@ -10,7 +10,8 @@ use openfang_types::model_catalog::{
     LMSTUDIO_BASE_URL, MINIMAX_BASE_URL, MISTRAL_BASE_URL, MOONSHOT_BASE_URL, OLLAMA_BASE_URL,
     OPENAI_BASE_URL, OPENROUTER_BASE_URL, PERPLEXITY_BASE_URL, QIANFAN_BASE_URL, QWEN_BASE_URL,
     REPLICATE_BASE_URL, SAMBANOVA_BASE_URL, TOGETHER_BASE_URL, VLLM_BASE_URL, VOLCENGINE_BASE_URL,
-    XAI_BASE_URL, ZHIPU_BASE_URL, ZHIPU_CODING_BASE_URL,
+    VOLCENGINE_CODING_BASE_URL, XAI_BASE_URL, ZAI_BASE_URL, ZAI_CODING_BASE_URL, ZHIPU_BASE_URL,
+    ZHIPU_CODING_BASE_URL,
 };
 use std::collections::HashMap;
 
@@ -160,17 +161,39 @@ impl ModelCatalog {
             p.base_url = url.to_string();
             true
         } else {
-            false
+            // Custom provider — add a new entry so it appears in /api/providers
+            let env_var = format!("{}_API_KEY", provider.to_uppercase().replace('-', "_"));
+            self.providers.push(ProviderInfo {
+                id: provider.to_string(),
+                display_name: provider.to_string(),
+                api_key_env: env_var,
+                base_url: url.to_string(),
+                key_required: true,
+                auth_status: AuthStatus::Missing,
+                model_count: 0,
+            });
+            // Re-detect auth for the newly added provider
+            self.detect_auth();
+            true
         }
     }
 
     /// Apply a batch of provider URL overrides from config.
     ///
     /// Each entry maps a provider ID to a custom base URL.
-    /// Unknown providers are silently skipped.
+    /// Unknown providers are automatically added as custom OpenAI-compatible entries.
+    /// Providers with explicit URL overrides are marked as configured since
+    /// the user intentionally set them up (e.g. local proxies, custom endpoints).
     pub fn apply_url_overrides(&mut self, overrides: &HashMap<String, String>) {
         for (provider, url) in overrides {
-            self.set_provider_url(provider, url);
+            if self.set_provider_url(provider, url) {
+                // Mark as configured so models from this provider show as available
+                if let Some(p) = self.providers.iter_mut().find(|p| p.id == *provider) {
+                    if p.auth_status == AuthStatus::Missing {
+                        p.auth_status = AuthStatus::Configured;
+                    }
+                }
+            }
         }
     }
 
@@ -583,6 +606,24 @@ fn builtin_providers() -> Vec<ProviderInfo> {
             model_count: 0,
         },
         ProviderInfo {
+            id: "zai".into(),
+            display_name: "Z.AI".into(),
+            api_key_env: "ZHIPU_API_KEY".into(),
+            base_url: ZAI_BASE_URL.into(),
+            key_required: true,
+            auth_status: AuthStatus::Missing,
+            model_count: 0,
+        },
+        ProviderInfo {
+            id: "zai_coding".into(),
+            display_name: "Z.AI Coding".into(),
+            api_key_env: "ZHIPU_API_KEY".into(),
+            base_url: ZAI_CODING_BASE_URL.into(),
+            key_required: true,
+            auth_status: AuthStatus::Missing,
+            model_count: 0,
+        },
+        ProviderInfo {
             id: "moonshot".into(),
             display_name: "Moonshot (Kimi)".into(),
             api_key_env: "MOONSHOT_API_KEY".into(),
@@ -606,6 +647,15 @@ fn builtin_providers() -> Vec<ProviderInfo> {
             display_name: "Volcano Engine (Doubao)".into(),
             api_key_env: "VOLCENGINE_API_KEY".into(),
             base_url: VOLCENGINE_BASE_URL.into(),
+            key_required: true,
+            auth_status: AuthStatus::Missing,
+            model_count: 0,
+        },
+        ProviderInfo {
+            id: "volcengine_coding".into(),
+            display_name: "Volcano Engine Coding Plan".into(),
+            api_key_env: "VOLCENGINE_API_KEY".into(),
+            base_url: VOLCENGINE_CODING_BASE_URL.into(),
             key_required: true,
             auth_status: AuthStatus::Missing,
             model_count: 0,
@@ -3052,7 +3102,7 @@ mod tests {
     #[test]
     fn test_catalog_has_providers() {
         let catalog = ModelCatalog::new();
-        assert_eq!(catalog.list_providers().len(), 31);
+        assert_eq!(catalog.list_providers().len(), 34);
     }
 
     #[test]
@@ -3320,8 +3370,15 @@ mod tests {
     #[test]
     fn test_set_provider_url_unknown() {
         let mut catalog = ModelCatalog::new();
-        let updated = catalog.set_provider_url("nonexistent", "http://localhost:9999");
-        assert!(!updated);
+        let initial_count = catalog.list_providers().len();
+        let updated = catalog.set_provider_url("my-custom-llm", "http://localhost:9999");
+        // Unknown providers are now auto-registered as custom entries
+        assert!(updated);
+        assert_eq!(catalog.list_providers().len(), initial_count + 1);
+        assert_eq!(
+            catalog.get_provider("my-custom-llm").unwrap().base_url,
+            "http://localhost:9999"
+        );
     }
 
     #[test]

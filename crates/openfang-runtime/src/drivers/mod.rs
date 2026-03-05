@@ -19,8 +19,9 @@ use openfang_types::model_catalog::{
     FIREWORKS_BASE_URL, GEMINI_BASE_URL, GROQ_BASE_URL, HUGGINGFACE_BASE_URL, LMSTUDIO_BASE_URL,
     MINIMAX_BASE_URL, MISTRAL_BASE_URL, MOONSHOT_BASE_URL, OLLAMA_BASE_URL, OPENAI_BASE_URL,
     OPENROUTER_BASE_URL, PERPLEXITY_BASE_URL, QIANFAN_BASE_URL, QWEN_BASE_URL, REPLICATE_BASE_URL,
-    SAMBANOVA_BASE_URL, TOGETHER_BASE_URL, VLLM_BASE_URL, VOLCENGINE_BASE_URL, XAI_BASE_URL,
-    ZHIPU_BASE_URL, ZHIPU_CODING_BASE_URL,
+    SAMBANOVA_BASE_URL, TOGETHER_BASE_URL, VLLM_BASE_URL, VOLCENGINE_BASE_URL,
+    VOLCENGINE_CODING_BASE_URL, XAI_BASE_URL, ZAI_BASE_URL, ZAI_CODING_BASE_URL, ZHIPU_BASE_URL,
+    ZHIPU_CODING_BASE_URL,
 };
 use std::sync::Arc;
 
@@ -170,6 +171,16 @@ fn provider_defaults(provider: &str) -> Option<ProviderDefaults> {
             api_key_env: "ZHIPU_API_KEY",
             key_required: true,
         }),
+        "zai" => Some(ProviderDefaults {
+            base_url: ZAI_BASE_URL,
+            api_key_env: "ZHIPU_API_KEY",
+            key_required: true,
+        }),
+        "zai_coding" => Some(ProviderDefaults {
+            base_url: ZAI_CODING_BASE_URL,
+            api_key_env: "ZHIPU_API_KEY",
+            key_required: true,
+        }),
         "qianfan" | "baidu" => Some(ProviderDefaults {
             base_url: QIANFAN_BASE_URL,
             api_key_env: "QIANFAN_API_KEY",
@@ -177,6 +188,11 @@ fn provider_defaults(provider: &str) -> Option<ProviderDefaults> {
         }),
         "volcengine" | "doubao" => Some(ProviderDefaults {
             base_url: VOLCENGINE_BASE_URL,
+            api_key_env: "VOLCENGINE_API_KEY",
+            key_required: true,
+        }),
+        "volcengine_coding" => Some(ProviderDefaults {
+            base_url: VOLCENGINE_CODING_BASE_URL,
             api_key_env: "VOLCENGINE_API_KEY",
             key_required: true,
         }),
@@ -371,8 +387,11 @@ pub fn known_providers() -> &'static [&'static str] {
         "minimax",
         "zhipu",
         "zhipu_coding",
+        "zai",
+        "zai_coding",
         "qianfan",
         "volcengine",
+        "volcengine_coding",
         "codex",
         "claude-code",
     ]
@@ -469,9 +488,12 @@ mod tests {
         assert!(providers.contains(&"zhipu_coding"));
         assert!(providers.contains(&"qianfan"));
         assert!(providers.contains(&"volcengine"));
+        assert!(providers.contains(&"volcengine_coding"));
+        assert!(providers.contains(&"zai"));
+        assert!(providers.contains(&"zai_coding"));
         assert!(providers.contains(&"codex"));
         assert!(providers.contains(&"claude-code"));
-        assert_eq!(providers.len(), 30);
+        assert_eq!(providers.len(), 33);
     }
 
     #[test]
