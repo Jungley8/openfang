@@ -36,7 +36,7 @@ The desktop app follows a straightforward embedded-server pattern:
 ### Startup Sequence
 
 1. **Tracing init** -- `tracing_subscriber` is configured with `RUST_LOG` env, defaulting to `octarq=info,tauri=info`.
-2. **Kernel boot** -- `OctarqKernel::boot(None)` loads the default configuration (from `config.toml` or defaults), wrapped in `Arc`. `set_self_handle()` is called to enable self-referencing kernel operations.
+2. **Kernel boot** -- `OpenfangKernel::boot(None)` loads the default configuration (from `config.toml` or defaults), wrapped in `Arc`. `set_self_handle()` is called to enable self-referencing kernel operations.
 3. **Port binding** -- A `std::net::TcpListener` binds to `127.0.0.1:0` on the main thread, which lets the OS assign a random free port. This ensures the port number is known before any window is created.
 4. **Server thread** -- A dedicated OS thread named `"openfang-server"` is spawned. It creates its own `tokio::runtime::Builder::new_multi_thread()` runtime and runs:
    - `kernel.start_background_agents()` -- heartbeat monitor, autonomous agents, etc.
@@ -51,7 +51,7 @@ The `ServerHandle` struct (defined in `src/server.rs`) manages the embedded serv
 ```rust
 pub struct ServerHandle {
     pub port: u16,
-    pub kernel: Arc<OctarqKernel>,
+    pub kernel: Arc<OpenfangKernel>,
     shutdown_tx: watch::Sender<bool>,
     server_thread: Option<std::thread::JoinHandle<()>>,
 }
@@ -85,16 +85,16 @@ After the server shuts down, channel bridges (Telegram, Slack, etc.) are stopped
 
 The system tray (defined in `src/tray.rs`) provides quick access without bringing up the main window:
 
-| Menu Item | Behavior |
-|-----------|----------|
-| **Show Window** | Calls `show()`, `unminimize()`, and `set_focus()` on the main WebView window |
-| **Open in Browser** | Reads the port from managed `PortState` and opens `http://127.0.0.1:{port}` in the default browser |
-| **Agents: N running** | Disabled (info only) — shows current agent count |
-| **Status: Running (uptime)** | Disabled (info only) — shows uptime in human-readable format |
-| **Launch at Login** | Checkbox — toggles OS-level auto-start via `tauri-plugin-autostart` |
-| **Check for Updates...** | Checks for updates, downloads, installs, and restarts if available. Shows notifications for progress/success/failure |
-| **Open Config Directory** | Opens `~/.openfang/` in the OS file manager |
-| **Quit Octarq** | Logs the quit event and calls `app.exit(0)` |
+| Menu Item                    | Behavior                                                                                                             |
+| ---------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| **Show Window**              | Calls `show()`, `unminimize()`, and `set_focus()` on the main WebView window                                         |
+| **Open in Browser**          | Reads the port from managed `PortState` and opens `http://127.0.0.1:{port}` in the default browser                   |
+| **Agents: N running**        | Disabled (info only) — shows current agent count                                                                     |
+| **Status: Running (uptime)** | Disabled (info only) — shows uptime in human-readable format                                                         |
+| **Launch at Login**          | Checkbox — toggles OS-level auto-start via `tauri-plugin-autostart`                                                  |
+| **Check for Updates...**     | Checks for updates, downloads, installs, and restarts if available. Shows notifications for progress/success/failure |
+| **Open Config Directory**    | Opens `~/.openfang/` in the OS file manager                                                                          |
+| **Quit Octarq**              | Logs the quit event and calls `app.exit(0)`                                                                          |
 
 The tray tooltip reads **"Octarq Agent OS"**.
 
@@ -139,10 +139,10 @@ To actually quit, use the **"Quit Octarq"** option in the system tray menu.
 
 The app subscribes to the kernel's event bus and forwards critical events as native desktop notifications using `tauri-plugin-notification`:
 
-| Event | Notification Title | Body |
-|-------|-------------------|------|
-| `LifecycleEvent::Crashed` | "Agent Crashed" | `Agent {id} crashed: {error}` |
-| `LifecycleEvent::Spawned` | "Agent Started" | `Agent "{name}" is now running` |
+| Event                            | Notification Title    | Body                                  |
+| -------------------------------- | --------------------- | ------------------------------------- |
+| `LifecycleEvent::Crashed`        | "Agent Crashed"       | `Agent {id} crashed: {error}`         |
+| `LifecycleEvent::Spawned`        | "Agent Started"       | `Agent "{name}" is now running`       |
 | `SystemEvent::HealthCheckFailed` | "Health Check Failed" | `Agent {id} unresponsive for {secs}s` |
 
 All other events are silently skipped. The notification listener runs as an async task spawned via `tauri::async_runtime::spawn` and handles broadcast lag gracefully (logs a warning and continues).
@@ -224,14 +224,14 @@ Opens `~/.openfang/` or `~/.openfang/logs/` in the OS file manager.
 
 The main window is created programmatically in the `setup` closure (not via `tauri.conf.json`, which declares an empty `windows: []` array):
 
-| Property | Value |
-|----------|-------|
-| Window label | `"main"` |
-| Title | `"Octarq"` |
-| URL | `http://127.0.0.1:{port}` (external) |
-| Inner size | 1280 x 800 |
-| Minimum inner size | 800 x 600 |
-| Position | Centered |
+| Property           | Value                                |
+| ------------------ | ------------------------------------ |
+| Window label       | `"main"`                             |
+| Title              | `"Octarq"`                           |
+| URL                | `http://127.0.0.1:{port}` (external) |
+| Inner size         | 1280 x 800                           |
+| Minimum inner size | 800 x 600                            |
+| Position           | Centered                             |
 
 The window uses `WebviewUrl::External(...)` rather than a bundled frontend, because the WebView renders the axum-served UI.
 
@@ -330,15 +330,15 @@ The `"targets": "all"` setting generates every available package format for the 
 
 ## Plugins
 
-| Plugin | Version | Purpose |
-|--------|---------|---------|
-| `tauri-plugin-notification` | 2 | Native OS notifications for kernel events and update progress |
-| `tauri-plugin-shell` | 2 | Shell/process access from the WebView |
-| `tauri-plugin-dialog` | 2 | Native file picker for agent/skill import |
-| `tauri-plugin-single-instance` | 2 | Prevents multiple instances (desktop only) |
-| `tauri-plugin-autostart` | 2 | Launch at OS login (desktop only) |
-| `tauri-plugin-updater` | 2 | Signed auto-updates from GitHub Releases (desktop only) |
-| `tauri-plugin-global-shortcut` | 2 | Ctrl+Shift+O/N/C shortcuts (desktop only) |
+| Plugin                         | Version | Purpose                                                       |
+| ------------------------------ | ------- | ------------------------------------------------------------- |
+| `tauri-plugin-notification`    | 2       | Native OS notifications for kernel events and update progress |
+| `tauri-plugin-shell`           | 2       | Shell/process access from the WebView                         |
+| `tauri-plugin-dialog`          | 2       | Native file picker for agent/skill import                     |
+| `tauri-plugin-single-instance` | 2       | Prevents multiple instances (desktop only)                    |
+| `tauri-plugin-autostart`       | 2       | Launch at OS login (desktop only)                             |
+| `tauri-plugin-updater`         | 2       | Signed auto-updates from GitHub Releases (desktop only)       |
+| `tauri-plugin-global-shortcut` | 2       | Ctrl+Shift+O/N/C shortcuts (desktop only)                     |
 
 ### Capabilities
 
@@ -405,8 +405,8 @@ crates/octarq-desktop/
 
 ## Environment Variables
 
-| Variable | Effect |
-|----------|--------|
+| Variable   | Effect                                                                     |
+| ---------- | -------------------------------------------------------------------------- |
 | `RUST_LOG` | Controls tracing verbosity. Defaults to `octarq=info,tauri=info` if unset. |
 
 All other Octarq environment variables (API keys, configuration) apply as normal since the desktop app boots the same kernel as the headless daemon.

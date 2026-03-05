@@ -1,4 +1,4 @@
-export class OctarqError extends Error {
+export class OpenfangError extends Error {
   status: number;
   body: string;
   constructor(message: string, status: number, body: string);
@@ -51,7 +51,7 @@ export class Octarq {
 export class AgentResource {
   list(): Promise<unknown[]>;
   get(id: string): Promise<unknown>;
-  create(opts: AgentCreateOpts): Promise<{ id: string; [key: string]: unknown }>;
+  create(opts: AgentCreateOpts): Promise<{ id: string;[key: string]: unknown }>;
   delete(id: string): Promise<unknown>;
   stop(id: string): Promise<unknown>;
   clone(id: string): Promise<unknown>;

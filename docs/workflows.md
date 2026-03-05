@@ -18,16 +18,16 @@ The implementation lives in `openfang-kernel/src/workflow.rs`. The workflow engi
 
 ## Core Types
 
-| Rust type | Description |
-|---|---|
-| `WorkflowId(Uuid)` | Unique identifier for a workflow definition. |
-| `WorkflowRunId(Uuid)` | Unique identifier for a running workflow instance. |
-| `Workflow` | A named definition containing a list of `WorkflowStep` entries. |
-| `WorkflowStep` | A single step: agent reference, prompt template, mode, timeout, error handling. |
-| `WorkflowRun` | A running instance: tracks state, step results, final output, timestamps. |
-| `WorkflowRunState` | Enum: `Pending`, `Running`, `Completed`, `Failed`. |
-| `StepResult` | Result from one step: agent info, output text, token counts, duration. |
-| `WorkflowEngine` | The engine itself: stores definitions and runs in `Arc<RwLock<HashMap>>`. |
+| Rust type             | Description                                                                     |
+| --------------------- | ------------------------------------------------------------------------------- |
+| `WorkflowId(Uuid)`    | Unique identifier for a workflow definition.                                    |
+| `WorkflowRunId(Uuid)` | Unique identifier for a running workflow instance.                              |
+| `Workflow`            | A named definition containing a list of `WorkflowStep` entries.                 |
+| `WorkflowStep`        | A single step: agent reference, prompt template, mode, timeout, error handling. |
+| `WorkflowRun`         | A running instance: tracks state, step results, final output, timestamps.       |
+| `WorkflowRunState`    | Enum: `Pending`, `Running`, `Completed`, `Failed`.                              |
+| `StepResult`          | Result from one step: agent info, output text, token counts, duration.          |
+| `WorkflowEngine`      | The engine itself: stores definitions and runs in `Arc<RwLock<HashMap>>`.       |
 
 ---
 
@@ -61,20 +61,20 @@ pub struct Workflow {
 
 Each step in the `steps` array has the following fields:
 
-| JSON field | Rust field | Type | Default | Description |
-|---|---|---|---|---|
-| `name` | `name` | `String` | `"step"` | Step name for logging and display. |
-| `agent_name` | `agent` | `StepAgent::ByName` | -- | Reference an agent by its name (first match). Mutually exclusive with `agent_id`. |
-| `agent_id` | `agent` | `StepAgent::ById` | -- | Reference an agent by its UUID. Mutually exclusive with `agent_name`. |
-| `prompt` | `prompt_template` | `String` | `"{{input}}"` | Prompt template with variable placeholders. |
-| `mode` | `mode` | `StepMode` | `"sequential"` | Execution mode (see below). |
-| `timeout_secs` | `timeout_secs` | `u64` | `120` | Maximum time in seconds before the step times out. |
-| `error_mode` | `error_mode` | `ErrorMode` | `"fail"` | How to handle errors (see below). |
-| `max_retries` | (inside `ErrorMode::Retry`) | `u32` | `3` | Number of retries when `error_mode` is `"retry"`. |
-| `output_var` | `output_var` | `Option<String>` | `null` | If set, stores this step's output in a named variable for later reference. |
-| `condition` | (inside `StepMode::Conditional`) | `String` | `""` | Substring to match in previous output (case-insensitive). |
-| `max_iterations` | (inside `StepMode::Loop`) | `u32` | `5` | Maximum loop iterations before forced termination. |
-| `until` | (inside `StepMode::Loop`) | `String` | `""` | Substring to match in output to terminate the loop (case-insensitive). |
+| JSON field       | Rust field                       | Type                | Default        | Description                                                                       |
+| ---------------- | -------------------------------- | ------------------- | -------------- | --------------------------------------------------------------------------------- |
+| `name`           | `name`                           | `String`            | `"step"`       | Step name for logging and display.                                                |
+| `agent_name`     | `agent`                          | `StepAgent::ByName` | --             | Reference an agent by its name (first match). Mutually exclusive with `agent_id`. |
+| `agent_id`       | `agent`                          | `StepAgent::ById`   | --             | Reference an agent by its UUID. Mutually exclusive with `agent_name`.             |
+| `prompt`         | `prompt_template`                | `String`            | `"{{input}}"`  | Prompt template with variable placeholders.                                       |
+| `mode`           | `mode`                           | `StepMode`          | `"sequential"` | Execution mode (see below).                                                       |
+| `timeout_secs`   | `timeout_secs`                   | `u64`               | `120`          | Maximum time in seconds before the step times out.                                |
+| `error_mode`     | `error_mode`                     | `ErrorMode`         | `"fail"`       | How to handle errors (see below).                                                 |
+| `max_retries`    | (inside `ErrorMode::Retry`)      | `u32`               | `3`            | Number of retries when `error_mode` is `"retry"`.                                 |
+| `output_var`     | `output_var`                     | `Option<String>`    | `null`         | If set, stores this step's output in a named variable for later reference.        |
+| `condition`      | (inside `StepMode::Conditional`) | `String`            | `""`           | Substring to match in previous output (case-insensitive).                         |
+| `max_iterations` | (inside `StepMode::Loop`)        | `u32`               | `5`            | Maximum loop iterations before forced termination.                                |
+| `until`          | (inside `StepMode::Loop`)        | `String`            | `""`           | Substring to match in output to terminate the loop (case-insensitive).            |
 
 ### Agent Resolution
 
@@ -416,12 +416,12 @@ The trigger engine (`openfang-kernel/src/triggers.rs`) provides event-driven aut
 
 ### Core Types
 
-| Rust type | Description |
-|---|---|
-| `TriggerId(Uuid)` | Unique identifier for a trigger. |
-| `Trigger` | A registered trigger: agent, pattern, prompt template, fire count, limits. |
-| `TriggerPattern` | Enum defining which events to match. |
-| `TriggerEngine` | The engine: `DashMap`-backed concurrent storage with agent-to-trigger index. |
+| Rust type         | Description                                                                  |
+| ----------------- | ---------------------------------------------------------------------------- |
+| `TriggerId(Uuid)` | Unique identifier for a trigger.                                             |
+| `Trigger`         | A registered trigger: agent, pattern, prompt template, fire count, limits.   |
+| `TriggerPattern`  | Enum defining which events to match.                                         |
+| `TriggerEngine`   | The engine: `DashMap`-backed concurrent storage with agent-to-trigger index. |
 
 ### Trigger Definition
 
@@ -442,17 +442,17 @@ pub struct Trigger {
 
 The `TriggerPattern` enum supports 9 matching modes:
 
-| Pattern | JSON | Description |
-|---|---|---|
-| `All` | `"all"` | Matches every event (wildcard). |
-| `Lifecycle` | `"lifecycle"` | Matches any lifecycle event (spawned, started, terminated, etc.). |
-| `AgentSpawned` | `{"agent_spawned": {"name_pattern": "coder"}}` | Matches when an agent with a name containing `name_pattern` is spawned. Use `"*"` for any agent. |
-| `AgentTerminated` | `"agent_terminated"` | Matches when any agent terminates or crashes. |
-| `System` | `"system"` | Matches any system event (health checks, quota warnings, etc.). |
-| `SystemKeyword` | `{"system_keyword": {"keyword": "quota"}}` | Matches system events whose debug representation contains the keyword (case-insensitive). |
-| `MemoryUpdate` | `"memory_update"` | Matches any memory change event. |
-| `MemoryKeyPattern` | `{"memory_key_pattern": {"key_pattern": "config"}}` | Matches memory updates where the key contains `key_pattern`. Use `"*"` for any key. |
-| `ContentMatch` | `{"content_match": {"substring": "error"}}` | Matches any event whose human-readable description contains the substring (case-insensitive). |
+| Pattern            | JSON                                                | Description                                                                                      |
+| ------------------ | --------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| `All`              | `"all"`                                             | Matches every event (wildcard).                                                                  |
+| `Lifecycle`        | `"lifecycle"`                                       | Matches any lifecycle event (spawned, started, terminated, etc.).                                |
+| `AgentSpawned`     | `{"agent_spawned": {"name_pattern": "coder"}}`      | Matches when an agent with a name containing `name_pattern` is spawned. Use `"*"` for any agent. |
+| `AgentTerminated`  | `"agent_terminated"`                                | Matches when any agent terminates or crashes.                                                    |
+| `System`           | `"system"`                                          | Matches any system event (health checks, quota warnings, etc.).                                  |
+| `SystemKeyword`    | `{"system_keyword": {"keyword": "quota"}}`          | Matches system events whose debug representation contains the keyword (case-insensitive).        |
+| `MemoryUpdate`     | `"memory_update"`                                   | Matches any memory change event.                                                                 |
+| `MemoryKeyPattern` | `{"memory_key_pattern": {"key_pattern": "config"}}` | Matches memory updates where the key contains `key_pattern`. Use `"*"` for any key.              |
+| `ContentMatch`     | `{"content_match": {"substring": "error"}}`         | Matches any event whose human-readable description contains the substring (case-insensitive).    |
 
 ### Pattern Matching Details
 
@@ -753,7 +753,7 @@ Loop steps are bounded by `max_iterations` (default: 5 in the API). The engine w
 
 ### Hourly Token Quota
 
-The `AgentScheduler` (in `openfang-kernel/src/scheduler.rs`) tracks per-agent token usage with a rolling 1-hour window via `UsageTracker`. If an agent exceeds its `ResourceQuota.max_llm_tokens_per_hour`, the scheduler returns `OctarqError::QuotaExceeded`. The window resets automatically after 3600 seconds. This quota applies to all agent interactions, including those invoked by workflows.
+The `AgentScheduler` (in `openfang-kernel/src/scheduler.rs`) tracks per-agent token usage with a rolling 1-hour window via `UsageTracker`. If an agent exceeds its `ResourceQuota.max_llm_tokens_per_hour`, the scheduler returns `OpenfangError::QuotaExceeded`. The window resets automatically after 3600 seconds. This quota applies to all agent interactions, including those invoked by workflows.
 
 ---
 
@@ -805,7 +805,7 @@ The `AgentScheduler` (in `openfang-kernel/src/scheduler.rs`) tracks per-agent to
 
 ## Internal Architecture Notes
 
-- The `WorkflowEngine` is decoupled from `OctarqKernel`. The `execute_run` method takes two closures: `agent_resolver` (resolves `StepAgent` to `AgentId` + name) and `send_message` (sends a prompt to an agent and returns output + token counts). This design makes the engine testable without a live kernel.
+- The `WorkflowEngine` is decoupled from `OpenfangKernel`. The `execute_run` method takes two closures: `agent_resolver` (resolves `StepAgent` to `AgentId` + name) and `send_message` (sends a prompt to an agent and returns output + token counts). This design makes the engine testable without a live kernel.
 - All state is held in `Arc<RwLock<HashMap>>`, allowing concurrent read access and serialized writes.
 - The `TriggerEngine` uses `DashMap` for lock-free concurrent access, with an `agent_triggers` index for efficient per-agent trigger lookups.
 - Fan-out parallelism uses `futures::future::join_all` -- all fan-out steps in a consecutive group are launched simultaneously.

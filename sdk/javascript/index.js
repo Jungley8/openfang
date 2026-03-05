@@ -17,10 +17,10 @@
 
 "use strict";
 
-class OctarqError extends Error {
+class OpenfangError extends Error {
   constructor(message, status, body) {
     super(message);
-    this.name = "OctarqError";
+    this.name = "OpenfangError";
     this.status = status;
     this.body = body;
   }
@@ -58,7 +58,7 @@ class Octarq {
     var res = await fetch(url, init);
     if (!res.ok) {
       var text = await res.text().catch(function () { return ""; });
-      throw new OctarqError("HTTP " + res.status + ": " + text, res.status, text);
+      throw new OpenfangError("HTTP " + res.status + ": " + text, res.status, text);
     }
     var ct = res.headers.get("content-type") || "";
     if (ct.includes("application/json")) {
@@ -78,7 +78,7 @@ class Octarq {
     var res = await fetch(url, init);
     if (!res.ok) {
       var text = await res.text().catch(function () { return ""; });
-      throw new OctarqError("HTTP " + res.status + ": " + text, res.status, text);
+      throw new OpenfangError("HTTP " + res.status + ": " + text, res.status, text);
     }
     var reader = res.body.getReader();
     var decoder = new TextDecoder();
@@ -255,7 +255,7 @@ class AgentResource {
     var form = new FormData();
     form.append("file", file, filename);
     var res = await fetch(url, { method: "POST", body: form });
-    if (!res.ok) throw new OctarqError("Upload failed: " + res.status, res.status);
+    if (!res.ok) throw new OpenfangError("Upload failed: " + res.status, res.status);
     return res.json();
   }
 
@@ -476,4 +476,4 @@ class ScheduleResource {
 
 // ── Exports ─────────────────────────────────────────────────────
 
-module.exports = { Octarq: Octarq, OctarqError: OctarqError };
+module.exports = { Octarq: Octarq, OpenfangError: OpenfangError };
