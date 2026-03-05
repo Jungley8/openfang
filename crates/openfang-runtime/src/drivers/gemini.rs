@@ -50,40 +50,6 @@ struct GeminiRequest {
     tools: Vec<GeminiToolConfig>,
     #[serde(skip_serializing_if = "Option::is_none")]
     generation_config: Option<GenerationConfig>,
-    #[serde(skip_serializing_if = "Vec::is_empty")]
-    safety_settings: Vec<GeminiSafetySetting>,
-}
-
-#[derive(Debug, Serialize)]
-#[serde(rename_all = "camelCase")]
-struct GeminiSafetySetting {
-    category: String,
-    threshold: String,
-}
-
-fn default_safety_settings() -> Vec<GeminiSafetySetting> {
-    vec![
-        GeminiSafetySetting {
-            category: "HARM_CATEGORY_HATE_SPEECH".to_string(),
-            threshold: "BLOCK_NONE".to_string(),
-        },
-        GeminiSafetySetting {
-            category: "HARM_CATEGORY_HARASSMENT".to_string(),
-            threshold: "BLOCK_NONE".to_string(),
-        },
-        GeminiSafetySetting {
-            category: "HARM_CATEGORY_SEXUALLY_EXPLICIT".to_string(),
-            threshold: "BLOCK_NONE".to_string(),
-        },
-        GeminiSafetySetting {
-            category: "HARM_CATEGORY_DANGEROUS_CONTENT".to_string(),
-            threshold: "BLOCK_NONE".to_string(),
-        },
-        GeminiSafetySetting {
-            category: "HARM_CATEGORY_CIVIC_INTEGRITY".to_string(),
-            threshold: "BLOCK_NONE".to_string(),
-        },
-    ]
 }
 
 /// A content entry (user/model turn).
@@ -336,16 +302,6 @@ fn convert_response(resp: GeminiResponse) -> Result<CompletionResponse, LlmError
         .next()
         .ok_or_else(|| LlmError::Parse("No candidates in Gemini response".to_string()))?;
 
-    // Detect safety block early
-    if let Some(reason) = &candidate.finish_reason {
-        if reason == "SAFETY" {
-            return Err(LlmError::Api {
-                status: 200,
-                message: "Gemini safety filter blocked the response. This usually occurs with 'lite' models or when the prompt contains system-level instructions that the model perceives as high-risk.".to_string(),
-            });
-        }
-    }
-
     let mut content = Vec::new();
     let mut tool_calls = Vec::new();
 
@@ -429,7 +385,6 @@ impl LlmDriver for GeminiDriver {
                 temperature: Some(request.temperature),
                 max_output_tokens: Some(request.max_tokens),
             }),
-            safety_settings: default_safety_settings(),
         };
 
         let max_retries = 3;
@@ -510,7 +465,6 @@ impl LlmDriver for GeminiDriver {
                 temperature: Some(request.temperature),
                 max_output_tokens: Some(request.max_tokens),
             }),
-            safety_settings: default_safety_settings(),
         };
 
         let max_retries = 3;
@@ -655,27 +609,6 @@ impl LlmDriver for GeminiDriver {
             let mut content = Vec::new();
             let mut tool_calls = Vec::new();
 
-            let stop_reason = match finish_reason.as_deref() {
-                Some("STOP") => StopReason::EndTurn,
-                Some("MAX_TOKENS") => StopReason::MaxTokens,
-                Some("SAFETY") => {
-                    if text_content.is_empty() && fn_calls.is_empty() {
-                        return Err(LlmError::Api {
-                            status: 200,
-                            message: "Gemini safety filter blocked the response stream. This usually occurs with 'lite' models or when the prompt contains system-level instructions that the model perceives as high-risk.".to_string(),
-                        });
-                    }
-                    StopReason::EndTurn
-                }
-                _ => {
-                    if !fn_calls.is_empty() {
-                        StopReason::ToolUse
-                    } else {
-                        StopReason::EndTurn
-                    }
-                }
-            };
-
             if !text_content.is_empty() {
                 content.push(ContentBlock::Text { text: text_content });
             }
@@ -693,6 +626,19 @@ impl LlmDriver for GeminiDriver {
                     input: args,
                 });
             }
+
+            let stop_reason = match finish_reason.as_deref() {
+                Some("STOP") => StopReason::EndTurn,
+                Some("MAX_TOKENS") => StopReason::MaxTokens,
+                Some("SAFETY") => StopReason::EndTurn,
+                _ => {
+                    if !tool_calls.is_empty() {
+                        StopReason::ToolUse
+                    } else {
+                        StopReason::EndTurn
+                    }
+                }
+            };
 
             let _ = tx
                 .send(StreamEvent::ContentComplete { stop_reason, usage })
@@ -748,7 +694,6 @@ mod tests {
                 temperature: Some(0.7),
                 max_output_tokens: Some(1024),
             }),
-            safety_settings: vec![],
         };
 
         let json = serde_json::to_value(&req).unwrap();
@@ -1006,44 +951,5 @@ mod tests {
         let json = serde_json::to_value(&config).unwrap();
         assert_eq!(json["temperature"], 0.5);
         assert_eq!(json["maxOutputTokens"], 2048);
-    }
-
-    #[test]
-    fn test_convert_response_safety_block() {
-        let resp = GeminiResponse {
-            candidates: vec![GeminiCandidate {
-                content: None,
-                finish_reason: Some("SAFETY".to_string()),
-            }],
-            usage_metadata: None,
-        };
-
-        let result = convert_response(resp);
-        assert!(result.is_err());
-        match result.unwrap_err() {
-            LlmError::Api { message, .. } => {
-                assert!(message.contains("safety filter blocked"));
-            }
-            _ => panic!("Expected Api error for safety block"),
-        }
-    }
-
-    #[test]
-    fn test_gemini_request_serialization_with_safety() {
-        let req = GeminiRequest {
-            contents: vec![],
-            system_instruction: None,
-            tools: vec![],
-            generation_config: None,
-            safety_settings: default_safety_settings(),
-        };
-
-        let json = serde_json::to_value(&req).unwrap();
-        assert!(json["safetySettings"].is_array());
-        assert_eq!(
-            json["safetySettings"][0]["category"],
-            "HARM_CATEGORY_HATE_SPEECH"
-        );
-        assert_eq!(json["safetySettings"][0]["threshold"], "BLOCK_NONE");
     }
 }
