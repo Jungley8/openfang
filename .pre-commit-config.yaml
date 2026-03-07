@@ -17,8 +17,10 @@ repos:
         entry: bash -c 'cargo fmt --check'
         language: system
         pass_filenames: false
+        stages: [pre-commit]
       - id: cargo-check
-        name: cargo-fmt-check
+        name: cargo-check
         entry: bash -c 'cargo check --workspace'
         language: system
         pass_filenames: false
+        stages: [pre-commit]
