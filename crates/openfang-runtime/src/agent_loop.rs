@@ -358,6 +358,7 @@ pub async fn run_agent_loop(
                         id: tc.id.clone(),
                         name: tc.name.clone(),
                         input: tc.input.clone(),
+                        thought_signature: None,
                     });
                 }
                 response.content = new_blocks;
@@ -681,6 +682,13 @@ pub async fn run_agent_loop(
                             }),
                         };
                         let _ = hook_reg.fire(&ctx);
+                    }
+
+                    // Record outcome for loop guard (identical call+result → next time block)
+                    if let Some(outcome_msg) =
+                        loop_guard.record_outcome(&tool_call.name, &tool_call.input, &result.content)
+                    {
+                        warn!(tool = %tool_call.name, "Loop guard outcome repetition: {}", outcome_msg);
                     }
 
                     // Dynamic truncation based on context budget (replaces flat MAX_TOOL_RESULT_CHARS)
@@ -1293,6 +1301,7 @@ pub async fn run_agent_loop_streaming(
                         id: tc.id.clone(),
                         name: tc.name.clone(),
                         input: tc.input.clone(),
+                        thought_signature: None,
                     });
                 }
                 response.content = new_blocks;
@@ -1609,6 +1618,13 @@ pub async fn run_agent_loop_streaming(
                             }),
                         };
                         let _ = hook_reg.fire(&ctx);
+                    }
+
+                    // Record outcome for loop guard (identical call+result → next time block)
+                    if let Some(outcome_msg) =
+                        loop_guard.record_outcome(&tool_call.name, &tool_call.input, &result.content)
+                    {
+                        warn!(tool = %tool_call.name, "Loop guard outcome repetition: {}", outcome_msg);
                     }
 
                     // Dynamic truncation based on context budget (replaces flat MAX_TOOL_RESULT_CHARS)
@@ -1986,6 +2002,7 @@ mod tests {
                         id: "tool_1".to_string(),
                         name: "fake_tool".to_string(),
                         input: serde_json::json!({"query": "test"}),
+                        thought_signature: None,
                     }],
                     stop_reason: StopReason::ToolUse,
                     tool_calls: vec![ToolCall {

@@ -9,6 +9,7 @@ use dashmap::DashMap;
 use openfang_types::agent::AgentId;
 use openfang_types::event::{Event, EventPayload, LifecycleEvent, SystemEvent};
 use serde::{Deserialize, Serialize};
+use std::time::{Duration, Instant};
 use tracing::{debug, info};
 use uuid::Uuid;
 
@@ -58,6 +59,9 @@ pub enum TriggerPattern {
     ContentMatch { substring: String },
 }
 
+/// Minimum seconds between firings of the same trigger (avoids memory→trigger→agent loops).
+const TRIGGER_COOLDOWN_SECS: u64 = 60;
+
 /// A registered trigger definition.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Trigger {
@@ -77,6 +81,9 @@ pub struct Trigger {
     pub fire_count: u64,
     /// Maximum number of times this trigger can fire (0 = unlimited).
     pub max_fires: u64,
+    /// Last time this trigger fired (for cooldown); not persisted.
+    #[serde(skip, default)]
+    pub last_fired_at: Option<Instant>,
 }
 
 /// The trigger engine manages event-to-agent routing.
@@ -113,6 +120,7 @@ impl TriggerEngine {
             created_at: Utc::now(),
             fire_count: 0,
             max_fires,
+            last_fired_at: None,
         };
         let id = trigger.id;
         self.triggers.insert(id, trigger);
@@ -189,12 +197,28 @@ impl TriggerEngine {
                 continue;
             }
 
+            // Cooldown for memory-related triggers only: avoid memory_store → MemoryUpdate → agent → memory_store loop
+            let is_memory_trigger = matches!(
+                &trigger.pattern,
+                TriggerPattern::MemoryUpdate | TriggerPattern::MemoryKeyPattern { .. }
+            );
+            if is_memory_trigger {
+                if let Some(t) = trigger.last_fired_at {
+                    if t.elapsed() < Duration::from_secs(TRIGGER_COOLDOWN_SECS) {
+                        continue;
+                    }
+                }
+            }
+
             if matches_pattern(&trigger.pattern, event, &event_description) {
                 let message = trigger
                     .prompt_template
                     .replace("{{event}}", &event_description);
                 matches.push((trigger.agent_id, message));
                 trigger.fire_count += 1;
+                if is_memory_trigger {
+                    trigger.last_fired_at = Some(Instant::now());
+                }
 
                 debug!(
                     trigger_id = %trigger.id,
@@ -348,6 +372,16 @@ fn describe_event(event: &Event) -> String {
             } => {
                 format!(
                     "Health check failed: agent {agent_id}, unresponsive for {unresponsive_secs}s"
+                )
+            }
+            SystemEvent::AgentRepeatedFailure {
+                agent_id,
+                agent_name,
+                response_preview,
+                repeat_count,
+            } => {
+                format!(
+                    "Agent {agent_name} ({agent_id}) returned the same error {repeat_count} times in a row. Preview: {response_preview}"
                 )
             }
         },

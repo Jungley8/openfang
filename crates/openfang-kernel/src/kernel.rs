@@ -36,9 +36,20 @@ use openfang_types::memory::Memory;
 use openfang_types::tool::ToolDefinition;
 
 use async_trait::async_trait;
+use std::collections::hash_map::DefaultHasher;
+use std::hash::{Hash, Hasher};
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, OnceLock, Weak};
-use tracing::{debug, info, warn, Instrument};
+use tracing::{debug, error, info, warn, Instrument};
+
+/// Tracks last N background tick response hashes per agent to detect repeated failures.
+struct RepeatedFailureState {
+    hashes: Vec<u64>,
+    emitted: bool,
+}
+
+/// Number of identical error-like responses in a row before we emit AgentRepeatedFailure.
+const REPEATED_FAILURE_THRESHOLD: usize = 3;
 
 /// The main OpenFang kernel — coordinates all subsystems.
 /// Stub LLM driver used when no providers are configured.
@@ -102,6 +113,8 @@ pub struct OpenFangKernel {
     pub mcp_tools: std::sync::Mutex<Vec<ToolDefinition>>,
     /// A2A task store for tracking task lifecycle.
     pub a2a_task_store: openfang_runtime::a2a::A2aTaskStore,
+    /// Per-agent history of background tick response hashes; used to detect repeated failures and notify user.
+    background_tick_history: dashmap::DashMap<AgentId, RepeatedFailureState>,
     /// Discovered external A2A agent cards.
     pub a2a_external_agents: std::sync::Mutex<Vec<(String, openfang_runtime::a2a::AgentCard)>>,
     /// Web tools context (multi-provider search + SSRF-protected fetch + caching).
@@ -920,6 +933,7 @@ impl OpenFangKernel {
             mcp_tools: std::sync::Mutex::new(Vec::new()),
             a2a_task_store: openfang_runtime::a2a::A2aTaskStore::default(),
             a2a_external_agents: std::sync::Mutex::new(Vec::new()),
+            background_tick_history: dashmap::DashMap::new(),
             web_ctx,
             browser_ctx,
             media_engine,
@@ -1042,12 +1056,12 @@ impl OpenFangKernel {
 
                     // Apply default_model to restored agents (same logic as spawn)
                     {
+                        let dm = &kernel.config.default_model;
                         let is_default_provider = restored_entry.manifest.model.provider.is_empty()
                             || restored_entry.manifest.model.provider == "default";
                         let is_default_model = restored_entry.manifest.model.model.is_empty()
                             || restored_entry.manifest.model.model == "default";
                         if is_default_provider && is_default_model {
-                            let dm = &kernel.config.default_model;
                             if !dm.provider.is_empty() {
                                 restored_entry.manifest.model.provider = dm.provider.clone();
                             }
@@ -1068,6 +1082,13 @@ impl OpenFangKernel {
                                     .model
                                     .base_url
                                     .clone_from(&dm.base_url);
+                            }
+                        }
+
+                        // Also resolve "default" provider in fallback_models
+                        for fb in &mut restored_entry.manifest.fallback_models {
+                            if fb.provider.is_empty() || fb.provider == "default" {
+                                fb.provider = dm.provider.clone();
                             }
                         }
                     }
@@ -3913,20 +3934,102 @@ impl OpenFangKernel {
 
         // Start continuous/periodic loops
         let kernel = Arc::clone(self);
+        let agent_name = name.to_string();
         self.background
             .start_agent(agent_id, name, schedule, move |aid, msg| {
                 let k = Arc::clone(&kernel);
+                let name_owned = agent_name.clone();
                 tokio::spawn(async move {
                     match k.send_message(aid, &msg).await {
-                        Ok(_) => {}
+                        Ok(result) => {
+                            k.record_background_tick_result(aid, &name_owned, &result.response)
+                                .await;
+                        }
                         Err(e) => {
-                            // send_message already records the panic in supervisor,
-                            // just log the background context here
                             warn!(agent_id = %aid, error = %e, "Background tick failed");
                         }
                     }
                 })
             });
+    }
+
+    /// Record a background tick response; if the same error repeats, emit event and audit so the user is notified.
+    pub async fn record_background_tick_result(
+        self: &Arc<Self>,
+        agent_id: AgentId,
+        agent_name: &str,
+        response: &str,
+    ) {
+        let normalized = response.trim();
+        if normalized.len() < 40 {
+            return;
+        }
+        let lower = normalized.to_lowercase();
+        let error_like = lower.contains("unable to proceed")
+            || lower.contains("429")
+            || lower.contains("authentication")
+            || lower.contains("insufficient")
+            || lower.contains("depleted")
+            || lower.contains("rate limit")
+            || (lower.contains("error") && normalized.len() > 80);
+        let mut hasher = DefaultHasher::new();
+        normalized.chars().take(500).for_each(|c| {
+            c.to_string().hash(&mut hasher);
+        });
+        let hash = hasher.finish();
+
+        let mut state =
+            self.background_tick_history
+                .entry(agent_id)
+                .or_insert(RepeatedFailureState {
+                    hashes: Vec::with_capacity(REPEATED_FAILURE_THRESHOLD),
+                    emitted: false,
+                });
+
+        if !error_like {
+            state.hashes.clear();
+            state.emitted = false;
+            return;
+        }
+
+        state.hashes.push(hash);
+        if state.hashes.len() > REPEATED_FAILURE_THRESHOLD {
+            state.hashes.remove(0);
+        }
+        if state.hashes.len() == REPEATED_FAILURE_THRESHOLD
+            && state.hashes.windows(2).all(|w| w[0] == w[1])
+            && !state.emitted
+        {
+            state.emitted = true;
+            let preview: String = normalized.chars().take(200).collect();
+            let repeat_count = REPEATED_FAILURE_THRESHOLD as u32;
+            let name_owned = agent_name.to_string();
+            drop(state); // release before await to avoid holding DashMap across .await
+            error!(
+                agent_id = %agent_id,
+                agent_name = %name_owned,
+                repeat_count = repeat_count,
+                preview = %preview,
+                "Background agent returned same error repeatedly — notify user, check config/API"
+            );
+            self.audit_log.record(
+                agent_id.to_string(),
+                openfang_runtime::audit::AuditAction::AgentRepeatedFailure,
+                &preview,
+                &format!("repeat_count={}", repeat_count),
+            );
+            let event = Event::new(
+                agent_id,
+                EventTarget::Broadcast,
+                EventPayload::System(SystemEvent::AgentRepeatedFailure {
+                    agent_id,
+                    agent_name: name_owned,
+                    response_preview: preview,
+                    repeat_count,
+                }),
+            );
+            self.event_bus.publish(event).await;
+        }
     }
 
     /// Gracefully shutdown the kernel.
@@ -3984,11 +4087,27 @@ impl OpenFangKernel {
         let agent_provider = &manifest.model.provider;
         let default_provider = &self.config.default_model.provider;
 
-        // If agent uses same provider as kernel default and has no custom overrides, reuse
-        let has_custom_key = manifest.model.api_key_env.is_some();
+        // If agent uses same provider as kernel default and has no custom overrides, reuse.
+        // Treat api_key_env as "custom" only if it differs from the kernel default.
+        let has_custom_key = manifest
+            .model
+            .api_key_env
+            .as_deref()
+            .is_some_and(|k| k != self.config.default_model.api_key_env);
         let has_custom_url = manifest.model.base_url.is_some();
 
+        debug!(
+            agent = %manifest.name,
+            agent_provider = %agent_provider,
+            default_provider = %default_provider,
+            agent_api_key_env = ?manifest.model.api_key_env,
+            has_custom_key,
+            has_custom_url,
+            "Resolving LLM driver"
+        );
+
         let primary = if agent_provider == default_provider && !has_custom_key && !has_custom_url {
+            debug!(agent = %manifest.name, "Reusing kernel default driver");
             Arc::clone(&self.default_driver)
         } else {
             // Create a dedicated driver for this agent.
@@ -4039,6 +4158,14 @@ impl OpenFangKernel {
                     .cloned()
             };
 
+            debug!(
+                agent = %manifest.name,
+                provider = %agent_provider,
+                has_api_key = api_key.is_some(),
+                base_url = ?base_url,
+                "Creating dedicated LLM driver for agent"
+            );
+
             let driver_config = DriverConfig {
                 provider: agent_provider.clone(),
                 api_key,
@@ -4058,21 +4185,32 @@ impl OpenFangKernel {
                 String,
             )> = vec![(primary.clone(), String::new())];
             for fb in &manifest.fallback_models {
+                // Resolve "default" provider to the kernel's actual default
+                let fb_provider = if fb.provider.is_empty() || fb.provider == "default" {
+                    self.config.default_model.provider.clone()
+                } else {
+                    fb.provider.clone()
+                };
+                // Resolve API key: use fallback's own key, or inherit from default if same provider
+                let fb_api_key = if let Some(ref env) = fb.api_key_env {
+                    std::env::var(env).ok()
+                } else if fb_provider == self.config.default_model.provider {
+                    std::env::var(&self.config.default_model.api_key_env).ok()
+                } else {
+                    None
+                };
                 let config = DriverConfig {
-                    provider: fb.provider.clone(),
-                    api_key: fb
-                        .api_key_env
-                        .as_ref()
-                        .and_then(|env| std::env::var(env).ok()),
+                    provider: fb_provider.clone(),
+                    api_key: fb_api_key,
                     base_url: fb
                         .base_url
                         .clone()
-                        .or_else(|| self.config.provider_urls.get(&fb.provider).cloned()),
+                        .or_else(|| self.config.provider_urls.get(&fb_provider).cloned()),
                 };
                 match drivers::create_driver(&config) {
                     Ok(d) => chain.push((d, fb.model.clone())),
                     Err(e) => {
-                        warn!("Fallback driver '{}' failed to init: {e}", fb.provider);
+                        warn!("Fallback driver '{}' failed to init: {e}", fb_provider);
                     }
                 }
             }

@@ -277,6 +277,18 @@ pub enum SystemEvent {
         /// How long the agent has been unresponsive.
         unresponsive_secs: u64,
     },
+    /// A background/scheduled agent has returned the same error response repeatedly.
+    /// Emitted so the user can be notified instead of silently burning LLM calls.
+    AgentRepeatedFailure {
+        /// The agent that is stuck.
+        agent_id: AgentId,
+        /// Human-readable agent name.
+        agent_name: String,
+        /// First 200 chars of the repeated response (for display).
+        response_preview: String,
+        /// How many consecutive ticks returned the same (or near-identical) error.
+        repeat_count: u32,
+    },
 }
 
 /// A complete event in the OpenFang event system.

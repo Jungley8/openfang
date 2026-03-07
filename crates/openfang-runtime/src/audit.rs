@@ -17,6 +17,8 @@ pub enum AuditAction {
     AgentSpawn,
     AgentKill,
     AgentMessage,
+    /// Background agent returned same error repeatedly (user should be notified).
+    AgentRepeatedFailure,
     MemoryAccess,
     FileAccess,
     NetworkAccess,

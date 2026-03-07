@@ -17,6 +17,18 @@ use tracing::{debug, info, warn};
 /// Maximum number of concurrent background LLM calls across all agents.
 const MAX_CONCURRENT_BG_LLM: usize = 5;
 
+/// Minimum interval for continuous mode (avoids dense/infinite self-prompts).
+#[cfg(not(test))]
+const MIN_CONTINUOUS_INTERVAL_SECS: u64 = 60;
+#[cfg(test)]
+const MIN_CONTINUOUS_INTERVAL_SECS: u64 = 1;
+
+/// Minimum interval for periodic mode.
+#[cfg(not(test))]
+const MIN_PERIODIC_INTERVAL_SECS: u64 = 60;
+#[cfg(test)]
+const MIN_PERIODIC_INTERVAL_SECS: u64 = 1;
+
 /// Manages background task loops for autonomous agents.
 pub struct BackgroundExecutor {
     /// Running background task handles, keyed by agent ID.
@@ -59,7 +71,16 @@ impl BackgroundExecutor {
             ScheduleMode::Continuous {
                 check_interval_secs,
             } => {
-                let interval = std::time::Duration::from_secs(*check_interval_secs);
+                let effective_secs = (*check_interval_secs).max(MIN_CONTINUOUS_INTERVAL_SECS);
+                if effective_secs != *check_interval_secs {
+                    warn!(
+                        agent = %agent_name,
+                        requested = check_interval_secs,
+                        effective = effective_secs,
+                        "Continuous interval capped to minimum (rate limit)"
+                    );
+                }
+                let interval = std::time::Duration::from_secs(effective_secs);
                 let name = agent_name.to_string();
                 let mut shutdown = self.shutdown_rx.clone();
                 let busy = Arc::new(AtomicBool::new(false));
@@ -67,7 +88,7 @@ impl BackgroundExecutor {
 
                 info!(
                     agent = %name, id = %agent_id,
-                    interval_secs = check_interval_secs,
+                    interval_secs = effective_secs,
                     "Starting continuous background loop"
                 );
 
@@ -119,7 +140,17 @@ impl BackgroundExecutor {
                 self.tasks.insert(agent_id, handle);
             }
             ScheduleMode::Periodic { cron } => {
-                let interval_secs = parse_cron_to_secs(cron);
+                let raw_secs = parse_cron_to_secs(cron);
+                let interval_secs = raw_secs.max(MIN_PERIODIC_INTERVAL_SECS);
+                if interval_secs != raw_secs {
+                    warn!(
+                        agent = %agent_name,
+                        cron = %cron,
+                        requested_secs = raw_secs,
+                        effective_secs = interval_secs,
+                        "Periodic interval capped to minimum (rate limit)"
+                    );
+                }
                 let interval = std::time::Duration::from_secs(interval_secs);
                 let name = agent_name.to_string();
                 let cron_owned = cron.clone();

@@ -60,6 +60,9 @@ pub enum ContentBlock {
         name: String,
         /// The tool input parameters.
         input: serde_json::Value,
+        /// Gemini thought signature (must be preserved across turns for function calling).
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        thought_signature: Option<String>,
     },
     /// A tool result from executing a tool.
     #[serde(rename = "tool_result")]

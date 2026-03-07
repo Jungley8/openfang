@@ -26,6 +26,9 @@ const POLL_TOOLS: &[&str] = &[
     "shell_exec", // checking command output
 ];
 
+/// memory_store / memory_recall: max calls per key in one run (avoids repeated read/write to same key).
+const MEMORY_KEY_MAX_PER_RUN: u32 = 5;
+
 /// Maximum recent call history size for ping-pong detection.
 const HISTORY_SIZE: usize = 30;
 
@@ -119,6 +122,8 @@ pub struct LoopGuard {
     blocked_calls: u32,
     /// Map from call hash to tool name (for stats reporting).
     hash_to_tool: HashMap<String, String>,
+    /// Per-key call count for memory_store/memory_recall (key = "tool_name:key").
+    memory_key_counts: HashMap<String, u32>,
 }
 
 impl LoopGuard {
@@ -135,6 +140,7 @@ impl LoopGuard {
             poll_counts: HashMap::new(),
             blocked_calls: 0,
             hash_to_tool: HashMap::new(),
+            memory_key_counts: HashMap::new(),
         }
     }
 
@@ -175,6 +181,23 @@ impl LoopGuard {
                  The current approach is not working — try something different.",
                 tool_name
             ));
+        }
+
+        // Per-key cap for memory_store/memory_recall (avoids repeated read/write to same key)
+        if tool_name == "memory_store" || tool_name == "memory_recall" {
+            if let Some(k) = params.get("key").and_then(|v| v.as_str()) {
+                let key = format!("{}:{}", tool_name, k);
+                let key_count = self.memory_key_counts.entry(key).or_insert(0);
+                *key_count += 1;
+                if *key_count > MEMORY_KEY_MAX_PER_RUN {
+                    self.blocked_calls += 1;
+                    return LoopGuardVerdict::Block(format!(
+                        "Blocked: '{}' called more than {} times for key \"{}\". \
+                         Avoid repeated read/write to the same memory key.",
+                        tool_name, MEMORY_KEY_MAX_PER_RUN, k
+                    ));
+                }
+            }
         }
 
         let count = self.call_counts.entry(hash.clone()).or_insert(0);
@@ -576,6 +599,33 @@ mod tests {
             let v = guard.check("web_search", &params);
             assert_eq!(v, LoopGuardVerdict::Allow);
         }
+    }
+
+    #[test]
+    fn memory_store_per_key_cap() {
+        let mut guard = LoopGuard::new(LoopGuardConfig::default());
+        // Same key, different values → still capped per key (MEMORY_KEY_MAX_PER_RUN = 5)
+        for i in 0..5 {
+            let params = serde_json::json!({"key": "status", "value": format!("v{}", i)});
+            let v = guard.check("memory_store", &params);
+            assert_eq!(
+                v,
+                LoopGuardVerdict::Allow,
+                "call {} should be allowed",
+                i + 1
+            );
+        }
+        let params = serde_json::json!({"key": "status", "value": "v6"});
+        let v = guard.check("memory_store", &params);
+        assert!(
+            matches!(v, LoopGuardVerdict::Block(_)),
+            "6th call for same key should be blocked, got {:?}",
+            v
+        );
+        // Different key still allowed
+        let params = serde_json::json!({"key": "other", "value": "x"});
+        let v = guard.check("memory_store", &params);
+        assert_eq!(v, LoopGuardVerdict::Allow);
     }
 
     #[test]
