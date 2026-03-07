@@ -4030,7 +4030,7 @@ impl OpenFangKernel {
                 agent_id.to_string(),
                 openfang_runtime::audit::AuditAction::AgentRepeatedFailure,
                 &preview,
-                &format!("repeat_count={}", repeat_count),
+                format!("repeat_count={}", repeat_count),
             );
             let event = Event::new(
                 agent_id,
