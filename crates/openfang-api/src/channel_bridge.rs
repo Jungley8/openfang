@@ -314,9 +314,9 @@ impl ChannelBridgeHandle for KernelBridgeAdapter {
                         Some((entry.id, entry.name.clone()))
                     }
                 },
-                |agent_id, message| {
+                |agent_id, message| -> openfang_kernel::workflow::StepRunnerFuture<'static> {
                     let k = kernel.clone();
-                    async move {
+                    Box::pin(async move {
                         let result = k
                             .send_message(agent_id, &message)
                             .await
@@ -326,7 +326,7 @@ impl ChannelBridgeHandle for KernelBridgeAdapter {
                             result.total_usage.input_tokens,
                             result.total_usage.output_tokens,
                         ))
-                    }
+                    })
                 },
             )
             .await;

@@ -3407,18 +3407,21 @@ impl OpenFangKernel {
         };
 
         // Message sender: sends to agent and returns (output, in_tokens, out_tokens)
-        let send_message = |agent_id: AgentId, message: String| async move {
-            self.send_message(agent_id, &message)
-                .await
-                .map(|r| {
-                    (
-                        r.response,
-                        r.total_usage.input_tokens,
-                        r.total_usage.output_tokens,
-                    )
+        let send_message =
+            |agent_id: AgentId, message: String| -> crate::workflow::StepRunnerFuture<'_> {
+                Box::pin(async move {
+                    self.send_message(agent_id, &message)
+                        .await
+                        .map(|r| {
+                            (
+                                r.response,
+                                r.total_usage.input_tokens,
+                                r.total_usage.output_tokens,
+                            )
+                        })
+                        .map_err(|e| format!("{e}"))
                 })
-                .map_err(|e| format!("{e}"))
-        };
+            };
 
         // SECURITY: Global workflow timeout to prevent runaway execution.
         const MAX_WORKFLOW_SECS: u64 = 3600; // 1 hour

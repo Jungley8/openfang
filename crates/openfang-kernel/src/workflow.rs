@@ -14,10 +14,15 @@ use chrono::{DateTime, Utc};
 use openfang_types::agent::AgentId;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use std::pin::Pin;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 use tracing::{debug, info, warn, Instrument};
 use uuid::Uuid;
+
+/// Erased future for step execution. Used to avoid huge monomorphized async state machines.
+pub type StepRunnerFuture<'a> =
+    Pin<Box<dyn std::future::Future<Output = Result<(String, u64, u64), String>> + Send + 'a>>;
 
 /// Unique identifier for a workflow definition.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
@@ -331,16 +336,12 @@ impl WorkflowEngine {
     }
 
     /// Execute a single step with error mode handling. Returns (output, input_tokens, output_tokens).
-    async fn execute_step_with_error_mode<F, Fut>(
+    async fn execute_step_with_error_mode<'a>(
         step: &WorkflowStep,
         agent_id: AgentId,
         prompt: String,
-        send_message: &F,
-    ) -> Result<Option<(String, u64, u64)>, String>
-    where
-        F: Fn(AgentId, String) -> Fut,
-        Fut: std::future::Future<Output = Result<(String, u64, u64), String>>,
-    {
+        send_message: &impl Fn(AgentId, String) -> StepRunnerFuture<'a>,
+    ) -> Result<Option<(String, u64, u64)>, String> {
         let step_span = tracing::info_span!(
             "workflow_step",
             step_name = %step.name,
@@ -426,16 +427,12 @@ impl WorkflowEngine {
     ///
     /// This method takes a closure that sends messages to agents,
     /// so the workflow engine remains decoupled from the kernel.
-    pub async fn execute_run<F, Fut>(
+    pub async fn execute_run<'a>(
         &self,
         run_id: WorkflowRunId,
         agent_resolver: impl Fn(&StepAgent) -> Option<(AgentId, String)>,
-        send_message: F,
-    ) -> Result<String, String>
-    where
-        F: Fn(AgentId, String) -> Fut,
-        Fut: std::future::Future<Output = Result<(String, u64, u64), String>>,
-    {
+        send_message: impl Fn(AgentId, String) -> StepRunnerFuture<'a>,
+    ) -> Result<String, String> {
         // Get the run and workflow
         let (workflow, input) = {
             let mut runs = self.runs.write().await;
@@ -906,8 +903,8 @@ mod tests {
             .await
             .unwrap();
 
-        let sender = |_id: AgentId, msg: String| async move {
-            Ok((format!("Processed: {msg}"), 100u64, 50u64))
+        let sender = |_id: AgentId, msg: String| -> StepRunnerFuture<'static> {
+            Box::pin(async move { Ok((format!("Processed: {msg}"), 100u64, 50u64)) })
         };
 
         let result = engine.execute_run(run_id, mock_resolver, sender).await;
@@ -963,8 +960,9 @@ mod tests {
             .await
             .unwrap();
 
-        let sender =
-            |_id: AgentId, msg: String| async move { Ok((format!("OK: {msg}"), 10u64, 5u64)) };
+        let sender = |_id: AgentId, msg: String| -> StepRunnerFuture<'static> {
+            Box::pin(async move { Ok((format!("OK: {msg}"), 10u64, 5u64)) })
+        };
 
         let result = engine.execute_run(run_id, mock_resolver, sender).await;
         assert!(result.is_ok());
@@ -1013,8 +1011,8 @@ mod tests {
         let run_id = engine.create_run(wf_id, "data".to_string()).await.unwrap();
 
         // This sender returns output containing "ERROR"
-        let sender = |_id: AgentId, _msg: String| async move {
-            Ok(("Found an ERROR in the data".to_string(), 10u64, 5u64))
+        let sender = |_id: AgentId, _msg: String| -> StepRunnerFuture<'static> {
+            Box::pin(async move { Ok(("Found an ERROR in the data".to_string(), 10u64, 5u64)) })
         };
 
         let result = engine.execute_run(run_id, mock_resolver, sender).await;
@@ -1053,16 +1051,16 @@ mod tests {
 
         let call_count = Arc::new(std::sync::atomic::AtomicU32::new(0));
         let cc = call_count.clone();
-        let sender = move |_id: AgentId, _msg: String| {
+        let sender = move |_id: AgentId, _msg: String| -> StepRunnerFuture<'static> {
             let cc = cc.clone();
-            async move {
+            Box::pin(async move {
                 let n = cc.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
                 if n >= 2 {
                     Ok(("Result: DONE".to_string(), 10u64, 5u64))
                 } else {
                     Ok(("Still working...".to_string(), 10u64, 5u64))
                 }
-            }
+            })
         };
 
         let result = engine.execute_run(run_id, mock_resolver, sender).await;
@@ -1097,8 +1095,8 @@ mod tests {
         let wf_id = engine.register(wf).await;
         let run_id = engine.create_run(wf_id, "data".to_string()).await.unwrap();
 
-        let sender = |_id: AgentId, _msg: String| async move {
-            Ok(("iteration output".to_string(), 10u64, 5u64))
+        let sender = |_id: AgentId, _msg: String| -> StepRunnerFuture<'static> {
+            Box::pin(async move { Ok(("iteration output".to_string(), 10u64, 5u64)) })
         };
 
         let result = engine.execute_run(run_id, mock_resolver, sender).await;
@@ -1146,16 +1144,16 @@ mod tests {
 
         let call_count = Arc::new(std::sync::atomic::AtomicU32::new(0));
         let cc = call_count.clone();
-        let sender = move |_id: AgentId, _msg: String| {
+        let sender = move |_id: AgentId, _msg: String| -> StepRunnerFuture<'static> {
             let cc = cc.clone();
-            async move {
+            Box::pin(async move {
                 let n = cc.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
                 if n == 0 {
                     Err("simulated error".to_string())
                 } else {
                     Ok(("success".to_string(), 10u64, 5u64))
                 }
-            }
+            })
         };
 
         let result = engine.execute_run(run_id, mock_resolver, sender).await;
@@ -1192,16 +1190,16 @@ mod tests {
 
         let call_count = Arc::new(std::sync::atomic::AtomicU32::new(0));
         let cc = call_count.clone();
-        let sender = move |_id: AgentId, _msg: String| {
+        let sender = move |_id: AgentId, _msg: String| -> StepRunnerFuture<'static> {
             let cc = cc.clone();
-            async move {
+            Box::pin(async move {
                 let n = cc.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
                 if n < 2 {
                     Err("transient error".to_string())
                 } else {
                     Ok(("finally worked".to_string(), 10u64, 5u64))
                 }
-            }
+            })
         };
 
         let result = engine.execute_run(run_id, mock_resolver, sender).await;
@@ -1260,16 +1258,16 @@ mod tests {
 
         let call_count = Arc::new(std::sync::atomic::AtomicU32::new(0));
         let cc = call_count.clone();
-        let sender = move |_id: AgentId, msg: String| {
+        let sender = move |_id: AgentId, msg: String| -> StepRunnerFuture<'static> {
             let cc = cc.clone();
-            async move {
+            Box::pin(async move {
                 let n = cc.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
                 match n {
                     0 => Ok(("alpha".to_string(), 10u64, 5u64)),
                     1 => Ok(("beta".to_string(), 10u64, 5u64)),
                     _ => Ok((format!("Combined: {msg}"), 10u64, 5u64)),
                 }
-            }
+            })
         };
 
         let result = engine.execute_run(run_id, mock_resolver, sender).await;
@@ -1327,8 +1325,9 @@ mod tests {
         let wf_id = engine.register(wf).await;
         let run_id = engine.create_run(wf_id, "data".to_string()).await.unwrap();
 
-        let sender =
-            |_id: AgentId, msg: String| async move { Ok((format!("Done: {msg}"), 10u64, 5u64)) };
+        let sender = |_id: AgentId, msg: String| -> StepRunnerFuture<'static> {
+            Box::pin(async move { Ok((format!("Done: {msg}"), 10u64, 5u64)) })
+        };
 
         let result = engine.execute_run(run_id, mock_resolver, sender).await;
         assert!(result.is_ok());
