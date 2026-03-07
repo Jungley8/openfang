@@ -1,0 +1,95 @@
+---
+title: CLI Reference
+description: octarq command-line tool complete reference
+---
+
+`octarq` is the main CLI for Octarq Agent OS, supporting two modes:
+
+- **Daemon mode** — When `openfang dashboard` is running, CLI communicates with the daemon via HTTP
+- **In-process mode** — Without a daemon, starts a temporary kernel to execute commands
+
+## Quick Reference
+
+```bash
+openfang init                          # Initialize ~/.openfang/
+openfang dashboard                     # Start daemon
+openfang status                        # Check status
+openfang doctor                        # Diagnostic check
+
+openfang agent spawn <manifest.toml>   # Start agent
+openfang agent list                    # List agents
+openfang agent chat <id>               # Chat with agent
+openfang agent kill <id>               # Terminate agent
+
+openfang chat [agent]                  # Quick chat
+openfang hand activate <hand>          # Activate Hand
+openfang hand status <hand>            # Hand status
+openfang hand pause <hand>             # Pause Hand
+openfang hand list                     # List Hands
+
+openfang telos init                    # Initialize TELOS
+openfang telos status                  # TELOS status
+openfang telos preview <hand>          # Preview injection
+openfang telos edit <file>             # Edit TELOS file
+
+openfang workflow list                 # List workflows
+openfang workflow create <file>        # Create workflow
+openfang workflow run <id> <input>     # Run workflow
+
+openfang skill install <source>        # Install skill
+openfang skill list                    # List skills
+openfang skill search <query>          # Search FangHub
+
+openfang channel list                  # Channel status
+openfang channel setup <channel>       # Interactive setup
+
+openfang config show                   # Show config
+openfang config edit                   # Edit config
+
+openfang migrate --from openclaw       # Migrate from OpenClaw
+openfang mcp                           # Start MCP server
+```
+
+## Global Options
+
+| Option | Description |
+| --- | --- |
+| `--config <PATH>` | Custom config file path |
+| `--help` | Show help |
+| `--version` | Show version |
+
+## openfang init
+
+Initialize workspace. Creates `~/.openfang/` directory and default config.
+
+```bash
+openfang init          # Interactive guide
+openfang init --quick  # Skip prompts, auto-detect best provider
+```
+
+## openfang dashboard
+
+Start the daemon (kernel + API server).
+
+```bash
+openfang dashboard
+```
+
+Output:
+```
+  openfang Agent OS v0.3.26
+
+  [ok] Kernel started (groq/llama-3.3-70b-versatile)
+  [ok] 50 models available
+  API:    http://127.0.0.1:4200
+```
+
+## openfang doctor
+
+Run diagnostic checks:
+
+```bash
+openfang doctor          # Interactive output
+openfang doctor --json   # JSON format (script-friendly)
+openfang doctor --repair # Attempt automatic repair
+```

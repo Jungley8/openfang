@@ -1,0 +1,68 @@
+---
+title: LLM 供应商
+description: 27 个供应商、123+ 模型 — 智能路由与成本追踪
+---
+
+Octarq 内置 3 个原生 LLM 驱动（Anthropic、Gemini、OpenAI 兼容），覆盖 27 个供应商。
+
+## 快速设置
+
+```bash
+# 选一个供应商 — 设置环境变量 — 完成
+export GEMINI_API_KEY="your-key"        # 有免费套餐
+# 或
+export GROQ_API_KEY="your-key"          # 有免费套餐
+# 或
+export ANTHROPIC_API_KEY="your-key"
+# 或
+export OPENAI_API_KEY="your-key"
+```
+
+启动时自动检测已配置密钥的供应商。本地供应商 (Ollama, vLLM, LM Studio) 无需密钥。
+
+## 供应商列表
+
+| 供应商 | 驱动 | 环境变量 | 免费套餐 | 模型数 |
+| --- | --- | --- | --- | --- |
+| **Anthropic** | 原生 | `ANTHROPIC_API_KEY` | 否 | 3 |
+| **OpenAI** | OpenAI 兼容 | `OPENAI_API_KEY` | 否 | 6 |
+| **Google Gemini** | 原生 | `GEMINI_API_KEY` | 是 | 3 |
+| **DeepSeek** | OpenAI 兼容 | `DEEPSEEK_API_KEY` | 否 | 2 |
+| **Groq** | OpenAI 兼容 | `GROQ_API_KEY` | 是 | 4 |
+| **OpenRouter** | OpenAI 兼容 | `OPENROUTER_API_KEY` | 部分 | 3 |
+| **Mistral** | OpenAI 兼容 | `MISTRAL_API_KEY` | 否 | 3 |
+| **Together** | OpenAI 兼容 | `TOGETHER_API_KEY` | 否 | 3 |
+| **Fireworks** | OpenAI 兼容 | `FIREWORKS_API_KEY` | 否 | 2 |
+| **xAI** | OpenAI 兼容 | `XAI_API_KEY` | 否 | 2 |
+| **Ollama** | OpenAI 兼容 | 无需 | 本地 | — |
+| **vLLM** | OpenAI 兼容 | 无需 | 本地 | — |
+| **LM Studio** | OpenAI 兼容 | 无需 | 本地 | — |
+
+以及 Cohere、Perplexity、AI21、Cerebras、SambaNova、HuggingFace、Replicate 等。
+
+## Per-Agent 模型覆盖
+
+每个 Agent 可以使用不同的供应商：
+
+```toml
+[model]
+provider = "openai"
+model = "gpt-4o"
+api_key_env = "OPENAI_API_KEY"
+```
+
+## 模型别名
+
+常用快捷方式：
+
+| 别名 | 实际模型 |
+| --- | --- |
+| `claude` | claude-sonnet-4-20250514 |
+| `gpt` | gpt-4o |
+| `gemini` | gemini-2.5-flash |
+| `deepseek` | deepseek-chat |
+| `groq` | llama-3.3-70b-versatile |
+
+## 成本追踪
+
+内置计量引擎自动追踪每个 Agent 的 token 使用量和成本（美元），支持 20+ 模型家族的定价。

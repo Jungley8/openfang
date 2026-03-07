@@ -1,0 +1,101 @@
+---
+title: Configuration Guide
+description: config.toml complete reference — all configurable fields
+---
+
+Octarq reads configuration from a single TOML file:
+
+```
+~/.openfang/config.toml
+```
+
+**Key behaviors:**
+- All fields are optional; omitted fields use defaults
+- Channel configs (`[channels.telegram]`, etc.) are `Option<T>` — missing means the adapter is disabled, including an empty section header enables it
+- Secrets are **never stored in the config file** — use `api_key_env` to reference environment variable names
+
+## Minimal Configuration
+
+```toml
+[default_model]
+provider = "anthropic"
+model = "claude-sonnet-4-20250514"
+api_key_env = "ANTHROPIC_API_KEY"
+```
+
+Using local Ollama (no API key needed):
+
+```toml
+[default_model]
+provider = "ollama"
+model = "llama3.2:latest"
+base_url = "http://localhost:11434"
+api_key_env = ""
+```
+
+## Full Configuration Example
+
+```toml
+# Top-level fields
+home_dir = "~/.openfang"
+data_dir = "~/.openfang/data"
+log_level = "info"                   # trace | debug | info | warn | error
+api_listen = "127.0.0.1:4200"
+api_key = ""                         # API Bearer token (empty = no auth)
+
+# Default LLM provider
+[default_model]
+provider = "anthropic"
+model = "claude-sonnet-4-20250514"
+api_key_env = "ANTHROPIC_API_KEY"
+
+# Fallback providers
+[[fallback_providers]]
+provider = "groq"
+model = "llama-3.3-70b-versatile"
+api_key_env = "GROQ_API_KEY"
+
+# Memory
+[memory]
+embedding_model = "all-MiniLM-L6-v2"
+decay_rate = 0.1
+
+# Network (OFP)
+[network]
+listen_addresses = ["/ip4/0.0.0.0/tcp/0"]
+shared_secret = ""
+
+# Web tools
+[web]
+search_provider = "auto"             # auto | brave | tavily | perplexity | duckduckgo
+cache_ttl_minutes = 15
+
+# MCP servers
+[[mcp_servers]]
+name = "filesystem"
+timeout_secs = 30
+[mcp_servers.transport]
+type = "stdio"
+command = "npx"
+args = ["-y", "@modelcontextprotocol/server-filesystem", "/tmp"]
+
+# RBAC users
+[[users]]
+name = "Alice"
+role = "owner"
+[users.channel_bindings]
+telegram = "123456"
+```
+
+## Environment Variables
+
+| Variable | Description |
+| --- | --- |
+| `ANTHROPIC_API_KEY` | Anthropic API key |
+| `OPENAI_API_KEY` | OpenAI API key |
+| `GEMINI_API_KEY` | Google Gemini API key |
+| `GROQ_API_KEY` | Groq API key |
+| `DEEPSEEK_API_KEY` | DeepSeek API key |
+| `RUST_LOG` | Log level control |
+| `OPENFANG_AGENTS_DIR` | Agent template directory override |
+| `OCTARQ_TELOS_DIR` | TELOS directory override |

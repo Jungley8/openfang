@@ -1,0 +1,86 @@
+---
+title: TELOS 目标系统
+description: PAI 驱动的个人目标引擎 — 让 Agent 理解你的使命
+---
+
+## 什么是 TELOS
+
+TELOS 是 Octarq 的核心差异化特性。基于 Daniel Miessler 的 [PAI (Personal AI Infrastructure)](https://github.com/danielmiessler/Personal_AI_Infrastructure) 思想，TELOS 让每个 Agent 在执行任务之前，先加载你的个人目标上下文。
+
+**没有 TELOS 的 Agent**：你告诉它做什么，它就做什么。
+**有 TELOS 的 Agent**：它知道你是谁、你在追求什么、你面临什么挑战，然后在这个框架下执行任务。
+
+## 10 个 TELOS 文件
+
+| 文件 | 核心问题 | 作用 |
+| --- | --- | --- |
+| `MISSION.md` | 你为什么存在？ | 过滤与使命无关的任务 |
+| `GOALS.md` | 你现在追求什么？ | 为 Hand 提供优先级基准 |
+| `PROJECTS.md` | 你在做什么？ | 研究和线索生成的靶向 |
+| `BELIEFS.md` | 你相信什么？ | 避免输出与价值观冲突 |
+| `MODELS.md` | 你如何思考？ | Predictor 使用你偏好的分析框架 |
+| `STRATEGIES.md` | 你如何行动？ | Twitter/Lead 遵循你的沟通风格 |
+| `NARRATIVES.md` | 你的故事是什么？ | 增强背景意识 |
+| `LEARNED.md` | 你从经历中学到了什么？ | 防止重复犯错 |
+| `CHALLENGES.md` | 你面对什么障碍？ | 自动纳入研究范围 |
+| `IDEAS.md` | 你想探索什么？ | 主动探索清单 |
+
+## 快速开始
+
+```bash
+# 初始化 TELOS 目录（交互式引导）
+openfang telos init
+
+# 查看当前状态
+openfang telos status
+
+# 预览 Researcher Hand 将看到的上下文
+openfang telos preview researcher
+
+# 编辑目标文件
+openfang telos edit goals
+```
+
+## 注入模式
+
+不同的 Hand 需要不同深度的上下文：
+
+| 模式 | 注入内容 | 适用 Hand |
+| --- | --- | --- |
+| **full** | 全部 10 个文件 | Researcher、Collector、Predictor |
+| **focused** | Mission + Goals + Projects + Challenges | 大多数 Hand (默认) |
+| **minimal** | Mission + 活跃目标列表 | Lead、Twitter、Clip |
+| **custom** | 自定义文件列表 | 需要精确控制时 |
+| **none** | 不注入 | 纯技术任务 (如 Clip) |
+
+在 `HAND.toml` 中配置：
+
+```toml
+[telos]
+mode = "focused"
+max_chars = 3000
+position = "before_prompt"
+```
+
+## 各 Hand 的注入策略
+
+### Researcher — Full 模式
+注入全部 10 个文件。产出不再是泛泛的报告，而是"针对你的目标和挑战"的精准研究。
+
+### Lead — Minimal 模式
+从 PROJECTS.md 提取 ICP（理想客户画像），无需手动配置。目标客户随项目方向自动调整。
+
+### Collector — Full 模式
+从 TELOS 自动推导监控靶标：项目竞品、挑战解决方案、目标路径上的关键信号。
+
+### Predictor — Full + MODELS 优先
+使用 MODELS.md 中你认可的思维框架构建推理链。
+
+### Twitter — Minimal + STRATEGIES
+品牌声音来自 STRATEGIES.md，不依赖手动配置风格。
+
+## 安全与隐私
+
+- **端侧处理** — 所有 TELOS 解析和注入在本地完成
+- **隐私标记** — 用 `<!-- PRIVATE START -->` 标记敏感内容，仅在本地 LLM 时注入
+- **透明预览** — `octarq telos preview` 随时查看发送给 LLM 的内容

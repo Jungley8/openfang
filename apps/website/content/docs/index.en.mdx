@@ -1,0 +1,33 @@
+---
+title: Octarq Docs
+description: The Agent OS with a Soul — Installation, Configuration & Usage Guide
+icon: Rocket
+---
+
+Welcome to the Octarq documentation. Octarq is an autonomous agent runtime built on [OpenFang](https://github.com/RightNow-AI/openfang), powered by the **TELOS goal system** — every agent doesn't just execute tasks, it understands your mission and moves your life forward.
+
+## Core Features
+
+<Cards>
+  <Card title="Quick Start" href="/en/docs/getting-started">
+    Install and run your first agent in 5 minutes.
+  </Card>
+  <Card title="Architecture" href="/en/docs/architecture">
+    14 Rust crates, 137K lines of modular kernel design.
+  </Card>
+  <Card title="TELOS Goal System" href="/en/docs/telos">
+    PAI-powered personal goal engine — the soul of Octarq.
+  </Card>
+  <Card title="Autonomous Hands" href="/en/docs/hands">
+    7 pre-built capability packages: Researcher, Lead, Collector, Predictor, Twitter, Browser, Clip.
+  </Card>
+</Cards>
+
+## Installation
+
+```bash
+curl -fsSL https://octarq.jungley.net/install.sh | sh
+openfang init
+openfang dashboard
+# Dashboard at http://localhost:4200
+```

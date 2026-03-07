@@ -1,0 +1,57 @@
+---
+title: Channel Adapters
+description: 40+ messaging platform integrations — connect your agents anywhere
+---
+
+Octarq ships with 40 channel adapters, connecting your agents to every platform your users are on.
+
+## Adapter List
+
+**Core:** Telegram, Discord, Slack, WhatsApp, Signal, Matrix, Email (IMAP/SMTP)
+
+**Enterprise:** Microsoft Teams, Mattermost, Google Chat, Webex, Feishu/Lark, Zulip
+
+**Social:** LINE, Viber, Facebook Messenger, Mastodon, Bluesky, Reddit, LinkedIn, Twitch
+
+**Community:** IRC, XMPP, Guilded, Revolt, Keybase, Discourse, Gitter
+
+**Privacy:** Threema, Nostr, Mumble, Nextcloud Talk, Rocket.Chat, Ntfy, Gotify
+
+**Office:** Pumble, Flock, Twist, DingTalk, Zalo, Webhooks
+
+## Per-Channel Features
+
+Each adapter supports:
+- **Model override** — Different LLM per channel
+- **DM/group policy** — Control who can interact
+- **Rate limiting** — Prevent message flooding
+- **Output formatting** — Markdown → TelegramHTML / SlackMrkdwn / plain text
+- **Thread support** — Threaded conversations on supported platforms
+
+## Configuration Example
+
+```toml
+[channels.telegram]
+bot_token_env = "TELEGRAM_BOT_TOKEN"
+allowed_users = ["123456"]
+
+[channels.telegram.overrides]
+model_provider = "groq"
+model_name = "llama-3.3-70b-versatile"
+dm_policy = "allow_listed"
+group_policy = "mention_only"
+```
+
+## Channel Commands
+
+Users can use built-in commands in any channel:
+
+| Command | Description |
+| --- | --- |
+| `/models` | List available models |
+| `/providers` | List provider status |
+| `/model <name>` | Switch current model |
+| `/new` | Start new session |
+| `/compact` | Compact session history |
+| `/usage` | View usage statistics |
+| `/think` | Enable extended thinking mode |

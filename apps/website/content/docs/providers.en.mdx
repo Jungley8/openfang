@@ -1,0 +1,68 @@
+---
+title: LLM Providers
+description: 27 providers, 123+ models — intelligent routing with cost tracking
+---
+
+Octarq ships with 3 native LLM drivers (Anthropic, Gemini, OpenAI-compatible), covering 27 providers.
+
+## Quick Setup
+
+```bash
+# Pick a provider — set the env var — done
+export GEMINI_API_KEY="your-key"        # Has a free tier
+# Or
+export GROQ_API_KEY="your-key"          # Has a free tier
+# Or
+export ANTHROPIC_API_KEY="your-key"
+# Or
+export OPENAI_API_KEY="your-key"
+```
+
+Providers with configured keys are auto-detected at startup. Local providers (Ollama, vLLM, LM Studio) need no keys.
+
+## Provider List
+
+| Provider | Driver | Env Variable | Free Tier | Models |
+| --- | --- | --- | --- | --- |
+| **Anthropic** | Native | `ANTHROPIC_API_KEY` | No | 3 |
+| **OpenAI** | OpenAI-compatible | `OPENAI_API_KEY` | No | 6 |
+| **Google Gemini** | Native | `GEMINI_API_KEY` | Yes | 3 |
+| **DeepSeek** | OpenAI-compatible | `DEEPSEEK_API_KEY` | No | 2 |
+| **Groq** | OpenAI-compatible | `GROQ_API_KEY` | Yes | 4 |
+| **OpenRouter** | OpenAI-compatible | `OPENROUTER_API_KEY` | Partial | 3 |
+| **Mistral** | OpenAI-compatible | `MISTRAL_API_KEY` | No | 3 |
+| **Together** | OpenAI-compatible | `TOGETHER_API_KEY` | No | 3 |
+| **Fireworks** | OpenAI-compatible | `FIREWORKS_API_KEY` | No | 2 |
+| **xAI** | OpenAI-compatible | `XAI_API_KEY` | No | 2 |
+| **Ollama** | OpenAI-compatible | None | Local | — |
+| **vLLM** | OpenAI-compatible | None | Local | — |
+| **LM Studio** | OpenAI-compatible | None | Local | — |
+
+Plus Cohere, Perplexity, AI21, Cerebras, SambaNova, HuggingFace, Replicate, and more.
+
+## Per-Agent Model Override
+
+Each agent can use a different provider:
+
+```toml
+[model]
+provider = "openai"
+model = "gpt-4o"
+api_key_env = "OPENAI_API_KEY"
+```
+
+## Model Aliases
+
+Common shortcuts:
+
+| Alias | Actual Model |
+| --- | --- |
+| `claude` | claude-sonnet-4-20250514 |
+| `gpt` | gpt-4o |
+| `gemini` | gemini-2.5-flash |
+| `deepseek` | deepseek-chat |
+| `groq` | llama-3.3-70b-versatile |
+
+## Cost Tracking
+
+The built-in metering engine automatically tracks token usage and cost (USD) per agent, with pricing for 20+ model families.

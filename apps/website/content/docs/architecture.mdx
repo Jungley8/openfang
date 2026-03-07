@@ -1,0 +1,99 @@
+---
+title: 架构概览
+description: 14 个 Rust crate、137K 行代码的模块化内核设计
+---
+
+Octarq 基于 OpenFang 构建，是一个完整的 **Agent 操作系统**，不是聊天机器人框架，不是 LLM 的 Python 封装。它是从零开始用 Rust 构建的自主 Agent 操作系统。
+
+## Crate 结构
+
+整个系统组织为 Cargo workspace，包含 14 个 crate。依赖从上往下流动：
+
+```
+openfang-cli            CLI 接口，守护进程自动检测，MCP 服务器
+    |
+openfang-desktop        Tauri 2.0 桌面应用 (WebView + 系统托盘)
+    |
+openfang-api            REST/WS/SSE API 服务器 (Axum 0.8)，140+ 端点
+    |
+openfang-kernel         内核：组装所有子系统，工作流引擎，RBAC，计量
+    |
+    +-- openfang-runtime    Agent 循环，3 个 LLM 驱动，53 个工具，WASM 沙箱
+    +-- openfang-channels   40 个渠道适配器，桥接器，格式化器
+    +-- openfang-wire       OFP P2P 协议 (HMAC-SHA256 认证)
+    +-- openfang-skills     60 个内置技能，FangHub 市场
+    +-- openfang-hands      7 个自主 Hand，HAND.toml 解析器
+    +-- openfang-extensions MCP 模板，AES-256 凭证库，OAuth2
+    +-- openfang-telos      TELOS 目标系统，上下文注入引擎
+    |
+openfang-memory         SQLite 持久化，向量嵌入，规范化会话
+    |
+openfang-types          核心类型，污点追踪，Ed25519 签名，模型目录
+```
+
+## 内核启动序列
+
+`OpenFangKernel::boot_with_config()` 执行以下步骤：
+
+1. **加载配置** — 读取 `~/.openfang/config.toml`，应用默认值
+2. **初始化内存基底** — 打开 SQLite，运行 schema 迁移 (v1-v5)
+3. **初始化 LLM 驱动** — 创建对应供应商的驱动实例
+4. **构建模型目录** — 51 个内置模型，20+ 别名，27 个供应商
+5. **初始化核心子系统** — AgentRegistry、CapabilityManager、EventBus、Scheduler、Supervisor、WorkflowEngine 等
+6. **加载技能注册表** — 60 个内置技能 + 用户安装的技能
+7. **恢复持久化 Agent** — 从 SQLite 加载并重新注册
+8. **发布 KernelStarted 事件**
+
+## Agent 生命周期
+
+```
+    spawn                    message/tick              kill
+      |                         |                       |
+      v                         v                       v
+  [Running] <------------> [Running] ---------> [Terminated]
+      |                                              ^
+      |          shutdown                            |
+      +----------> [Suspended] ---------------------+
+                      |          reboot/restore
+                      +------> [Running]
+```
+
+- **Running** — Agent 活跃，可接收消息
+- **Suspended** — 暂停 (守护进程关闭时)，持久化到 SQLite
+- **Terminated** — 已销毁，从注册表移除
+
+## 内存基底
+
+6 层存储架构：
+
+| 层 | 功能 |
+| --- | --- |
+| **KV 存储** | 每 Agent 键值存储 + 共享命名空间 |
+| **语义搜索** | 向量嵌入 + 余弦相似度 |
+| **知识图谱** | 实体-关系存储和图遍历 |
+| **会话管理** | 对话历史 + token 计数 |
+| **任务板** | 多 Agent 协作的共享任务队列 |
+| **规范化会话** | 跨渠道记忆，上下文摘要注入 |
+
+## 安全概览
+
+16 个安全系统形成纵深防御。详见 [安全体系](/cn/docs/security)。
+
+| # | 系统 | 防护目标 |
+| --- | --- | --- |
+| 1 | WASM 双重计量沙箱 | CPU DoS，无限循环 |
+| 2 | Merkle 哈希链审计 | 日志篡改 |
+| 3 | 信息流污点追踪 | 提示注入，数据泄露 |
+| 4 | Ed25519 清单签名 | 供应链攻击 |
+| 5 | SSRF 防护 | 服务端请求伪造 |
+| 6 | 密钥零化 | 内存取证，密钥泄露 |
+| 7 | OFP 互认证 | 未授权 P2P 连接 |
+| 8 | 能力门控 | Agent 越权操作 |
+| 9 | 安全头 | XSS，点击劫持 |
+| 10 | GCRA 速率限制 | API 滥用 |
+| 11 | 路径遍历防护 | 目录遍历攻击 |
+| 12 | 子进程沙箱 | 密钥通过子进程泄露 |
+| 13 | 提示注入扫描 | 恶意技能提示 |
+| 14 | 循环守卫 | Agent 工具循环 |
+| 15 | 会话修复 | LLM 对话历史损坏 |
+| 16 | 健康端点脱敏 | 信息泄露 |

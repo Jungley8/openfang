@@ -1,0 +1,186 @@
+---
+title: 快速开始
+description: 5 分钟内安装 Octarq 并与你的第一个 Agent 对话
+---
+
+## 安装
+
+### 方式一：桌面应用 (Windows / macOS / Linux)
+
+从 [最新发布页](https://github.com/Jungley8/Octarq/releases/latest) 下载对应平台的安装包：
+
+| 平台 | 文件 |
+| --- | --- |
+| Windows | `.msi` 安装程序 |
+| macOS | `.dmg` 磁盘镜像 |
+| Linux | `.AppImage` 或 `.deb` |
+
+桌面应用包含完整的 Octarq 系统，支持系统托盘、自动更新和桌面通知。
+
+### 方式二：Shell 安装 (Linux / macOS)
+
+```bash
+curl -sSf https://octarq.jungley.net/install.sh | sh
+```
+
+### 方式三：PowerShell 安装 (Windows)
+
+```powershell
+irm https://octarq.jungley.net/install.ps1 | iex
+```
+
+### 方式四：Cargo 安装
+
+需要 Rust 1.75+：
+
+```bash
+cargo install --git https://github.com/Jungley8/Octarq openfang-cli
+```
+
+或从源码构建：
+
+```bash
+git clone https://github.com/Jungley8/Octarq.git
+cd Octarq
+cargo install --path crates/openfang-cli
+```
+
+### 方式五：Docker
+
+```bash
+docker pull ghcr.io/Jungley8/octarq:latest
+
+docker run -d \
+  --name octarq \
+  -p 4200:4200 \
+  -e ANTHROPIC_API_KEY=$ANTHROPIC_API_KEY \
+  -v octarq-data:/data \
+  ghcr.io/Jungley8/octarq:latest
+```
+
+### 验证安装
+
+```bash
+openfang --version
+```
+
+---
+
+## 配置
+
+### 初始化
+
+```bash
+openfang init
+```
+
+这会创建：
+
+```
+~/.openfang/
+  config.toml    # 主配置文件
+  data/          # 数据库和运行时数据
+  agents/        # Agent 清单 (可选)
+```
+
+### 设置 API 密钥
+
+openfang 需要至少一个 LLM 供应商的 API 密钥：
+
+```bash
+# Anthropic (Claude)
+export ANTHROPIC_API_KEY=sk-ant-...
+
+# 或 OpenAI
+export OPENAI_API_KEY=sk-...
+
+# 或 Groq (有免费套餐)
+export GROQ_API_KEY=gsk_...
+
+# 或 Gemini (有免费套餐)
+export GEMINI_API_KEY=AIza...
+```
+
+将上述 `export` 命令添加到你的 shell 配置文件 (`~/.zshrc`, `~/.bashrc` 等) 中以持久化。
+
+### 验证配置
+
+```bash
+openfang doctor
+```
+
+---
+
+## 启动 Agent
+
+### 使用内置模板
+
+openfang 内置 30 个 Agent 模板。启动 hello-world 示例：
+
+```bash
+openfang agent spawn agents/hello-world/agent.toml
+```
+
+### 与 Agent 对话
+
+```bash
+openfang chat hello-world
+```
+
+示例会话：
+
+```
+Chat session started. Type 'exit' or Ctrl+C to quit.
+
+you> 你好！你能做什么？
+
+agent> 我可以：
+- 读取文件系统中的文件
+- 列出目录内容
+- 获取网页内容
+
+试着让我读取一个文件或查找一些网上的信息！
+
+  [tokens: 142 in / 87 out | iterations: 1]
+```
+
+---
+
+## 启动守护进程
+
+```bash
+openfang dashboard
+```
+
+守护进程提供：
+- **REST API** `http://127.0.0.1:4200/api/`
+- **WebSocket** `ws://127.0.0.1:4200/api/agents/{id}/ws`
+- **WebChat UI** `http://127.0.0.1:4200/`
+
+---
+
+## 设置 TELOS
+
+TELOS 是 Octarq 的灵魂。初始化你的个人目标档案：
+
+```bash
+openfang telos init
+```
+
+然后预览 Agent 将如何理解你的目标：
+
+```bash
+openfang telos preview researcher
+```
+
+详见 [TELOS 目标系统](/cn/docs/telos)。
+
+---
+
+## 下一步
+
+- [架构概览](/cn/docs/architecture) — 了解内核设计
+- [自主 Hand](/cn/docs/hands) — 探索 7 个预置自主能力包
+- [LLM 供应商](/cn/docs/providers) — 配置 27 个供应商
+- [渠道适配器](/cn/docs/channels) — 连接 40+ 消息平台
+- [CLI 参考](/cn/docs/cli-reference) — 完整命令行参考

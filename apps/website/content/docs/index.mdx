@@ -1,0 +1,44 @@
+---
+title: Octarq 文档
+description: 有灵魂的 Agent OS — 安装、配置与使用指南
+icon: Rocket
+---
+
+欢迎来到 Octarq 文档。Octarq 是基于 [OpenFang](https://github.com/RightNow-AI/openfang) 的自主 Agent 运行时，内置 **TELOS 目标系统**，让每个 Agent 不只是执行任务 — 它理解你的使命，朝着你的目标推进。
+
+## 核心特性
+
+<Cards>
+  <Card title="快速开始" href="/cn/docs/getting-started">
+    5 分钟内安装并运行第一个 Agent。
+  </Card>
+  <Card title="架构概览" href="/cn/docs/architecture">
+    14 个 Rust crate、137K 行代码的模块化内核设计。
+  </Card>
+  <Card title="TELOS 目标系统" href="/cn/docs/telos">
+    PAI 驱动的个人目标引擎 — Octarq 的灵魂。
+  </Card>
+  <Card title="自主 Hand" href="/cn/docs/hands">
+    7 个预置自主能力包：Researcher、Lead、Collector、Predictor、Twitter、Browser、Clip。
+  </Card>
+</Cards>
+
+## 为什么选择 Octarq
+
+| 特性 | Octarq |
+| --- | --- |
+| **语言** | Rust — 单一 ~32MB 二进制 |
+| **冷启动** | {'<'}200ms |
+| **安全** | 16 层纵深防御 |
+| **渠道** | 40+ 消息平台适配器 |
+| **LLM 供应商** | 27 个供应商，123+ 模型 |
+| **独特之处** | TELOS 目标系统 — 有灵魂的 Agent |
+
+## 安装
+
+```bash
+curl -fsSL https://octarq.jungley.net/install.sh | sh
+openfang init
+openfang dashboard
+# 仪表盘运行在 http://localhost:4200
+```

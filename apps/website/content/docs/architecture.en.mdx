@@ -1,0 +1,99 @@
+---
+title: Architecture
+description: 14 Rust crates, 137K lines of modular kernel design
+---
+
+Octarq is built on OpenFang — a complete **Agent Operating System**. Not a chatbot framework, not a Python wrapper around LLMs. It's an autonomous agent OS built from scratch in Rust.
+
+## Crate Structure
+
+The system is organized as a Cargo workspace with 14 crates. Dependencies flow top-down:
+
+```
+openfang-cli            CLI interface, daemon auto-detection, MCP server
+    |
+openfang-desktop        Tauri 2.0 desktop app (WebView + system tray)
+    |
+openfang-api            REST/WS/SSE API server (Axum 0.8), 140+ endpoints
+    |
+openfang-kernel         Kernel: assembles all subsystems, workflow engine, RBAC, metering
+    |
+    +-- openfang-runtime    Agent loop, 3 LLM drivers, 53 tools, WASM sandbox
+    +-- openfang-channels   40 channel adapters, bridges, formatters
+    +-- openfang-wire       OFP P2P protocol (HMAC-SHA256 auth)
+    +-- openfang-skills     60 built-in skills, FangHub marketplace
+    +-- openfang-hands      7 autonomous Hands, HAND.toml parser
+    +-- openfang-extensions MCP templates, AES-256 credential vault, OAuth2
+    +-- openfang-telos      TELOS goal system, context injection engine
+    |
+openfang-memory         SQLite persistence, vector embeddings, normalized sessions
+    |
+openfang-types          Core types, taint tracking, Ed25519 signing, model catalog
+```
+
+## Kernel Boot Sequence
+
+`OpenFangKernel::boot_with_config()` performs the following steps:
+
+1. **Load config** — Read `~/.openfang/config.toml`, apply defaults
+2. **Initialize memory substrate** — Open SQLite, run schema migrations (v1-v5)
+3. **Initialize LLM drivers** — Create driver instances for configured providers
+4. **Build model catalog** — 51 built-in models, 20+ aliases, 27 providers
+5. **Initialize core subsystems** — AgentRegistry, CapabilityManager, EventBus, Scheduler, Supervisor, WorkflowEngine, etc.
+6. **Load skill registry** — 60 built-in skills + user-installed skills
+7. **Restore persisted agents** — Load from SQLite and re-register
+8. **Emit KernelStarted event**
+
+## Agent Lifecycle
+
+```
+    spawn                    message/tick              kill
+      |                         |                       |
+      v                         v                       v
+  [Running] <------------> [Running] ---------> [Terminated]
+      |                                              ^
+      |          shutdown                            |
+      +----------> [Suspended] ---------------------+
+                      |          reboot/restore
+                      +------> [Running]
+```
+
+- **Running** — Agent is active and accepting messages
+- **Suspended** — Paused (when daemon shuts down), persisted to SQLite
+- **Terminated** — Destroyed, removed from registry
+
+## Memory Substrate
+
+6-layer storage architecture:
+
+| Layer | Function |
+| --- | --- |
+| **KV Store** | Per-agent key-value store + shared namespace |
+| **Semantic Search** | Vector embeddings + cosine similarity |
+| **Knowledge Graph** | Entity-relationship store and graph traversal |
+| **Session Management** | Conversation history + token counting |
+| **Task Board** | Shared task queue for multi-agent collaboration |
+| **Normalized Sessions** | Cross-channel memory, context summary injection |
+
+## Security Overview
+
+16 security systems form defense-in-depth. See [Security](/en/docs/security) for details.
+
+| # | System | Threat Mitigated |
+| --- | --- | --- |
+| 1 | WASM dual-metering sandbox | CPU DoS, infinite loops |
+| 2 | Merkle hash-chain audit | Log tampering |
+| 3 | Information-flow taint tracking | Prompt injection, data exfiltration |
+| 4 | Ed25519 manifest signing | Supply chain attacks |
+| 5 | SSRF protection | Server-side request forgery |
+| 6 | Secret zeroization | Memory forensics, key leakage |
+| 7 | OFP mutual authentication | Unauthorized P2P connections |
+| 8 | Capability gating | Agent privilege escalation |
+| 9 | Security headers | XSS, clickjacking |
+| 10 | GCRA rate limiting | API abuse |
+| 11 | Path traversal protection | Directory traversal attacks |
+| 12 | Subprocess sandbox | Secret leakage via child processes |
+| 13 | Prompt injection scanning | Malicious skill prompts |
+| 14 | Loop guard | Agent tool-call loops |
+| 15 | Session fixation | LLM conversation history corruption |
+| 16 | Health endpoint sanitization | Information disclosure |

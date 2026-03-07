@@ -1,0 +1,101 @@
+---
+title: 配置指南
+description: config.toml 完整参考 — 所有可配置字段
+---
+
+openfang 从单一 TOML 文件读取配置：
+
+```
+~/.openfang/config.toml
+```
+
+**关键行为：**
+- 所有字段都是可选的，省略的字段使用默认值
+- 渠道配置 (`[channels.telegram]` 等) 为 `Option<T>` — 缺失时适配器禁用，包含空段头即启用
+- 密钥**永远不存储在配置文件中**，而是通过 `api_key_env` 引用环境变量名
+
+## 最小配置
+
+```toml
+[default_model]
+provider = "anthropic"
+model = "claude-sonnet-4-20250514"
+api_key_env = "ANTHROPIC_API_KEY"
+```
+
+使用本地 Ollama（无需 API 密钥）：
+
+```toml
+[default_model]
+provider = "ollama"
+model = "llama3.2:latest"
+base_url = "http://localhost:11434"
+api_key_env = ""
+```
+
+## 完整配置示例
+
+```toml
+# 顶级字段
+home_dir = "~/.openfang"
+data_dir = "~/.openfang/data"
+log_level = "info"                   # trace | debug | info | warn | error
+api_listen = "127.0.0.1:4200"
+api_key = ""                         # API Bearer token (空 = 无认证)
+
+# 默认 LLM 供应商
+[default_model]
+provider = "anthropic"
+model = "claude-sonnet-4-20250514"
+api_key_env = "ANTHROPIC_API_KEY"
+
+# 备用供应商
+[[fallback_providers]]
+provider = "groq"
+model = "llama-3.3-70b-versatile"
+api_key_env = "GROQ_API_KEY"
+
+# 内存
+[memory]
+embedding_model = "all-MiniLM-L6-v2"
+decay_rate = 0.1
+
+# 网络 (OFP)
+[network]
+listen_addresses = ["/ip4/0.0.0.0/tcp/0"]
+shared_secret = ""
+
+# Web 工具
+[web]
+search_provider = "auto"             # auto | brave | tavily | perplexity | duckduckgo
+cache_ttl_minutes = 15
+
+# MCP 服务器
+[[mcp_servers]]
+name = "filesystem"
+timeout_secs = 30
+[mcp_servers.transport]
+type = "stdio"
+command = "npx"
+args = ["-y", "@modelcontextprotocol/server-filesystem", "/tmp"]
+
+# RBAC 用户
+[[users]]
+name = "Alice"
+role = "owner"
+[users.channel_bindings]
+telegram = "123456"
+```
+
+## 环境变量
+
+| 变量 | 说明 |
+| --- | --- |
+| `ANTHROPIC_API_KEY` | Anthropic API 密钥 |
+| `OPENAI_API_KEY` | OpenAI API 密钥 |
+| `GEMINI_API_KEY` | Google Gemini API 密钥 |
+| `GROQ_API_KEY` | Groq API 密钥 |
+| `DEEPSEEK_API_KEY` | DeepSeek API 密钥 |
+| `RUST_LOG` | 日志级别控制 |
+| `OPENFANG_AGENTS_DIR` | Agent 模板目录覆盖 |
+| `OCTARQ_TELOS_DIR` | TELOS 目录覆盖 |

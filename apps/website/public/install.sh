@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # OpenFang installer — works on Linux, macOS, WSL
-# Usage: curl -sSf https://openfang.sh | sh
+# Usage: curl -sSf https://octarq.jungley.net/install.sh | sh
 #
 # Environment variables:
 #   OPENFANG_INSTALL_DIR  — custom install directory (default: ~/.openfang/bin)
@@ -8,7 +8,7 @@
 
 set -euo pipefail
 
-REPO="RightNow-AI/openfang"
+REPO="Jungley8/Octarq"
 INSTALL_DIR="${OPENFANG_INSTALL_DIR:-$HOME/.openfang/bin}"
 
 detect_platform() {
@@ -25,7 +25,7 @@ detect_platform() {
         mingw*|msys*|cygwin*)
             echo ""
             echo "  For Windows, use PowerShell instead:"
-            echo "    irm https://openfang.sh/install.ps1 | iex"
+            echo "    irm https://octarq.jungley.net/install.ps1 | iex"
             echo ""
             echo "  Or download the .msi installer from:"
             echo "    https://github.com/$REPO/releases/latest"

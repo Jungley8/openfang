@@ -1,0 +1,61 @@
+---
+title: Security
+description: 16-layer defense-in-depth — independently testable security systems
+---
+
+Octarq implements **defense-in-depth** security. Rather than relying on a single mechanism, 16 independent systems form overlapping layers — any single layer failure is caught by the others.
+
+## Security Systems Overview
+
+| # | System | Threat Mitigated |
+| --- | --- | --- |
+| 1 | **WASM dual-metering sandbox** | CPU DoS, infinite loops |
+| 2 | **Merkle hash-chain audit** | Log tampering |
+| 3 | **Information-flow taint tracking** | Prompt injection, data exfiltration |
+| 4 | **Ed25519 manifest signing** | Supply chain attacks |
+| 5 | **SSRF protection** | Server-side request forgery |
+| 6 | **Secret zeroization** | Memory forensics, key leakage |
+| 7 | **OFP mutual authentication** | Unauthorized P2P connections |
+| 8 | **Capability gating** | Agent privilege escalation |
+| 9 | **Security headers** | XSS, clickjacking, MIME sniffing |
+| 10 | **GCRA rate limiting** | API abuse, denial of service |
+| 11 | **Path traversal protection** | Directory traversal attacks |
+| 12 | **Subprocess sandbox** | Secret leakage via child processes |
+| 13 | **Prompt injection scanning** | Malicious skill prompts |
+| 14 | **Loop guard** | Agent tool-call loops |
+| 15 | **Session fixation** | LLM conversation history corruption |
+| 16 | **Health endpoint sanitization** | Information disclosure |
+
+## Capability Gating
+
+Every agent operation requires a capability check. Capabilities are declared in the manifest and enforced at runtime:
+
+```toml
+[capabilities]
+tools = ["file_read", "file_list", "web_fetch"]
+memory_read = ["*"]
+memory_write = ["self.*"]
+network = ["api.anthropic.com"]
+shell = []
+agent_spawn = false
+```
+
+**Capability inheritance validation** — Child agent capabilities must be a subset of the parent's, preventing privilege escalation.
+
+## WASM Dual Metering
+
+Untrusted WASM modules run in a Wasmtime sandbox with two independent metering mechanisms:
+- **Fuel metering** — Counts instructions, terminates when budget is exhausted
+- **Epoch interruption** — Watchdog thread monitors wall-clock time
+
+Both run independently — even if one fails, the other terminates runaway modules.
+
+## Merkle Audit Chain
+
+Every audit entry includes the cryptographic hash of the previous entry. Tampering with any record breaks the entire chain.
+
+## Secret Security
+
+- All API key fields use `Zeroizing<String>`, automatically wiped from memory on drop
+- Sensitive config fields are automatically redacted in Debug output and logs
+- Subprocesses use `env_clear()` + selective variable passthrough

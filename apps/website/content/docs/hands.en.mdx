@@ -1,0 +1,80 @@
+---
+title: Autonomous Hands
+description: 7 pre-built capability packages — agents that work for you 24/7
+---
+
+**Hands** are Octarq's core innovation — pre-built autonomous capability packages that run on a schedule without prompting. This isn't a chatbot. This is an agent that wakes up at 6 AM, researches your competitors, builds a knowledge graph, scores findings, and sends the report to Telegram before you've had your coffee.
+
+Each Hand includes:
+- **HAND.toml** — Manifest: declares tools, settings, requirements, and dashboard metrics
+- **System prompt** — Multi-stage operational playbook (500+ word expert procedures)
+- **SKILL.md** — Runtime-injected domain knowledge
+- **Guardrails** — Approval gates for sensitive operations
+
+Everything is compiled into the binary. No downloads, no pip install, no Docker pull.
+
+## 7 Built-in Hands
+
+### Clip
+Accepts YouTube URLs, downloads, identifies highlights, cuts into vertical short-form clips (with subtitles and thumbnails), optionally adds AI voiceover, publishes to Telegram and WhatsApp. 8-stage pipeline with FFmpeg + yt-dlp + 5 STT backends.
+
+### Lead
+Runs daily. Discovers prospects matching your ICP, enriches with web research, scores 0-100, deduplicates against your existing database, delivers qualified leads as CSV/JSON/Markdown.
+
+### Collector
+OSINT-grade intelligence. Give it a target (company, person, topic), it continuously monitors — change detection, sentiment tracking, knowledge graph building, alerts on critical changes.
+
+### Predictor
+Superforecasting engine. Collects multi-source signals, builds calibrated reasoning chains, produces predictions with confidence intervals, tracks its own accuracy with Brier scores. Has a contrarian thinking mode.
+
+### Researcher
+Deep autonomous research. Cross-references multiple sources, evaluates credibility with CRAAP criteria, generates cited reports (APA format), supports multilingual output.
+
+### Twitter
+Autonomous Twitter/X management. Creates content with 7 rotating formats, schedules optimal posting times, responds to mentions, tracks performance metrics. Has an approval queue — nothing posts without your confirmation.
+
+### Browser
+Web automation. Navigates websites, fills forms, clicks through multi-step workflows. Uses Playwright + session persistence. **Mandatory purchase approval gate** — never spends your money without confirmation.
+
+## Usage
+
+```bash
+# Activate Researcher Hand — starts working immediately
+openfang hand activate researcher
+
+# Check progress
+openfang hand status researcher
+
+# Activate Lead on daily schedule
+openfang hand activate lead
+
+# Pause (state preserved)
+openfang hand pause lead
+
+# List all available Hands
+openfang hand list
+```
+
+## Build Your Own Hand
+
+Define a `HAND.toml` with tools, settings, and system prompt:
+
+```toml
+name = "my-hand"
+version = "0.1.0"
+description = "Custom Hand"
+
+[telos]
+mode = "focused"
+max_chars = 3000
+
+[schedule]
+mode = "periodic"
+interval = "6h"
+
+[[tools]]
+name = "web_search"
+
+[[tools]]
+name = "web_fetch"
+```

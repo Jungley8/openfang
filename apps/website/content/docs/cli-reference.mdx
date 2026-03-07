@@ -1,0 +1,95 @@
+---
+title: CLI 命令参考
+description: openfang 命令行工具完整参考
+---
+
+`openfang` 是 Octarq Agent OS 的主命令行接口，支持两种模式：
+
+- **守护进程模式** — 当 `openfang dashboard` 运行时，CLI 通过 HTTP 与守护进程通信
+- **进程内模式** — 无守护进程时，启动临时内核执行命令
+
+## 常用命令速查
+
+```bash
+openfang init                          # 初始化 ~/.openfang/
+openfang dashboard                     # 启动守护进程
+openfang status                        # 查看状态
+openfang doctor                        # 诊断检查
+
+openfang agent spawn <manifest.toml>   # 启动 Agent
+openfang agent list                    # 列出 Agent
+openfang agent chat <id>               # 与 Agent 对话
+openfang agent kill <id>               # 终止 Agent
+
+openfang chat [agent]                  # 快速对话
+openfang hand activate <hand>          # 激活 Hand
+openfang hand status <hand>            # Hand 状态
+openfang hand pause <hand>             # 暂停 Hand
+openfang hand list                     # 列出 Hand
+
+openfang telos init                    # 初始化 TELOS
+openfang telos status                  # TELOS 状态
+openfang telos preview <hand>          # 预览注入
+openfang telos edit <file>             # 编辑 TELOS 文件
+
+openfang workflow list                 # 列出工作流
+openfang workflow create <file>        # 创建工作流
+openfang workflow run <id> <input>     # 运行工作流
+
+openfang skill install <source>        # 安装技能
+openfang skill list                    # 列出技能
+openfang skill search <query>          # 搜索 FangHub
+
+openfang channel list                  # 渠道状态
+openfang channel setup <channel>       # 交互式配置
+
+openfang config show                   # 显示配置
+openfang config edit                   # 编辑配置
+
+openfang migrate --from openclaw       # 从 OpenClaw 迁移
+openfang mcp                           # 启动 MCP 服务器
+```
+
+## 全局选项
+
+| 选项 | 说明 |
+| --- | --- |
+| `--config <PATH>` | 自定义配置文件路径 |
+| `--help` | 显示帮助信息 |
+| `--version` | 显示版本号 |
+
+## openfang init
+
+初始化工作空间。创建 `~/.openfang/` 目录和默认配置。
+
+```bash
+openfang init          # 交互式引导
+openfang init --quick  # 跳过提示，自动检测最佳供应商
+```
+
+## openfang dashboard
+
+启动守护进程（内核 + API 服务器）。
+
+```bash
+openfang dashboard
+```
+
+输出：
+```
+  openfang Agent OS v0.3.26
+
+  [ok] 内核启动 (groq/llama-3.3-70b-versatile)
+  [ok] 50 个模型可用
+  API:    http://127.0.0.1:4200
+```
+
+## openfang doctor
+
+运行诊断检查：
+
+```bash
+openfang doctor          # 交互式输出
+openfang doctor --json   # JSON 格式（脚本友好）
+openfang doctor --repair # 尝试自动修复
+```

@@ -1,0 +1,186 @@
+---
+title: Quick Start
+description: Install Octarq and talk to your first agent in 5 minutes
+---
+
+## Installation
+
+### Option 1: Desktop App (Windows / macOS / Linux)
+
+Download the installer for your platform from the [latest release page](https://github.com/Jungley8/Octarq/releases/latest):
+
+| Platform | File |
+| --- | --- |
+| Windows | `.msi` installer |
+| macOS | `.dmg` disk image |
+| Linux | `.AppImage` or `.deb` |
+
+The desktop app includes the full Octarq system with system tray, auto-update, and desktop notifications.
+
+### Option 2: Shell Install (Linux / macOS)
+
+```bash
+curl -sSf https://octarq.jungley.net/install.sh | sh
+```
+
+### Option 3: PowerShell Install (Windows)
+
+```powershell
+irm https://octarq.jungley.net/install.ps1 | iex
+```
+
+### Option 4: Cargo Install
+
+Requires Rust 1.75+:
+
+```bash
+cargo install --git https://github.com/Jungley8/Octarq openfang-cli
+```
+
+Or build from source:
+
+```bash
+git clone https://github.com/Jungley8/Octarq.git
+cd Octarq
+cargo install --path crates/openfang-cli
+```
+
+### Option 5: Docker
+
+```bash
+docker pull ghcr.io/Jungley8/octarq:latest
+
+docker run -d \
+  --name octarq \
+  -p 4200:4200 \
+  -e ANTHROPIC_API_KEY=$ANTHROPIC_API_KEY \
+  -v octarq-data:/data \
+  ghcr.io/Jungley8/octarq:latest
+```
+
+### Verify Installation
+
+```bash
+openfang --version
+```
+
+---
+
+## Configuration
+
+### Initialize
+
+```bash
+openfang init
+```
+
+This creates:
+
+```
+~/.openfang/
+  config.toml    # Main configuration file
+  data/          # Database and runtime data
+  agents/        # Agent manifests (optional)
+```
+
+### Set API Keys
+
+openfang requires at least one LLM provider API key:
+
+```bash
+# Anthropic (Claude)
+export ANTHROPIC_API_KEY=sk-ant-...
+
+# Or OpenAI
+export OPENAI_API_KEY=sk-...
+
+# Or Groq (has a free tier)
+export GROQ_API_KEY=gsk_...
+
+# Or Gemini (has a free tier)
+export GEMINI_API_KEY=AIza...
+```
+
+Add the `export` commands to your shell config (`~/.zshrc`, `~/.bashrc`, etc.) to persist them.
+
+### Verify Configuration
+
+```bash
+openfang doctor
+```
+
+---
+
+## Launch an Agent
+
+### Using Built-in Templates
+
+openfang ships with 30 agent templates. Start the hello-world example:
+
+```bash
+openfang agent spawn agents/hello-world/agent.toml
+```
+
+### Chat with an Agent
+
+```bash
+openfang chat hello-world
+```
+
+Example session:
+
+```
+Chat session started. Type 'exit' or Ctrl+C to quit.
+
+you> Hello! What can you do?
+
+agent> I can:
+- Read files from the filesystem
+- List directory contents
+- Fetch web page content
+
+Try asking me to read a file or look something up online!
+
+  [tokens: 142 in / 87 out | iterations: 1]
+```
+
+---
+
+## Start the Daemon
+
+```bash
+openfang dashboard
+```
+
+The daemon provides:
+- **REST API** `http://127.0.0.1:4200/api/`
+- **WebSocket** `ws://127.0.0.1:4200/api/agents/{id}/ws`
+- **WebChat UI** `http://127.0.0.1:4200/`
+
+---
+
+## Set Up TELOS
+
+TELOS is the soul of Octarq. Initialize your personal goal profile:
+
+```bash
+openfang telos init
+```
+
+Then preview how agents will understand your goals:
+
+```bash
+openfang telos preview researcher
+```
+
+See [TELOS Goal System](/en/docs/telos) for details.
+
+---
+
+## Next Steps
+
+- [Architecture](/en/docs/architecture) — Understand the kernel design
+- [Autonomous Hands](/en/docs/hands) — Explore 7 pre-built capability packages
+- [LLM Providers](/en/docs/providers) — Configure 27 providers
+- [Channel Adapters](/en/docs/channels) — Connect 40+ messaging platforms
+- [CLI Reference](/en/docs/cli-reference) — Full command-line reference

@@ -30,7 +30,7 @@ jobs:
       - name: Generate changelog
         uses: orhun/git-cliff-action@v4
         with:
-          args: --strip header
+          args: --latest --strip header
         env:
           OUTPUT: release-notes.md
       - uses: actions/upload-artifact@v4
@@ -82,7 +82,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.ref_name }}
-          name: "OpenFang ${{ github.ref_name }}"
+          name: "Octarq ${{ github.ref_name }}"
           body_path: release-notes.md
           draft: false
           generate_release_notes: false
@@ -179,7 +179,7 @@ jobs:
           APPLE_TEAM_ID: ${{ secrets.MAC_NOTARIZE_TEAM_ID }}
         with:
           tagName: ${{ github.ref_name }}
-          releaseName: "OpenFang ${{ github.ref_name }}"
+          releaseName: "Octarq ${{ github.ref_name }}"
           releaseBody: |
             ## What's New
 
@@ -196,7 +196,7 @@ jobs:
 
             **Docker**:
             ```bash
-            docker pull ghcr.io/rightnow-ai/openfang:latest
+            docker pull ghcr.io/jungley8/octarq:latest
             ```
 
             **Coming from OpenClaw?**

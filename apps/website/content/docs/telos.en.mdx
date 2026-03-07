@@ -1,0 +1,86 @@
+---
+title: TELOS Goal System
+description: PAI-powered personal goal engine — agents that understand your mission
+---
+
+## What Is TELOS
+
+TELOS is Octarq's core differentiator. Based on Daniel Miessler's [PAI (Personal AI Infrastructure)](https://github.com/danielmiessler/Personal_AI_Infrastructure) philosophy, TELOS loads your personal goal context before every agent executes a task.
+
+**Agent without TELOS**: You tell it what to do, it does it.
+**Agent with TELOS**: It knows who you are, what you're pursuing, what challenges you face, then executes within that framework.
+
+## 10 TELOS Files
+
+| File | Core Question | Purpose |
+| --- | --- | --- |
+| `MISSION.md` | Why do you exist? | Filter tasks irrelevant to your mission |
+| `GOALS.md` | What are you pursuing now? | Provide priority baselines for Hands |
+| `PROJECTS.md` | What are you working on? | Target research and lead generation |
+| `BELIEFS.md` | What do you believe? | Avoid outputs conflicting with your values |
+| `MODELS.md` | How do you think? | Predictor uses your preferred analysis frameworks |
+| `STRATEGIES.md` | How do you act? | Twitter/Lead follow your communication style |
+| `NARRATIVES.md` | What's your story? | Enhance contextual awareness |
+| `LEARNED.md` | What have you learned from experience? | Prevent repeating mistakes |
+| `CHALLENGES.md` | What obstacles do you face? | Automatically include in research scope |
+| `IDEAS.md` | What do you want to explore? | Proactive exploration list |
+
+## Quick Start
+
+```bash
+# Initialize TELOS directory (interactive guide)
+openfang telos init
+
+# Check current status
+openfang telos status
+
+# Preview context the Researcher Hand will see
+openfang telos preview researcher
+
+# Edit a goal file
+openfang telos edit goals
+```
+
+## Injection Modes
+
+Different Hands need different levels of context:
+
+| Mode | Content Injected | Applicable Hands |
+| --- | --- | --- |
+| **full** | All 10 files | Researcher, Collector, Predictor |
+| **focused** | Mission + Goals + Projects + Challenges | Most Hands (default) |
+| **minimal** | Mission + active goals list | Lead, Twitter, Clip |
+| **custom** | Custom file list | When precise control is needed |
+| **none** | No injection | Pure technical tasks (e.g. Clip) |
+
+Configure in `HAND.toml`:
+
+```toml
+[telos]
+mode = "focused"
+max_chars = 3000
+position = "before_prompt"
+```
+
+## Injection Strategies per Hand
+
+### Researcher — Full Mode
+Injects all 10 files. Output is no longer generic reports, but research precisely targeted at your goals and challenges.
+
+### Lead — Minimal Mode
+Extracts ICP (Ideal Customer Profile) from PROJECTS.md — no manual configuration needed. Target customers adjust automatically as your projects evolve.
+
+### Collector — Full Mode
+Automatically derives monitoring targets from TELOS: project competitors, challenge solutions, key signals on your goal path.
+
+### Predictor — Full + MODELS Priority
+Uses the reasoning frameworks from MODELS.md to build inference chains.
+
+### Twitter — Minimal + STRATEGIES
+Brand voice comes from STRATEGIES.md — no manual style configuration.
+
+## Security & Privacy
+
+- **Local processing** — All TELOS parsing and injection happens locally
+- **Privacy markers** — Use `<!-- PRIVATE START -->` to mark sensitive content, injected only with local LLMs
+- **Transparent preview** — `openfang telos preview` shows exactly what's sent to the LLM at any time

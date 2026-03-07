@@ -1,0 +1,18 @@
+{
+  "title": "文档",
+  "pages": [
+    "---快速入门---",
+    "getting-started",
+    "---核心概念---",
+    "architecture",
+    "telos",
+    "hands",
+    "configuration",
+    "---集成---",
+    "providers",
+    "channels",
+    "security",
+    "---参考---",
+    "cli-reference"
+  ]
+}

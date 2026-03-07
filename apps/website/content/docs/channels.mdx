@@ -1,0 +1,57 @@
+---
+title: 渠道适配器
+description: 40+ 消息平台集成 — 连接你的 Agent 到任何地方
+---
+
+Octarq 内置 40 个渠道适配器，让你的 Agent 连接到用户所在的每个平台。
+
+## 适配器列表
+
+**核心:** Telegram, Discord, Slack, WhatsApp, Signal, Matrix, Email (IMAP/SMTP)
+
+**企业:** Microsoft Teams, Mattermost, Google Chat, Webex, 飞书/Lark, Zulip
+
+**社交:** LINE, Viber, Facebook Messenger, Mastodon, Bluesky, Reddit, LinkedIn, Twitch
+
+**社区:** IRC, XMPP, Guilded, Revolt, Keybase, Discourse, Gitter
+
+**隐私:** Threema, Nostr, Mumble, Nextcloud Talk, Rocket.Chat, Ntfy, Gotify
+
+**办公:** Pumble, Flock, Twist, 钉钉, Zalo, Webhooks
+
+## 每渠道特性
+
+每个适配器支持：
+- **模型覆盖** — 不同渠道使用不同 LLM
+- **DM/群组策略** — 控制谁可以交互
+- **速率限制** — 防消息洪泛
+- **输出格式化** — Markdown → TelegramHTML / SlackMrkdwn / 纯文本
+- **线程支持** — 支持线程对话的平台
+
+## 配置示例
+
+```toml
+[channels.telegram]
+bot_token_env = "TELEGRAM_BOT_TOKEN"
+allowed_users = ["123456"]
+
+[channels.telegram.overrides]
+model_provider = "groq"
+model_name = "llama-3.3-70b-versatile"
+dm_policy = "allow_listed"
+group_policy = "mention_only"
+```
+
+## 渠道命令
+
+在任何渠道中，用户可以使用内置命令：
+
+| 命令 | 说明 |
+| --- | --- |
+| `/models` | 列出可用模型 |
+| `/providers` | 列出供应商状态 |
+| `/model <name>` | 切换当前模型 |
+| `/new` | 开始新会话 |
+| `/compact` | 压缩会话历史 |
+| `/usage` | 查看使用统计 |
+| `/think` | 启用扩展思考模式 |
