@@ -6,12 +6,34 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 See [v0.1.0 changelog](https://github.com/RightNow-AI/openfang/blob/main/CHANGELOG.md#010---2026-02-24) for more details.
 
+## [0.4.4] - 2026-03-07
+
+### 🐛 Bug Fixes
+
+- *(runtime)* Indicate when background LLM is invoked
+- *(workflow)* Erase step runner future type to avoid layout recursion limit
+- *(kernel)* Fix needless borrow for generic args
+
+### ⚙️ Miscellaneous Tasks
+
+- *(release)* Update CHANGELOG for v0.4.3
+- *(pre-commit)* Fix duplicate hook execution and names
+- Merge 0.3.20~0.3.26 updates from the upstream main branch
+- Add pre-push hook with nextest, remove cursor skill
+- *(ci)* Add cargo-clippy to pre-commit
+
+---
+
 ## [0.4.3] - 2026-03-05
 
 ### ⚙️ Miscellaneous Tasks
 
 - *(release)* Update CHANGELOG for v0.4.2
 - Merge 0.3.14~0.3.20  updates from the upstream main branch
+
+### ◀️ Revert
+
+- *(gemini)* Remove safety_settings and safety-block error handling
 
 ---
 
