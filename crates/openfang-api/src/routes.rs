@@ -523,68 +523,106 @@ pub async fn get_agent_session(
 
     match state.kernel.memory.get_session(entry.session_id) {
         Ok(Some(session)) => {
-            let messages: Vec<serde_json::Value> = session
-                .messages
-                .iter()
-                .filter_map(|m| {
-                    let mut tools: Vec<serde_json::Value> = Vec::new();
-                    let content = match &m.content {
-                        openfang_types::message::MessageContent::Text(t) => t.clone(),
-                        openfang_types::message::MessageContent::Blocks(blocks) => {
-                            // Extract human-readable text and tool info from blocks
-                            let mut texts = Vec::new();
-                            for b in blocks {
-                                match b {
-                                    openfang_types::message::ContentBlock::Text { text } => {
-                                        texts.push(text.clone());
-                                    }
-                                    openfang_types::message::ContentBlock::Image { .. } => {
-                                        texts.push("[Image]".to_string());
-                                    }
-                                    openfang_types::message::ContentBlock::ToolUse {
-                                        name, ..
-                                    } => {
-                                        tools.push(serde_json::json!({
-                                            "name": name,
-                                            "running": false,
-                                            "expanded": false,
-                                        }));
-                                    }
-                                    openfang_types::message::ContentBlock::ToolResult {
-                                        content: result,
-                                        is_error,
-                                        ..
-                                    } => {
-                                        // Attach result to the most recent tool without a result
-                                        if let Some(last_tool) = tools.last_mut() {
+            // Two-pass approach: ToolUse blocks live in Assistant messages while
+            // ToolResult blocks arrive in subsequent User messages.  Pass 1
+            // collects all tool_use entries keyed by id; pass 2 attaches results.
+
+            // Pass 1: build messages and a lookup from tool_use_id → (msg_idx, tool_idx)
+            let mut built_messages: Vec<serde_json::Value> = Vec::new();
+            let mut tool_use_index: std::collections::HashMap<String, (usize, usize)> =
+                std::collections::HashMap::new();
+
+            for m in &session.messages {
+                let mut tools: Vec<serde_json::Value> = Vec::new();
+                let content = match &m.content {
+                    openfang_types::message::MessageContent::Text(t) => t.clone(),
+                    openfang_types::message::MessageContent::Blocks(blocks) => {
+                        let mut texts = Vec::new();
+                        for b in blocks {
+                            match b {
+                                openfang_types::message::ContentBlock::Text { text } => {
+                                    texts.push(text.clone());
+                                }
+                                openfang_types::message::ContentBlock::Image { .. } => {
+                                    texts.push("[Image]".to_string());
+                                }
+                                openfang_types::message::ContentBlock::ToolUse {
+                                    id,
+                                    name,
+                                    input,
+                                    ..
+                                } => {
+                                    let tool_idx = tools.len();
+                                    tools.push(serde_json::json!({
+                                        "name": name,
+                                        "input": input,
+                                        "running": false,
+                                        "expanded": false,
+                                    }));
+                                    // Will be filled after this loop when we know msg_idx
+                                    tool_use_index.insert(id.clone(), (usize::MAX, tool_idx));
+                                }
+                                // ToolResult blocks are handled in pass 2
+                                openfang_types::message::ContentBlock::ToolResult { .. } => {}
+                                _ => {}
+                            }
+                        }
+                        texts.join("\n")
+                    }
+                };
+                // Skip messages that are purely tool results (User role with only ToolResult blocks)
+                if content.is_empty() && tools.is_empty() {
+                    continue;
+                }
+                let msg_idx = built_messages.len();
+                // Fix up the msg_idx for tool_use entries registered with sentinel
+                for (_, (mi, _)) in tool_use_index.iter_mut() {
+                    if *mi == usize::MAX {
+                        *mi = msg_idx;
+                    }
+                }
+                let mut msg = serde_json::json!({
+                    "role": format!("{:?}", m.role),
+                    "content": content,
+                });
+                if !tools.is_empty() {
+                    msg["tools"] = serde_json::Value::Array(tools);
+                }
+                built_messages.push(msg);
+            }
+
+            // Pass 2: walk messages again and attach ToolResult to the correct tool
+            for m in &session.messages {
+                if let openfang_types::message::MessageContent::Blocks(blocks) = &m.content {
+                    for b in blocks {
+                        if let openfang_types::message::ContentBlock::ToolResult {
+                            tool_use_id,
+                            content: result,
+                            is_error,
+                            ..
+                        } = b
+                        {
+                            if let Some(&(msg_idx, tool_idx)) = tool_use_index.get(tool_use_id) {
+                                if let Some(msg) = built_messages.get_mut(msg_idx) {
+                                    if let Some(tools_arr) =
+                                        msg.get_mut("tools").and_then(|v| v.as_array_mut())
+                                    {
+                                        if let Some(tool_obj) = tools_arr.get_mut(tool_idx) {
                                             let preview: String =
-                                                result.chars().take(300).collect();
-                                            last_tool["result"] =
-                                                serde_json::Value::String(preview);
-                                            last_tool["is_error"] =
+                                                result.chars().take(2000).collect();
+                                            tool_obj["result"] = serde_json::Value::String(preview);
+                                            tool_obj["is_error"] =
                                                 serde_json::Value::Bool(*is_error);
                                         }
                                     }
-                                    _ => {}
                                 }
                             }
-                            texts.join("\n")
                         }
-                    };
-                    // Skip messages that are purely tool results (User role with only ToolResult blocks)
-                    if content.is_empty() && tools.is_empty() {
-                        return None;
                     }
-                    let mut msg = serde_json::json!({
-                        "role": format!("{:?}", m.role),
-                        "content": content,
-                    });
-                    if !tools.is_empty() {
-                        msg["tools"] = serde_json::Value::Array(tools);
-                    }
-                    Some(msg)
-                })
-                .collect();
+                }
+            }
+
+            let messages = built_messages;
             (
                 StatusCode::OK,
                 Json(serde_json::json!({
@@ -673,6 +711,7 @@ pub async fn status(State(state): State<Arc<AppState>>) -> impl IntoResponse {
 
     Json(serde_json::json!({
         "status": "running",
+        "version": env!("CARGO_PKG_VERSION"),
         "agent_count": agent_count,
         "default_provider": state.kernel.config.default_model.provider,
         "default_model": state.kernel.config.default_model.model,
@@ -1135,6 +1174,7 @@ pub async fn get_agent(
             "skills_mode": if entry.manifest.skills.is_empty() { "all" } else { "allowlist" },
             "mcp_servers": entry.manifest.mcp_servers,
             "mcp_servers_mode": if entry.manifest.mcp_servers.is_empty() { "all" } else { "allowlist" },
+            "fallback_models": entry.manifest.fallback_models,
         })),
     )
 }
@@ -2415,8 +2455,15 @@ pub async fn remove_channel(
     }
 }
 
-/// POST /api/channels/{name}/test — Basic connectivity check for a channel.
-pub async fn test_channel(Path(name): Path<String>) -> impl IntoResponse {
+/// POST /api/channels/{name}/test — Connectivity check + optional live test message.
+///
+/// Accepts an optional JSON body with `channel_id` (for Discord/Slack) or `chat_id`
+/// (for Telegram). When provided, sends a real test message to verify the bot can
+/// post to that channel.
+pub async fn test_channel(
+    Path(name): Path<String>,
+    raw_body: axum::body::Bytes,
+) -> impl IntoResponse {
     let meta = match find_channel_meta(&name) {
         Some(m) => m,
         None => {
@@ -2449,13 +2496,110 @@ pub async fn test_channel(Path(name): Path<String>) -> impl IntoResponse {
         );
     }
 
+    // If a target channel/chat ID is provided, send a real test message
+    let body: serde_json::Value = if raw_body.is_empty() {
+        serde_json::Value::Null
+    } else {
+        serde_json::from_slice(&raw_body).unwrap_or(serde_json::Value::Null)
+    };
+    let target = body
+        .get("channel_id")
+        .or_else(|| body.get("chat_id"))
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string());
+
+    if let Some(target_id) = target {
+        match send_channel_test_message(&name, &target_id).await {
+            Ok(()) => {
+                return (
+                    StatusCode::OK,
+                    Json(serde_json::json!({
+                        "status": "ok",
+                        "message": format!("Test message sent to {} channel {}.", meta.display_name, target_id)
+                    })),
+                );
+            }
+            Err(e) => {
+                return (
+                    StatusCode::OK,
+                    Json(serde_json::json!({
+                        "status": "error",
+                        "message": format!("Credentials valid but failed to send test message: {e}")
+                    })),
+                );
+            }
+        }
+    }
+
     (
         StatusCode::OK,
         Json(serde_json::json!({
             "status": "ok",
-            "message": format!("All required credentials for {} are set.", meta.display_name)
+            "message": format!("All required credentials for {} are set. Provide channel_id or chat_id to send a test message.", meta.display_name)
         })),
     )
+}
+
+/// Send a real test message to a specific channel/chat on the given platform.
+async fn send_channel_test_message(channel_name: &str, target_id: &str) -> Result<(), String> {
+    let client = reqwest::Client::new();
+    let test_msg = "OpenFang test message — your channel is connected!";
+
+    match channel_name {
+        "discord" => {
+            let token = std::env::var("DISCORD_BOT_TOKEN")
+                .map_err(|_| "DISCORD_BOT_TOKEN not set".to_string())?;
+            let url = format!("https://discord.com/api/v10/channels/{target_id}/messages");
+            let resp = client
+                .post(&url)
+                .header("Authorization", format!("Bot {token}"))
+                .json(&serde_json::json!({ "content": test_msg }))
+                .send()
+                .await
+                .map_err(|e| format!("HTTP request failed: {e}"))?;
+            if !resp.status().is_success() {
+                let body = resp.text().await.unwrap_or_default();
+                return Err(format!("Discord API error: {body}"));
+            }
+        }
+        "telegram" => {
+            let token = std::env::var("TELEGRAM_BOT_TOKEN")
+                .map_err(|_| "TELEGRAM_BOT_TOKEN not set".to_string())?;
+            let url = format!("https://api.telegram.org/bot{token}/sendMessage");
+            let resp = client
+                .post(&url)
+                .json(&serde_json::json!({ "chat_id": target_id, "text": test_msg }))
+                .send()
+                .await
+                .map_err(|e| format!("HTTP request failed: {e}"))?;
+            if !resp.status().is_success() {
+                let body = resp.text().await.unwrap_or_default();
+                return Err(format!("Telegram API error: {body}"));
+            }
+        }
+        "slack" => {
+            let token = std::env::var("SLACK_BOT_TOKEN")
+                .map_err(|_| "SLACK_BOT_TOKEN not set".to_string())?;
+            let url = "https://slack.com/api/chat.postMessage";
+            let resp = client
+                .post(url)
+                .header("Authorization", format!("Bearer {token}"))
+                .json(&serde_json::json!({ "channel": target_id, "text": test_msg }))
+                .send()
+                .await
+                .map_err(|e| format!("HTTP request failed: {e}"))?;
+            if !resp.status().is_success() {
+                let body = resp.text().await.unwrap_or_default();
+                return Err(format!("Slack API error: {body}"));
+            }
+        }
+        _ => {
+            return Err(format!(
+                "Live test messaging not supported for {channel_name}. Credentials are valid."
+            ));
+        }
+    }
+    Ok(())
 }
 
 /// POST /api/channels/reload — Manually trigger a channel hot-reload from disk config.
@@ -2495,7 +2639,7 @@ pub async fn whatsapp_qr_start() -> impl IntoResponse {
         return Json(serde_json::json!({
             "available": false,
             "message": "WhatsApp Web gateway not running. Start the gateway or use Business API mode.",
-            "help": "Run: npx openfang-whatsapp-gateway   (or set WHATSAPP_WEB_GATEWAY_URL)"
+            "help": "The WhatsApp Web gateway auto-starts with the daemon when configured. Ensure Node.js >= 18 is installed and WhatsApp is configured in config.toml. Set WHATSAPP_WEB_GATEWAY_URL to use an external gateway."
         }));
     }
 
@@ -5152,6 +5296,92 @@ pub async fn update_agent(
     )
 }
 
+/// PATCH /api/agents/{id} — Partial update of agent fields (name, description, model, system_prompt).
+pub async fn patch_agent(
+    State(state): State<Arc<AppState>>,
+    Path(id): Path<String>,
+    Json(body): Json<serde_json::Value>,
+) -> impl IntoResponse {
+    let agent_id: AgentId = match id.parse() {
+        Ok(id) => id,
+        Err(_) => {
+            return (
+                StatusCode::BAD_REQUEST,
+                Json(serde_json::json!({"error": "Invalid agent ID"})),
+            );
+        }
+    };
+
+    if state.kernel.registry.get(agent_id).is_none() {
+        return (
+            StatusCode::NOT_FOUND,
+            Json(serde_json::json!({"error": "Agent not found"})),
+        );
+    }
+
+    // Apply partial updates using dedicated registry methods
+    if let Some(name) = body.get("name").and_then(|v| v.as_str()) {
+        if let Err(e) = state
+            .kernel
+            .registry
+            .update_name(agent_id, name.to_string())
+        {
+            return (
+                StatusCode::BAD_REQUEST,
+                Json(serde_json::json!({"error": format!("{e}")})),
+            );
+        }
+    }
+    if let Some(desc) = body.get("description").and_then(|v| v.as_str()) {
+        if let Err(e) = state
+            .kernel
+            .registry
+            .update_description(agent_id, desc.to_string())
+        {
+            return (
+                StatusCode::BAD_REQUEST,
+                Json(serde_json::json!({"error": format!("{e}")})),
+            );
+        }
+    }
+    if let Some(model) = body.get("model").and_then(|v| v.as_str()) {
+        if let Err(e) = state.kernel.set_agent_model(agent_id, model) {
+            return (
+                StatusCode::BAD_REQUEST,
+                Json(serde_json::json!({"error": format!("{e}")})),
+            );
+        }
+    }
+    if let Some(system_prompt) = body.get("system_prompt").and_then(|v| v.as_str()) {
+        if let Err(e) = state
+            .kernel
+            .registry
+            .update_system_prompt(agent_id, system_prompt.to_string())
+        {
+            return (
+                StatusCode::BAD_REQUEST,
+                Json(serde_json::json!({"error": format!("{e}")})),
+            );
+        }
+    }
+
+    // Persist updated entry to SQLite
+    if let Some(entry) = state.kernel.registry.get(agent_id) {
+        let _ = state.kernel.memory.save_agent(&entry);
+        (
+            StatusCode::OK,
+            Json(
+                serde_json::json!({"status": "ok", "agent_id": entry.id.to_string(), "name": entry.name}),
+            ),
+        )
+    } else {
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(serde_json::json!({"error": "Agent vanished during update"})),
+        )
+    }
+}
+
 // ---------------------------------------------------------------------------
 // Migration endpoint
 // ---------------------------------------------------------------------------
@@ -5629,7 +5859,9 @@ pub async fn add_custom_model(
     if !catalog.add_custom_model(entry) {
         return (
             StatusCode::CONFLICT,
-            Json(serde_json::json!({"error": format!("Model '{}' already exists", id)})),
+            Json(
+                serde_json::json!({"error": format!("Model '{}' already exists for provider '{}'", id, provider)}),
+            ),
         );
     }
 
@@ -5765,7 +5997,7 @@ pub async fn a2a_send_task(
     let task = openfang_runtime::a2a::A2aTask {
         id: task_id.clone(),
         session_id: session_id.clone(),
-        status: openfang_runtime::a2a::A2aTaskStatus::Working,
+        status: openfang_runtime::a2a::A2aTaskStatus::Working.into(),
         messages: vec![openfang_runtime::a2a::A2aMessage {
             role: "user".to_string(),
             parts: vec![openfang_runtime::a2a::A2aPart::Text {
@@ -5874,10 +6106,10 @@ pub async fn a2a_list_external_agents(State(state): State<Arc<AppState>>) -> imp
         .unwrap_or_else(|e| e.into_inner());
     let items: Vec<serde_json::Value> = agents
         .iter()
-        .map(|(url, card)| {
+        .map(|(_, card)| {
             serde_json::json!({
                 "name": card.name,
-                "url": url,
+                "url": card.url,
                 "description": card.description,
                 "skills": card.skills,
                 "version": card.version,
@@ -6235,6 +6467,12 @@ pub async fn clear_agent_history(
             )
         }
     };
+    if state.kernel.registry.get(agent_id).is_none() {
+        return (
+            StatusCode::NOT_FOUND,
+            Json(serde_json::json!({"error": "Agent not found"})),
+        );
+    }
     match state.kernel.clear_agent_history(agent_id) {
         Ok(()) => (
             StatusCode::OK,
@@ -7100,15 +7338,14 @@ fn upsert_channel_config(
                 }
             }
             FieldType::List => {
+                // Always store list items as strings so that numeric IDs
+                // (e.g. Discord guild snowflakes, Telegram user IDs) are
+                // deserialized correctly into Vec<String> config fields.
                 let items: Vec<toml::Value> = v
                     .split(',')
                     .map(|s| s.trim())
                     .filter(|s| !s.is_empty())
-                    .map(|s| {
-                        s.parse::<i64>()
-                            .map(toml::Value::Integer)
-                            .unwrap_or_else(|_| toml::Value::String(s.to_string()))
-                    })
+                    .map(|s| toml::Value::String(s.to_string()))
                     .collect();
                 toml::Value::Array(items)
             }
@@ -7841,10 +8078,16 @@ pub async fn update_agent_identity(
     };
 
     match state.kernel.registry.update_identity(agent_id, identity) {
-        Ok(()) => (
-            StatusCode::OK,
-            Json(serde_json::json!({"status": "ok", "agent_id": id})),
-        ),
+        Ok(()) => {
+            // Persist identity to SQLite
+            if let Some(entry) = state.kernel.registry.get(agent_id) {
+                let _ = state.kernel.memory.save_agent(&entry);
+            }
+            (
+                StatusCode::OK,
+                Json(serde_json::json!({"status": "ok", "agent_id": id})),
+            )
+        }
         Err(_) => (
             StatusCode::NOT_FOUND,
             Json(serde_json::json!({"error": "Agent not found"})),
@@ -7872,6 +8115,7 @@ pub struct PatchAgentConfigRequest {
     pub provider: Option<String>,
     pub api_key_env: Option<String>,
     pub base_url: Option<String>,
+    pub fallback_models: Option<Vec<openfang_types::agent::FallbackModel>>,
 }
 
 /// PATCH /api/agents/{id}/config — Hot-update agent name, description, system prompt, and identity.
@@ -8075,6 +8319,21 @@ pub async fn patch_agent_config(
                     Json(serde_json::json!({"error": "Agent not found"})),
                 );
             }
+        }
+    }
+
+    // Update fallback model chain
+    if let Some(fallbacks) = req.fallback_models {
+        if state
+            .kernel
+            .registry
+            .update_fallback_models(agent_id, fallbacks)
+            .is_err()
+        {
+            return (
+                StatusCode::NOT_FOUND,
+                Json(serde_json::json!({"error": "Agent not found"})),
+            );
         }
     }
 
