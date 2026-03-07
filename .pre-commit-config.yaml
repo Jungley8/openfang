@@ -19,6 +19,12 @@ repos:
         language: system
         pass_filenames: false
         stages: [pre-commit]
+      - id: cargo-clippy
+        name: cargo-clippy
+        entry: bash -c 'cargo clippy --workspace -- -D warnings'
+        language: system
+        pass_filenames: false
+        stages: [pre-commit]
       - id: cargo-check
         name: cargo-check
         entry: bash -c 'cargo check --workspace'
