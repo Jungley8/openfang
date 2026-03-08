@@ -40,6 +40,8 @@ jobs:
         run: pnpm run build
 
       - name: Deploy to Cloudflare Workers
-        uses: cloudflare/wrangler-action@v4
+        uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          wranglerVersion: 4.71.0
+          configPath: apps/website/wrangler.json
