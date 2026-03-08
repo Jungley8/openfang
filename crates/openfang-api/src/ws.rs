@@ -574,6 +574,26 @@ async fn handle_text_message(
                                                         break;
                                                     }
                                                 }
+                                                // When agent loop sends error phase, also send error so user is notified
+                                                if let StreamEvent::PhaseChange {
+                                                    phase,
+                                                    detail,
+                                                } = &ev
+                                                {
+                                                    if phase == "error" {
+                                                        let content = detail
+                                                            .as_deref()
+                                                            .unwrap_or("Agent run failed.");
+                                                        let _ = send_json(
+                                                            &sender_stream,
+                                                            &serde_json::json!({
+                                                                "type": "error",
+                                                                "content": content,
+                                                            }),
+                                                        )
+                                                        .await;
+                                                    }
+                                                }
                                             }
                                         }
                                     }

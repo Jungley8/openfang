@@ -4023,10 +4023,24 @@ impl OpenFangKernel {
                         }
                         Err(e) => {
                             warn!(agent_id = %aid, error = %e, "Background tick failed");
+                            k.record_background_tick_error(aid, &e);
                         }
                     }
                 })
             });
+    }
+
+    /// Write autonomous tick failure to the agent's workspace daily memory so the user sees it.
+    pub fn record_background_tick_error(self: &Arc<Self>, agent_id: AgentId, error: &KernelError) {
+        let workspace = match self.registry.get(agent_id) {
+            Some(entry) => match &entry.manifest.workspace {
+                Some(w) => w.clone(),
+                None => return,
+            },
+            None => return,
+        };
+        let msg = format!("[AUTONOMOUS TICK FAILED] {}", error);
+        append_daily_memory_log(&workspace, &msg);
     }
 
     /// Record a background tick response; if the same error repeats, emit event and audit so the user is notified.

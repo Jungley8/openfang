@@ -331,7 +331,16 @@ pub async fn run_agent_loop(
 
         // Call LLM with retry, error classification, and circuit breaker
         let provider_name = manifest.model.provider.as_str();
-        let mut response = call_with_retry(&*driver, request, Some(provider_name), None).await?;
+        let mut response = match call_with_retry(&*driver, request, Some(provider_name), None).await
+        {
+            Ok(r) => r,
+            Err(e) => {
+                if let Some(cb) = on_phase {
+                    cb(LoopPhase::Error);
+                }
+                return Err(e);
+            }
+        };
 
         total_usage.input_tokens += response.usage.input_tokens;
         total_usage.output_tokens += response.usage.output_tokens;
@@ -1268,14 +1277,30 @@ pub async fn run_agent_loop_streaming(
 
         // Stream LLM call with retry, error classification, and circuit breaker
         let provider_name = manifest.model.provider.as_str();
-        let mut response = stream_with_retry(
+        let mut response = match stream_with_retry(
             &*driver,
             request,
             stream_tx.clone(),
             Some(provider_name),
             None,
         )
-        .await?;
+        .await
+        {
+            Ok(r) => r,
+            Err(e) => {
+                let msg = e.to_string();
+                if let Some(cb) = on_phase {
+                    cb(LoopPhase::Error);
+                }
+                let _ = stream_tx
+                    .send(StreamEvent::PhaseChange {
+                        phase: "error".to_string(),
+                        detail: Some(msg),
+                    })
+                    .await;
+                return Err(e);
+            }
+        };
 
         total_usage.input_tokens += response.usage.input_tokens;
         total_usage.output_tokens += response.usage.output_tokens;
