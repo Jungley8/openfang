@@ -496,7 +496,6 @@ impl LlmDriver for OpenAIDriver {
                         id: call.id.clone(),
                         name: call.function.name.clone(),
                         input: input.clone(),
-                        thought_signature: None,
                     });
                     tool_calls.push(ToolCall {
                         id: call.id,
@@ -948,7 +947,6 @@ impl LlmDriver for OpenAIDriver {
                     id: id.clone(),
                     name: name.clone(),
                     input: input.clone(),
-                    thought_signature: None,
                 });
                 tool_calls.push(ToolCall {
                     id: id.clone(),

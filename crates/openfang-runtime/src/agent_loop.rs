@@ -358,7 +358,6 @@ pub async fn run_agent_loop(
                         id: tc.id.clone(),
                         name: tc.name.clone(),
                         input: tc.input.clone(),
-                        thought_signature: None,
                     });
                 }
                 response.content = new_blocks;
@@ -1301,7 +1300,6 @@ pub async fn run_agent_loop_streaming(
                         id: tc.id.clone(),
                         name: tc.name.clone(),
                         input: tc.input.clone(),
-                        thought_signature: None,
                     });
                 }
                 response.content = new_blocks;
@@ -2132,7 +2130,6 @@ mod tests {
                         id: "tool_1".to_string(),
                         name: "fake_tool".to_string(),
                         input: serde_json::json!({"query": "test"}),
-                        thought_signature: None,
                     }],
                     stop_reason: StopReason::ToolUse,
                     tool_calls: vec![ToolCall {

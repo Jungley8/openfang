@@ -520,7 +520,6 @@ impl LlmDriver for AnthropicDriver {
                             id: id.clone(),
                             name: name.clone(),
                             input: input.clone(),
-                            thought_signature: None,
                         });
                         tool_calls.push(ToolCall { id, name, input });
                     }
@@ -618,7 +617,6 @@ fn convert_response(api: ApiResponse) -> CompletionResponse {
                     id: id.clone(),
                     name: name.clone(),
                     input: input.clone(),
-                    thought_signature: None,
                 });
                 tool_calls.push(ToolCall { id, name, input });
             }
