@@ -329,6 +329,10 @@ fn main() {
     }
 }
 
+// ---------------------------------------------------------------------------
+// (daemon helpers and inline commands live in daemon.rs and cmd::*)
+// ---------------------------------------------------------------------------
+
 /// Copy text to the system clipboard. Returns true on success.
 pub(crate) fn copy_to_clipboard(text: &str) -> bool {
     #[cfg(target_os = "windows")]
@@ -415,8 +419,14 @@ pub(crate) fn open_in_browser(url: &str) -> bool {
     }
     #[cfg(target_os = "linux")]
     {
+        // Detach from parent to avoid inheriting sandbox restrictions.
+        // Some Chromium-based browsers fail with EPERM when launched from
+        // restricted environments (containers, snaps, flatpaks).
         std::process::Command::new("xdg-open")
             .arg(url)
+            .stdin(std::process::Stdio::null())
+            .stdout(std::process::Stdio::null())
+            .stderr(std::process::Stdio::null())
             .spawn()
             .is_ok()
     }
